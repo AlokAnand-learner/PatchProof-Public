@@ -35,6 +35,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onHistoryCleared, on
   const [historyError, setHistoryError] = useState<string | null>(null);
   const [evaluating, setEvaluating] = useState(false);
   const [evalResult, setEvalResult] = useState<EvaluationMetrics | null>(null);
+  const [benchmarkError, setBenchmarkError] = useState<string | null>(null);
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showBenchmarkDetails, setShowBenchmarkDetails] = useState(false);
   const [privacyError, setPrivacyError] = useState<string | null>(null);
@@ -58,6 +59,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onHistoryCleared, on
 
   const handleRunBenchmark = async () => {
     setEvaluating(true);
+    setBenchmarkError(null);
     try {
       const res = await fetch('/api/evaluate');
       if (!res.ok) throw new Error('Benchmark request failed');
@@ -65,6 +67,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onHistoryCleared, on
       setEvalResult(data);
     } catch (err) {
       console.error('Benchmark execution error:', err);
+      setBenchmarkError('The benchmark could not complete. Check that the local PatchProof server is running, then try again.');
     } finally {
       setEvaluating(false);
     }
@@ -124,7 +127,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onHistoryCleared, on
         </div>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs text-[#526078] dark:text-[#C2CDDC]">
           <p className="p-3 rounded-lg bg-[#F4F6FA] dark:bg-slate-950/50 border border-[#DCE3ED] dark:border-slate-800"><strong className="block text-[#17243B] dark:text-white">Remediation</strong> Suggested patches are generated as proposals and require review; PatchProof does not silently rewrite uploaded files.</p>
-          <p className="p-3 rounded-lg bg-[#F4F6FA] dark:bg-slate-950/50 border border-[#DCE3ED] dark:border-slate-800"><strong className="block text-[#17243B] dark:text-white">Finding visibility</strong> Findings are shown with their verification status. There is no active user-configurable severity filter yet.</p>
+          <p className="p-3 rounded-lg bg-[#F4F6FA] dark:bg-slate-950/50 border border-[#DCE3ED] dark:border-slate-800"><strong className="block text-[#17243B] dark:text-white">Finding visibility</strong> Findings are shown with their verification status; severity, status, file, and text filters are available in the Results view.</p>
         </div>
       </div>
 
@@ -149,6 +152,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onHistoryCleared, on
             </span>
           </div>
           <button
+            type="button"
+            role="switch"
+            aria-checked={isPrivacyModeEnabled()}
+            aria-label="Enable privacy mode for saved source code"
             onClick={() => {
               const nextState = !isPrivacyModeEnabled();
               const updated = setPrivacyMode(nextState);
@@ -195,6 +202,11 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onHistoryCleared, on
             </span>
           </div>
           <button
+            type="button"
+            role="switch"
+            aria-checked={Boolean(serverStatus?.cloudConsentGranted)}
+            aria-label="Allow source code transmission to the selected cloud AI provider"
+            disabled={!serverStatus || serverStatus.status === 'offline'}
             onClick={async () => {
               const currentConsent = serverStatus?.cloudConsentGranted ?? false;
               try {
@@ -315,8 +327,13 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onHistoryCleared, on
         </div>
 
         <p className="text-xs text-[#526078] dark:text-[#C2CDDC] leading-relaxed">
-          Runs 13 built-in synthetic fixtures. Review-only cases are excluded from binary precision/recall scoring; these small fixtures are not a real-world accuracy guarantee.
+          Runs the built-in synthetic fixture suite. Review-only cases are excluded from binary precision/recall scoring; these small fixtures are not a real-world accuracy guarantee.
         </p>
+        {benchmarkError && (
+          <div role="alert" className="text-xs text-rose-700 dark:text-rose-300 bg-rose-500/10 border border-rose-500/20 rounded-lg p-3">
+            {benchmarkError}
+          </div>
+        )}
 
         {evalResult ? (
           <div className="space-y-4 pt-2">
@@ -344,7 +361,9 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onHistoryCleared, on
               <div className="p-3 rounded-lg bg-[#F4F6FA] dark:bg-[#243247] border border-[#DCE3ED] dark:border-[#35445A]">
                 <span className="text-[10px] uppercase font-bold tracking-wider text-[#68758A] dark:text-[#9BAAC0] block">False Positives</span>
                 <span className="text-xl font-bold text-emerald-700 dark:text-emerald-400 block mt-0.5 font-mono">{evalResult.falsePositives}</span>
-                <span className="text-[10px] text-emerald-700 dark:text-emerald-400">0 FP Target Met</span>
+                <span className={`text-[10px] ${evalResult.falsePositives === 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-rose-700 dark:text-rose-300'}`}>
+                  {evalResult.falsePositives === 0 ? '0 FP Target Met' : 'False-positive target not met'}
+                </span>
               </div>
             </div>
 
