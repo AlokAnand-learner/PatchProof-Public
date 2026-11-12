@@ -27,6 +27,7 @@ Completed:
 - Imported or recreated project configuration, Node version pin, Vite/TypeScript setup, example-only environment template, metadata, entrypoint, and visual assets.
 - Added or imported local Host/Origin validation, bounded provider response handling, model-name validation, request-error sanitization, SSRF endpoint validation, and AI finding trust-boundary checks, and production CSP without `unsafe-eval`.
 - Added a guarded source archive importer with strict path, symlink, size, compression-ratio, UTF-8, and high-confidence secret-pattern checks.
+- Added a provider-neutral untrusted-source boundary helper: it separates a fixed defensive system instruction from JSON-encoded source data, enforces file/path/size limits, and flags common prompt-injection-like text without deleting source content. This helper is not yet wired into provider adapters.
 - Pinned the importer to the reviewed archive SHA-256: `f6a0cbe3ab7e1fc0c1c8ab33ad3218ad903ac65a1fc5267342b6cd642c9770b5`.
 - Added a GitHub Actions workflow that imports missing files and removes the temporary archive after a successful import.
 - Updated the handoff instructions for the 82-file archive.
@@ -75,9 +76,11 @@ Completed:
 - Per-file, total extracted size, archive size, entry-count, file-count, symlink, and binary-content checks are present.
 
 Still required:
+- Wire the untrusted-source boundary into every AI provider adapter and verify uploaded content cannot grant tools, filesystem, or network access.
 - Run the JSZip-backed ZIP/folder test suite after dependencies are installed.
 - Add malformed-archive and duplicate-entry coverage using real JSZip fixtures.
 - Run a complete upload-to-analysis integration smoke test and inspect memory use under configured limits.
+- Verify prompt-injection fixtures against each supported model/provider with tool access disabled and secret redaction enforced.
 
 ## Phase 5 — Privacy and local boundary
 
