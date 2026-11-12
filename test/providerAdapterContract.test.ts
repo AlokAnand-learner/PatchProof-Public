@@ -31,12 +31,12 @@ const anthropicEnd = source.indexOf('\n}\n\nexport function extractJsonFromModel
 assert.ok(anthropicStart >= 0 && anthropicEnd > anthropicStart, 'Anthropic adapter must be discoverable');
 const anthropicSection = source.slice(anthropicStart, anthropicEnd);
 assert.equal(
-  (anthropicSection.match(/fetchPinnedHttpsResponseText\\(/g) || []).length,
+  (anthropicSection.match(/fetchPinnedHttpsResponseText\(/g) || []).length,
   2,
   'Anthropic connection tests and analysis must both use DNS-pinned HTTPS transport',
 );
 assert.equal(
-  /fetchResponseText\\(/.test(anthropicSection),
+  /fetchResponseText\(/.test(anthropicSection),
   false,
   'Anthropic cloud requests must never use the ordinary fetch transport',
 );
