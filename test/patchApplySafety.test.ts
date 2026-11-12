@@ -8,11 +8,13 @@ const applyEnd = source.indexOf('const handleApplyClick', applyStart);
 assert.ok(applyStart >= 0 && applyEnd > applyStart, 'patch apply handler must exist');
 const applyHandler = source.slice(applyStart, applyEnd);
 
-assert.ok(applyHandler.includes("if (status === 'INVALID')"), 'INVALID fixes must be blocked inside the apply handler itself');
+assert.ok(applyHandler.includes("if (status !== 'VALIDATED')"), 'only fully statically checked fixes may be applied');
 assert.ok(applyHandler.includes('return;'), 'blocked fixes must return without applying');
 assert.ok(applyHandler.includes('!Number.isInteger(startLine)') && applyHandler.includes('!Number.isInteger(endLine)'), 'line bounds must be finite integers');
 assert.ok(applyHandler.includes('startLine < 1') && applyHandler.includes('endLine < startLine'), 'line bounds must be positive and ordered');
 assert.ok(applyHandler.includes('startIdx >= lines.length') && applyHandler.includes('endIdx > lines.length'), 'out-of-file line ranges must be rejected');
+assert.ok(applyHandler.includes("!finding.snippet || currentSnippet !== finding.snippet"), 'stale or mismatched source evidence must block patch application');
+assert.ok(source.includes('Review Required'), 'unvalidated fixes must be clearly labelled for review');
 assert.ok(applyHandler.includes("viewMode === 'full'"), 'full-file model output must remain preview-only');
 assert.ok(!source.includes('Apply Anyway'), 'there must be no user-confirmation bypass for invalid patches');
 assert.match(source, /disabled=\{viewMode === 'full'\}/, 'only preview-only full-file mode should disable the apply control');
