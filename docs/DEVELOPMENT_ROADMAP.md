@@ -2,9 +2,9 @@
 
 ## Current repository state
 
-The public development repository is being populated on the isolated working branch `work/ssrf-special-purpose-ipv4-2026-11-12`. The reviewed source archive contains 82 files (868,355 uncompressed bytes). At the latest audit, 40 of those 82 archive paths are represented in the working branch (49% by archive path count). This is a transfer measure only; it does not mean half of the product's functionality is release-ready.
+The public development repository is being populated on the isolated working branch `work/ssrf-special-purpose-ipv4-2026-11-12`. The reviewed source archive contains 82 files (868,355 uncompressed bytes). A read-only comparison now accounts for all 82 paths: 57 match exactly, 25 differ from the reviewed archive and are preserved, and none are missing. This is a source-transfer measure only, not a product-readiness percentage.
 
-The branch now contains a hash-pinned archive importer and GitHub Actions workflow. The updated reviewed archive is ready for the one-time upload described in [SOURCE_IMPORT_HANDOFF.md](SOURCE_IMPORT_HANDOFF.md). The importer adds missing files and preserves differing existing files for explicit reconciliation.
+The branch contains a hash-pinned archive importer, an automatic import workflow, and a read-only conflict-audit workflow. The uploaded archive has been imported; differing branch files are preserved rather than overwritten and are listed by the audit for reconciliation.
 
 ## Phase progress snapshot
 
@@ -12,16 +12,16 @@ These percentages are engineering estimates, not test coverage or acceptance per
 
 | Phase | Progress | Current state |
 |---|---:|---|
-| 1. Safe source import | 49% | 40/82 archive paths represented; remaining source files await guarded import |
-| 2. Reproducible setup | 45% | Bun lockfile is committed and frozen installation passed on GitHub Actions; full typecheck/build and lifecycle-script review remain open |
+| 1. Safe source import | 75% | All 82 paths accounted for; 57 exact matches and 25 preserved differences; final conflict review and runtime smoke test remain |
+| 2. Reproducible setup | 75% | Frozen install, typecheck, production build, and full test suite pass in CI; one postinstall warning is still being investigated |
 | 3. Detection precision | 42% | Bounded alias taint, review-only fixture classification, source-derived evidence, duplicate suppression, and safe model-label normalization added; benchmark remains small and synthetic |
-| 4. Upload/archive safety | 60% | Path normalization and collision checks added; dependency-backed ZIP suite still pending |
-| 5. Privacy/local boundary | 60% | Local-only host/origin policy, SSRF controls, cloud consent, and privacy-default history are implemented |
-| 6. UX/release readiness | 40% | Inert controls removed, history-clear result surfaced, benchmark disclosures improved; full app smoke test pending |
+| 4. Upload/archive safety | 78% | ZIP/folder tests pass; source boundary is wired into all four provider adapters; remote credential redaction and provider request tests added |
+| 5. Privacy/local boundary | 66% | Local-only boundary, consent, privacy defaults, redirect rejection, and remote-source credential redaction are covered; custom-host DNS pinning remains open |
+| 6. UX/release readiness | 45% | Responsive layout checks and reduced-motion support are in place; real-device browser smoke and full accessibility review remain |
 
 ## Phase 1 — Safe source import
 
-**Progress: 49% by source-archive path count. Acceptance remains incomplete.**
+**Progress: 75% engineering estimate. All 82 archive paths are accounted for (57 exact matches, 25 preserved differences, no missing paths); acceptance remains incomplete.**
 
 Completed:
 - Imported or recreated project configuration, Node version pin, Vite/TypeScript setup, example-only environment template, metadata, entrypoint, and visual assets.
@@ -31,13 +31,12 @@ Completed:
 - Expanded ZIP collision checks to include implicit parent directories and cross-platform case/Unicode aliases.
 - Pinned the importer to the reviewed archive SHA-256: `f6a0cbe3ab7e1fc0c1c8ab33ad3218ad903ac65a1fc5267342b6cd642c9770b5`.
 - Added a GitHub Actions workflow that imports missing files and removes the temporary archive after a successful import.
-- Updated the handoff instructions for the 82-file archive.
+- Updated the handoff instructions for the 82-file archive. The archive import completed with 41 new files; subsequent read-only audit found 57 exact matches, 25 differing preserved files, and no missing archive paths.
+- Added an automated read-only conflict audit that downloads the exact SHA-pinned archive from its upload commit and compares hashes without overwriting files.
 
 Still required:
-- Upload the exact reviewed archive to `import/PatchProof-source.zip` on this working branch.
-- Review importer conflict output; existing branch files with different contents are intentionally preserved.
-- Audit the complete imported tree and resolve remaining conflicts.
-- Re-verify frozen dependency installation against the complete imported tree, then run full typecheck, production build, complete test suite, and a local upload-to-analysis smoke test.
+- Review the 25 preserved differences against the source archive and keep the more secure branch versions where appropriate; do not blindly replace them with the older archive copy.
+- Complete an end-to-end upload-to-analysis smoke test in a real browser and review any remaining conflicts.
 
 ## Phase 2 — Reproducible project setup
 
@@ -50,10 +49,8 @@ Completed:
 
 Still required:
 - Review the dependency lifecycle script reported as blocked by Bun; do not approve install scripts without checking why they are needed.
-- Re-run frozen installation after the complete source archive is imported and the manifest is reconciled.
-- Run full TypeScript typecheck and production build.
-- Run all tests, including server-backed and JSZip-backed tests.
-- Verify a clean checkout and local runtime startup.
+- Investigate the single postinstall warning even though `bun pm untrusted` currently reports zero untrusted dependencies; do not approve lifecycle scripts without identifying the package and purpose.
+- Verify a clean checkout and local runtime startup on a developer machine.
 
 ## Phase 3 — Detection precision
 
@@ -84,11 +81,10 @@ Completed:
 - A separate untrusted-source AI boundary helper serializes source as JSON data, provides a fixed defensive system instruction, applies path/file/total limits, and flags common prompt-injection indicators. It deliberately preserves source text and does not claim heuristic detection is complete.
 
 Still required:
-- Wire the untrusted-source boundary into every AI provider adapter and verify uploaded content cannot grant tools, filesystem, or network access.
-- Run the JSZip-backed ZIP/folder test suite after dependencies are installed.
-- Add malformed-archive and duplicate-entry coverage using real JSZip fixtures.
-- Run a complete upload-to-analysis integration smoke test and inspect memory use under configured limits.
-- Verify prompt-injection fixtures against each supported model/provider with tool access disabled and secret redaction enforced.
+- The fixed system instruction and separate JSON source payload are now wired into Ollama, Gemini, OpenAI-compatible, and Anthropic request branches. No tool declarations are sent by these review requests.
+- JSZip-backed ZIP/folder tests pass in the complete suite; malformed archives, duplicate entries, path collisions, and decompression limits have regression coverage.
+- Local Ollama/custom and mocked remote custom provider tests verify the source boundary, absence of tool declarations, redirect rejection, and credential redaction. Hosted Gemini/Anthropic requests have not been exercised against live credentials.
+- Complete a real-browser upload-to-analysis smoke test and inspect memory use under configured limits.
 
 ## Phase 5 — Privacy and local boundary
 
@@ -101,7 +97,7 @@ Completed:
 
 Still required:
 - Add DNS resolution/pinning protections for user-configured remote custom endpoints to reduce DNS-rebinding risk.
-- Verify all provider adapters enforce equivalent timeouts, response bounds, redirect policy, and credential redaction.
+- Verify all provider adapters enforce equivalent timeouts, response bounds, redirect policy, and credential redaction. Fetch wrappers reject redirects; remote custom endpoint DNS resolution/pinning remains open.
 - Review all logs, reports, browser persistence, and error paths after full application import.
 
 ## Phase 6 — UX and release readiness
@@ -118,18 +114,18 @@ Completed:
 Still required:
 - Run the application in a real browser and verify upload, analysis, provider selection, reports, history, clear-history, mobile layout, and error recovery.
 - Verify empty, loading, and failure states on Android-sized viewports.
-- Complete keyboard/accessibility checks and document supported languages and known limitations.
+- Complete keyboard/accessibility checks and document supported languages and known limitations. Global reduced-motion support is implemented and regression-tested.
 - Keep public deployment disabled until a separate deployment threat model and security review are complete.
 
 ## Verification performed in this work session
 
-- Latest focused GitHub Actions run passed 40 Python repository/archive tests, 10 same-origin API tests, 13 untrusted-source boundary checks, 18 AI-finding validation checks (including duplicate suppression and hostile Unicode label normalization), 10 special-purpose IPv4 SSRF checks, and 11 special-purpose IPv6 SSRF checks. The Node security suite now installs from the committed Bun lockfile before running.
+- Latest full GitHub Actions run passed the Python repository/archive preflight (43 tests), type-check, production build, local server startup, and the complete Node regression suite. The provider boundary tests include 22 assertions; the source boundary suite includes 17 checks. The read-only archive comparison reports 57 exact matches, 25 preserved differences, and no missing paths.
 - Earlier foundation audit: 21 of the 23 scripted test files were executed successfully in focused mode.
 - The latest focused workflow passed 40 Python repository/archive tests, 10 same-origin API tests, 13 untrusted-source boundary checks, 18 AI-finding validation checks, 10 special-purpose IPv4 checks, and 8 special-purpose IPv6 checks (102 reported checks across the focused groups).
-- The two not completed were the JSZip-backed upload suite (dependency unavailable) and the server-backed authentication boundary suite (server/dependencies not running).
-- TypeScript/TSX syntax transpilation completed for 62 files with zero syntax diagnostics.
-- Full `tsc --noEmit` has not yet been re-run after the lockfile-backed dependency installation; the earlier attempt was blocked because `vite/client` was unavailable.
-- Frozen dependency installation now passes on GitHub Actions. Production build and full end-to-end smoke test remain unverified because the complete application source tree is still missing.
+- The complete suite now includes JSZip-backed upload safety and server-backed authentication boundary tests; both pass in CI.
+- TypeScript type-check and production build pass after the reviewed source import.
+- A single postinstall warning remains under investigation; the explicit `bun pm untrusted` audit reports zero untrusted dependencies.
+- A real-device browser smoke test remains unverified because the app is not running on the user's local device.
 
 ## Acceptance rule
 
