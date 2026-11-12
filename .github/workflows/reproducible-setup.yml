@@ -38,14 +38,18 @@ jobs:
       - name: Verify frozen dependency installation
         run: bun install --frozen-lockfile
 
+      - name: Report dependency install scripts requiring review
+        run: bun pm untrusted
+
       - name: Commit lockfile when it changes
         run: |
-          if git diff --quiet -- bun.lock; then
-            echo "Bun lockfile is already current."
+          test -f bun.lock
+          git add bun.lock
+          if git diff --cached --quiet -- bun.lock; then
+            echo "Bun lockfile is already tracked and current."
             exit 0
           fi
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add bun.lock
           git commit -m "build: add reproducible Bun lockfile"
           git push origin HEAD:work/ssrf-special-purpose-ipv4-2026-11-12
