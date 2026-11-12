@@ -16,7 +16,7 @@ These percentages are engineering estimates, not test coverage or acceptance per
 | 2. Reproducible setup | 75% | Frozen install, typecheck, production build, and full test suite pass in CI; one postinstall warning is still being investigated |
 | 3. Detection precision | 42% | Bounded alias taint, review-only fixture classification, source-derived evidence, duplicate suppression, and safe model-label normalization added; benchmark remains small and synthetic |
 | 4. Upload/archive safety | 78% | ZIP/folder tests pass; source boundary is wired into all four provider adapters; remote credential redaction and provider request tests added |
-| 5. Privacy/local boundary | 66% | Local-only boundary, consent, privacy defaults, redirect rejection, and remote-source credential redaction are covered; custom-host DNS pinning remains open |
+| 5. Privacy/local boundary | 72% | Local-only boundary, consent, privacy defaults, remote-source credential redaction, redirect rejection, and DNS-pinned custom HTTPS requests are implemented and regression-tested |
 | 6. UX/release readiness | 45% | Responsive layout checks and reduced-motion support are in place; real-device browser smoke and full accessibility review remain |
 
 ## Phase 1 — Safe source import
@@ -49,7 +49,7 @@ Completed:
 
 Still required:
 - Review the dependency lifecycle script reported as blocked by Bun; do not approve install scripts without checking why they are needed.
-- Investigate the single postinstall warning even though `bun pm untrusted` currently reports zero untrusted dependencies; do not approve lifecycle scripts without identifying the package and purpose.
+- Bun identifies the blocked lifecycle script as `protobufjs@7.6.6` (`node scripts/postinstall`). It remains blocked; `bun pm untrusted` lists it after installation. Typecheck, build, and tests pass without running it, so do not add it to trusted dependencies unless its necessity is established.
 - Verify a clean checkout and local runtime startup on a developer machine.
 
 ## Phase 3 — Detection precision
@@ -96,8 +96,8 @@ Completed:
 - History clear now reports success or failure rather than silently claiming success. Production CSP no longer permits `unsafe-eval`. Production CSP no longer permits `unsafe-eval`.
 
 Still required:
-- Add DNS resolution/pinning protections for user-configured remote custom endpoints to reduce DNS-rebinding risk.
-- Verify all provider adapters enforce equivalent timeouts, response bounds, redirect policy, and credential redaction. Fetch wrappers reject redirects; remote custom endpoint DNS resolution/pinning remains open.
+- Run live network integration checks for DNS-pinned custom endpoints and confirm certificate/hostname validation across supported operating systems.
+- Verify all provider adapters enforce equivalent timeouts, response bounds, redirect policy, and credential redaction. Remote custom HTTPS requests now pin validated DNS answers and reject restricted address sets; redirects are not followed.
 - Review all logs, reports, browser persistence, and error paths after full application import.
 
 ## Phase 6 — UX and release readiness
@@ -119,7 +119,7 @@ Still required:
 
 ## Verification performed in this work session
 
-- Latest full GitHub Actions run passed the Python repository/archive preflight (43 tests), type-check, production build, local server startup, and the complete Node regression suite. The provider boundary tests include 22 assertions; the source boundary suite includes 17 checks. The read-only archive comparison reports 57 exact matches, 25 preserved differences, and no missing paths.
+- Latest full GitHub Actions run passed the Python repository/archive preflight (43 tests), type-check, production build, local server startup, and the complete Node regression suite. The provider boundary tests include 22 assertions, the source boundary suite includes 17 checks, and the pinned DNS suite includes 10 checks. The read-only archive comparison reports 57 exact matches, 25 preserved differences, and no missing paths.
 - Earlier foundation audit: 21 of the 23 scripted test files were executed successfully in focused mode.
 - The latest focused workflow passed 40 Python repository/archive tests, 10 same-origin API tests, 13 untrusted-source boundary checks, 18 AI-finding validation checks, 10 special-purpose IPv4 checks, and 8 special-purpose IPv6 checks (102 reported checks across the focused groups).
 - The complete suite now includes JSZip-backed upload safety and server-backed authentication boundary tests; both pass in CI.
