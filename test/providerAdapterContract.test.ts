@@ -5,7 +5,7 @@ import path from 'node:path';
 const source = fs.readFileSync(path.join(process.cwd(), 'src/engine/providerEngine.ts'), 'utf8');
 const sections = [
   ['Ollama', '// A. OLLAMA (Local)', '// B. GEMINI or HOSTED GEMMA', ['system: systemInstruction', 'prompt: userPayload']],
-  ['Gemini/Gemma', '// B. GEMINI or HOSTED GEMMA', '// C. OPENAI or CUSTOM OPENAI-COMPATIBLE', ['contents: userPayload', 'systemInstruction']],
+  ['Gemini/Gemma', '// B. GEMINI or HOSTED GEMMA', '// C. OPENAI or CUSTOM OPENAI-COMPATIBLE', ['userPayload', 'systemInstruction', 'requestGoogleGenerateContent']],
   ['OpenAI-compatible', '// C. OPENAI or CUSTOM OPENAI-COMPATIBLE', '// D. ANTHROPIC', ["role: 'system'", "role: 'user'", 'content: userPayload']],
   ['Anthropic', '// D. ANTHROPIC', '\n}\n\nexport function extractJsonFromModelResponse', ['system: systemInstruction', "role: 'user'", 'content: userPayload']],
 ];
@@ -26,6 +26,13 @@ assert.ok(source.includes("activeProvider === 'custom' && isCustomLocal"), 'ordi
 assert.ok(source.includes('Every remote HTTPS endpoint is DNS-pinned'), 'OpenAI and remote custom connection tests must share pinned transport');
 assert.ok(source.includes('Remote OpenAI and custom HTTPS endpoints must use DNS-pinned transport'), 'OpenAI and remote custom analysis must share pinned transport');
 assert.ok(source.includes("redirect: 'error'"), 'provider requests must reject redirects');
+assert.ok(source.includes('async function requestGoogleGenerateContent('), 'Google provider requests must use the shared bounded transport');
+const googleTransportStart = source.indexOf('async function requestGoogleGenerateContent(');
+const googleTransportEnd = source.indexOf('function extractGoogleResponseText', googleTransportStart);
+assert.ok(googleTransportStart >= 0 && googleTransportEnd > googleTransportStart, 'Google transport helper must be present');
+assert.ok(source.slice(googleTransportStart, googleTransportEnd).includes('fetchPinnedHttpsResponseText('), 'Gemini/Gemma transport must use DNS-pinned HTTPS');
+assert.equal(source.includes('new GoogleGenAI('), false, 'Google SDK must not bypass the pinned outbound transport');
+
 const anthropicStart = source.indexOf('// 4. ANTHROPIC');
 const analysisStart = source.indexOf('/**\n * Dispatches code analysis', anthropicStart);
 const analysisAnthropicStart = source.indexOf('// D. ANTHROPIC', analysisStart);
