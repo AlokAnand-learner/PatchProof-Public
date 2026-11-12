@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import hashlib
+import io
 from pathlib import Path
 import stat
 import struct
@@ -217,6 +218,18 @@ class SourceArchiveImportFlowTests(unittest.TestCase):
         self.archive_path.write_bytes(raw)
         with self.assertRaises((zipfile.BadZipFile, zlib.error)):
             self.run_import()
+
+    def test_actual_decompressed_bytes_are_bounded_even_if_metadata_lies(self) -> None:
+        class FakeArchive:
+            def open(self, info: zipfile.ZipInfo, mode: str):
+                return io.BytesIO(b"1234")
+
+        info = zipfile.ZipInfo("source/src/app.ts")
+        info.file_size = 3
+        info.compress_type = zipfile.ZIP_DEFLATED
+        with patch.object(import_source_archive, "MAX_FILE_BYTES", 3):
+            with self.assertRaises(ValueError):
+                import_source_archive.read_entry_bounded(FakeArchive(), info, 3)
 
     def test_malformed_zip_is_rejected_without_writing(self) -> None:
         self.archive_path.write_bytes(b"not a zip archive")
