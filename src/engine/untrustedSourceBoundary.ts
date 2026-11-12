@@ -79,6 +79,9 @@ export function prepareUntrustedSource(
     if (!file || typeof file.path !== 'string' || typeof file.content !== 'string') {
       throw new Error('Uploaded source file is invalid.');
     }
+    if (file.path.length > 1024 || file.content.length > policy.maxFileBytes) {
+      throw new Error('Uploaded source path or file exceeds the size limit.');
+    }
     const path = file.path.normalize('NFC');
     const parts = path.split('/');
     const reservedWindowsName = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\..*)?$/i;
