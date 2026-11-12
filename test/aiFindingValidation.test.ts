@@ -22,6 +22,18 @@ const duplicatePair = validateAIModelFindings([
 assert.equal(duplicatePair.length, 1, 'equivalent model findings at the same location must be deduplicated');
 assert.equal(duplicatePair[0].severity, 'HIGH', 'the first source-validated occurrence is retained');
 assert.equal(Object.hasOwn(accepted[0], 'verificationStatus'), false, 'model verification labels are not trusted');
+const hostileLabels = validateAIModelFindings([{
+  ...valid,
+  title: 'Alert\\u202Etxt.exe',
+  cwe: 'CWE-89\\u202E',
+  explanation: 'line one\\u0000\\u202Eline two\\u0007',
+  owaspCategory: 'A05\\u202E:Injection',
+}], source)[0];
+assert.equal(hostileLabels.title, 'Alerttxt.exe', 'bidirectional override controls must not survive in labels');
+assert.equal(hostileLabels.cwe, 'CWE-Other', 'malformed CWE identifiers must fall back to a safe label');
+assert.equal(hostileLabels.explanation, 'line one line two', 'control and bidirectional formatting characters must be removed from model prose');
+const normalCwe = validateAIModelFindings([{ ...valid, cwe: 'cwe-89' }], source)[0];
+assert.equal(normalCwe.cwe, 'CWE-89', 'valid CWE identifiers are normalized');
 assert.equal(validateAIModelFindings([{ ...valid, startLine: 0 }], source).length, 0);
 assert.equal(validateAIModelFindings([{ ...valid, startLine: 4, endLine: 4 }], source).length, 0);
 assert.equal(validateAIModelFindings([{ ...valid, startLine: 3, endLine: 2 }], source).length, 0);
@@ -34,4 +46,4 @@ const bounded = validateAIModelFindings([{ ...valid, title: 'x'.repeat(500), sev
 assert.equal(bounded.title.length, 180);
 assert.equal(bounded.severity, 'MEDIUM');
 assert.equal(bounded.confidence, 'LOW');
-console.log('AI finding validation tests: 14 passed');
+console.log('AI finding validation tests: 18 passed');
