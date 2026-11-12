@@ -447,11 +447,16 @@ async function countZipEntriesBeforeParsing(
   }
 
   let totalEntries: number;
+  let centralDirectoryOffset: number;
+  let centralDirectorySize: number;
+  let directoryBoundary = eocdOffset;
   if (totalEntries16 !== 0xffff) {
     if (entriesOnDisk !== totalEntries16) {
       throw new Error('Invalid or corrupted ZIP archive entry metadata.');
     }
     totalEntries = totalEntries16;
+    centralDirectorySize = view.getUint32(eocdOffset + 12, true);
+    centralDirectoryOffset = view.getUint32(eocdOffset + 16, true);
   } else {
     // ZIP64 locator immediately precedes the classic EOCD record.
     const locatorOffset = eocdOffset - 20;
@@ -468,6 +473,10 @@ async function countZipEntriesBeforeParsing(
     if (zip64Offset + 56 > bytes.length || view.getUint32(zip64Offset, true) !== 0x06064b50) {
       throw new Error('Invalid ZIP64 end-of-central-directory record.');
     }
+    const zip64RecordSize = view.getBigUint64(zip64Offset + 4, true);
+    if (zip64RecordSize < 44n || zip64Offset + 12n + zip64RecordSize > BigInt(locatorOffset)) {
+      throw new Error('Invalid ZIP64 end-of-central-directory record size.');
+    }
     const zip64DiskNumber = view.getUint32(zip64Offset + 16, true);
     const zip64CentralDisk = view.getUint32(zip64Offset + 20, true);
     const zip64EntriesOnDisk = view.getBigUint64(zip64Offset + 24, true);
@@ -477,6 +486,57 @@ async function countZipEntriesBeforeParsing(
       throw new Error('Invalid or multi-disk ZIP64 entry metadata.');
     }
     totalEntries = Number(zip64TotalEntries);
+    const centralDirectorySizeBig = view.getBigUint64(zip64Offset + 40, true);
+    const centralDirectoryOffsetBig = view.getBigUint64(zip64Offset + 48, true);
+    if (centralDirectorySizeBig > BigInt(Number.MAX_SAFE_INTEGER) || centralDirectoryOffsetBig > BigInt(Number.MAX_SAFE_INTEGER)) {
+      throw new Error('Unsupported ZIP64 central-directory dimensions.');
+    }
+    centralDirectorySize = Number(centralDirectorySizeBig);
+    centralDirectoryOffset = Number(centralDirectoryOffsetBig);
+    directoryBoundary = zip64Offset;
+  }
+
+
+  // Do not trust the EOCD entry count by itself: a fake EOCD signature can be
+  // embedded in the ZIP comment. Walk the bounded central directory and verify
+  // that its actual record count and lengths agree before JSZip allocates entries.
+  const centralDirectoryEnd = centralDirectoryOffset + centralDirectorySize;
+  if (!Number.isSafeInteger(centralDirectoryOffset) || !Number.isSafeInteger(centralDirectorySize) ||
+      centralDirectoryOffset < 0 || centralDirectorySize < 0 ||
+      centralDirectoryEnd > directoryBoundary || centralDirectoryEnd > bytes.length) {
+    throw new Error('Invalid ZIP central-directory bounds.');
+  }
+
+  let cursor = centralDirectoryOffset;
+  let actualEntries = 0;
+  while (actualEntries < totalEntries) {
+    if (cursor + 46 > centralDirectoryEnd || view.getUint32(cursor, true) !== 0x02014b50) {
+      throw new Error('Invalid ZIP central-directory entry signature.');
+    }
+    const nameLength = view.getUint16(cursor + 28, true);
+    const extraLength = view.getUint16(cursor + 30, true);
+    const entryCommentLength = view.getUint16(cursor + 32, true);
+    const diskStart = view.getUint16(cursor + 34, true);
+    const recordLength = 46 + nameLength + extraLength + entryCommentLength;
+    if (diskStart !== 0 || cursor + recordLength > centralDirectoryEnd) {
+      throw new Error('Invalid or multi-disk ZIP central-directory entry.');
+    }
+    cursor += recordLength;
+    actualEntries += 1;
+  }
+
+  if (actualEntries !== totalEntries) {
+    throw new Error('ZIP central-directory entry count does not match end-of-directory metadata.');
+  }
+  if (cursor < centralDirectoryEnd) {
+    // The optional central-directory digital-signature record may follow entries.
+    if (cursor + 6 > centralDirectoryEnd || view.getUint32(cursor, true) !== 0x05054b50) {
+      throw new Error('Unexpected data follows ZIP central-directory entries.');
+    }
+    const signatureLength = view.getUint16(cursor + 4, true);
+    if (cursor + 6 + signatureLength !== centralDirectoryEnd) {
+      throw new Error('Invalid ZIP central-directory digital signature length.');
+    }
   }
 
   if (totalEntries > maxEntries) {
