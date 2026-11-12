@@ -278,6 +278,49 @@ export function sanitizeRelativePath(rawPath: string): string | null {
   return clean;
 }
 
+/**
+ * Inflates one ZIP entry incrementally and stops as soon as its actual output
+ * exceeds the caller's byte budget. ZIP metadata is attacker-controlled, so
+ * declared uncompressed sizes are only an early-rejection hint.
+ */
+async function extractEntryWithinLimit(entry: any, maxBytes: number): Promise<Uint8Array> {
+  return new Promise((resolve, reject) => {
+    const stream = entry.internalStream('uint8array');
+    const chunks: Uint8Array[] = [];
+    let total = 0;
+    let settled = false;
+
+    stream.on('data', (chunk: Uint8Array) => {
+      if (settled) return;
+      total += chunk.byteLength;
+      if (total > maxBytes) {
+        settled = true;
+        stream.pause();
+        reject(new Error('ZIP entry exceeds its actual decompressed size limit.'));
+        return;
+      }
+      chunks.push(chunk);
+    });
+    stream.on('error', (error: Error) => {
+      if (settled) return;
+      settled = true;
+      reject(error);
+    });
+    stream.on('end', () => {
+      if (settled) return;
+      settled = true;
+      const output = new Uint8Array(total);
+      let offset = 0;
+      for (const chunk of chunks) {
+        output.set(chunk, offset);
+        offset += chunk.byteLength;
+      }
+      resolve(output);
+    });
+    stream.resume();
+  });
+}
+
 export interface ExtractionResult {
   stagedFiles: StagedFile[];
   skippedFiles: string[];
@@ -503,9 +546,23 @@ export async function safeExtractZip(
       );
     }
 
-    // Extract text content safely in memory
-    const text = await entry.async('string');
-    const actualSize = new Blob([text]).size;
+    // Declared ZIP sizes are untrusted. Stream decompression and enforce
+    // actual per-file and remaining project budgets before buffering content.
+    let extractedBytes: Uint8Array;
+    try {
+      extractedBytes = await extractEntryWithinLimit(
+        entry,
+        Math.min(limits.maxSingleFileSize, limits.maxTotalExtractedSize - totalExtractedSize)
+      );
+    } catch (error) {
+      if (error instanceof Error && error.message.includes('actual decompressed size limit')) {
+        skippedFiles.push(`${cleanPath} (Actual decompressed size exceeds the configured limit)`);
+        continue;
+      }
+      throw new Error(`Unable to safely decompress archive entry: ${cleanPath}`);
+    }
+    const actualSize = extractedBytes.byteLength;
+    const text = new TextDecoder('utf-8', { fatal: false }).decode(extractedBytes);
 
     if (actualSize === 0 || text.trim().length === 0) {
       skippedFiles.push(`${cleanPath} (Empty file: 0 bytes)`);
@@ -580,15 +637,19 @@ export async function processFiles(
   const excludeDirs = options?.excludeDirs ?? options?.excludeCommonDirs ?? true;
   const excludedDirs = options?.excludedDirsList ?? DEFAULT_EXCLUDED_DIRS;
 
-  const fileArray = Array.from(files);
-  if (fileArray.length === 0) {
+  // Reject oversized selections before copying or iterating the browser FileList.
+  // FileList itself is browser-owned; avoid an additional unbounded array allocation.
+  if (files.length === 0) {
     throw new Error('No files were selected.');
+  }
+  if (files.length > limits.maxArchiveEntries) {
+    throw new Error(`Selection contains too many files (maximum ${limits.maxArchiveEntries}).`);
   }
 
   // Derive the project name only from a validated relative path. Browser-provided
   // webkitRelativePath is still treated as untrusted input.
   let projectName = 'Project Review';
-  const firstWithRel = fileArray.find(f => typeof (f as any).webkitRelativePath === 'string' && (f as any).webkitRelativePath.length > 0);
+  const firstWithRel = Array.from(files).find(f => typeof (f as any).webkitRelativePath === 'string' && (f as any).webkitRelativePath.length > 0);
   if (firstWithRel) {
     const firstPath = sanitizeRelativePath((firstWithRel as any).webkitRelativePath);
     const rootDir = firstPath?.split('/')[0];
@@ -600,7 +661,7 @@ export async function processFiles(
   let totalExtractedSize = 0;
   const seenPaths = new Set<string>();
 
-  for (const file of fileArray) {
+  for (const file of Array.from(files)) {
     const relativePath = (file as any).webkitRelativePath;
     const rawPath = typeof relativePath === 'string' && relativePath.length > 0 ? relativePath : file.name;
     const cleanPath = sanitizeRelativePath(rawPath);
