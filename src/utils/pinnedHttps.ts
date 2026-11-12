@@ -104,9 +104,11 @@ export async function fetchPinnedHttpsResponseText(
 
   return await new Promise<PinnedHttpsResult>((resolve, reject) => {
     let settled = false;
+    let deadlineTimer: ReturnType<typeof setTimeout> | undefined;
     const finishError = (error: Error) => {
       if (settled) return;
       settled = true;
+      if (deadlineTimer) clearTimeout(deadlineTimer);
       agent.destroy();
       reject(error);
     };
@@ -127,6 +129,7 @@ export async function fetchPinnedHttpsResponseText(
       response.on('end', () => {
         if (settled) return;
         settled = true;
+        if (deadlineTimer) clearTimeout(deadlineTimer);
         agent.destroy();
         const status = response.statusCode || 0;
         resolve({
@@ -137,6 +140,9 @@ export async function fetchPinnedHttpsResponseText(
       response.on('error', finishError);
     });
 
+    // Socket inactivity timeouts alone can be defeated by a peer that trickles
+    // response bytes. Enforce a hard wall-clock deadline for the entire request.
+    deadlineTimer = setTimeout(() => request.destroy(new Error('Provider request exceeded its total time limit.')), timeoutMs);
     request.setTimeout(timeoutMs, () => request.destroy(new Error('Provider request timed out.')));
     request.on('error', finishError);
     if (typeof init.body === 'string') request.write(init.body);
