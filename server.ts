@@ -603,6 +603,7 @@ async function startServer() {
         let aiReviewCompletedFiles = 0;
         let aiReviewFailedFiles = 0;
         let aiTruncatedFiles = 0;
+        const aiTruncatedFilePaths: string[] = [];
         let aiBudgetSkippedFiles = 0;
         const fileRecords: any[] = [];
         const skippedFiles: string[] = [];
@@ -677,7 +678,10 @@ async function startServer() {
           if (aiEligibleForFile && aiReviewAttemptedFiles < MAX_AI_FILES_PER_PROJECT) {
             aiReviewAttemptedFiles += 1;
             const aiInputContent = fileContent.slice(0, 35000);
-            if (aiInputContent.length < fileContent.length) aiTruncatedFiles += 1;
+            if (aiInputContent.length < fileContent.length) {
+              aiTruncatedFiles += 1;
+              aiTruncatedFilePaths.push(filePath);
+            }
             try {
               const prompt = `Conduct an in-depth defensive code security review of "${filePath}" (${fileLang}).
 CRITICAL RULES:
@@ -878,6 +882,7 @@ CRITICAL RULES:
             truncated: aiTruncatedFiles,
             maxCharactersPerFile: 35000,
             skippedByBudget: aiBudgetSkippedFiles,
+            truncatedFiles: aiTruncatedFilePaths,
             offlineMode: provState.offlineMode,
             cloudConsentRequired: requiresCloudConsent(provState.activeProvider, activeEndpoint),
             cloudConsentGranted: provState.cloudConsentGranted
@@ -1137,6 +1142,7 @@ CRITICAL RULES:
           truncated: aiTruncated ? 1 : 0,
           maxCharactersPerFile: 45000,
           skippedByBudget: 0,
+          truncatedFiles: aiTruncated ? [safeFileName] : [],
           offlineMode: provState.offlineMode,
           cloudConsentRequired: requiresCloudConsent(provState.activeProvider, activeEndpoint),
           cloudConsentGranted: provState.cloudConsentGranted
