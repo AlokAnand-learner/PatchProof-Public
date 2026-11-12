@@ -58,9 +58,11 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: "22"
-      - name: Run same-origin API security regression tests
-        run: |
-          npx --yes tsx@4.21.0 test/apiClientOrigin.test.ts
-          npx --yes tsx@4.21.0 test/untrustedSourceBoundary.test.ts
-          npx --yes tsx@4.21.0 test/aiFindingValidation.test.ts
-          npx --yes tsx@4.21.0 test/ssrf-ipv6-special-purpose.test.ts
+      - name: Set up Bun
+        uses: oven-sh/setup-bun@v2
+
+      - name: Install locked dependencies
+        run: bun install --frozen-lockfile
+
+      - name: Run focused security regression suite
+        run: bun run test:focused-security
