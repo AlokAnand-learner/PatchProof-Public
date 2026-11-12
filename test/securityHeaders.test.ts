@@ -11,5 +11,11 @@ assert.match(developmentPolicy, /script-src 'self' 'unsafe-inline' 'unsafe-eval'
 assert.match(productionPolicy, /object-src 'none';/);
 assert.match(productionPolicy, /frame-ancestors 'self';/);
 assert.match(productionPolicy, /base-uri 'self';/);
+assert.match(productionPolicy, /connect-src 'self';/);
+assert.doesNotMatch(productionPolicy, /ws:\/\//, 'production CSP must not permit browser connections to arbitrary loopback ports');
+assert.match(developmentPolicy, /connect-src 'self' ws:\/\/localhost:\* ws:\/\/127\.0\.0\.1:\* ws:\/\/\[::1\]:\*;/);
+assert.match(productionPolicy, /form-action 'self';/);
+assert.match(productionPolicy, /frame-ancestors 'none';/);
 
-console.log('Content Security Policy: 7 assertions passed.');
+
+console.log('Content Security Policy: 12 assertions passed.');
