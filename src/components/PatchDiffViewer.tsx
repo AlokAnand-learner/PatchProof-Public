@@ -65,8 +65,9 @@ export const PatchDiffViewer: React.FC<PatchDiffViewerProps> = ({
   };
 
   const executeApply = () => {
-    // INVALID means blocked: never provide a warning-confirmation bypass.
-    if (status === 'INVALID') {
+    // Only fixes that passed every configured static check may be applied.
+    // NEEDS_REVIEW and PARTIALLY_VALIDATED remain review-only; INVALID is blocked.
+    if (status !== 'VALIDATED') {
       setShowInvalidApplyWarning(true);
       return;
     }
@@ -84,6 +85,14 @@ export const PatchDiffViewer: React.FC<PatchDiffViewerProps> = ({
       startLine < 1 || endLine < startLine ||
       startIdx >= lines.length || endIdx > lines.length
     ) {
+      setShowInvalidApplyWarning(true);
+      return;
+    }
+
+    // Refuse stale or mismatched line ranges: the current source must exactly
+    // match the evidence snippet used to generate and validate this patch.
+    const currentSnippet = lines.slice(startIdx, endIdx).join('\\n');
+    if (!finding.snippet || currentSnippet !== finding.snippet) {
       setShowInvalidApplyWarning(true);
       return;
     }
@@ -234,7 +243,7 @@ export const PatchDiffViewer: React.FC<PatchDiffViewerProps> = ({
             ) : (
               <>
                 <ShieldCheck className="w-3.5 h-3.5" />
-                <span>{viewMode === 'full' ? 'Preview Only' : status === 'INVALID' ? 'Fix Blocked' : 'Apply Snippet Fix'}</span>
+                <span>{viewMode === 'full' ? 'Preview Only' : status === 'INVALID' ? 'Fix Blocked' : status === 'VALIDATED' ? 'Apply Snippet Fix' : 'Review Required'}</span>
               </>
             )}
           </button>
@@ -249,7 +258,7 @@ export const PatchDiffViewer: React.FC<PatchDiffViewerProps> = ({
             <div>
               <span className="font-semibold text-rose-900 dark:text-rose-300 block">Patch Application Blocked</span>
               <p className="text-[11px] text-rose-700 dark:text-rose-200/90 leading-relaxed mt-0.5">
-                This patch is marked invalid or its source line range is no longer valid. PatchProof will not apply it. Re-run the review and inspect the source before trying another fix.
+                This patch has not passed every required static check, or its source no longer matches the reviewed evidence. PatchProof will not apply it. Re-run the review and inspect the source before trying another fix.
               </p>
             </div>
           </div>
