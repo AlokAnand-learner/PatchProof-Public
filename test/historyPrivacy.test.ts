@@ -218,13 +218,14 @@ async function run(): Promise<void> {
   const malformedHistoryItem = {
     ...validRawHistory[0],
     id: 'malformed-history-item',
-    scanResult: { ...validRawHistory[0].scanResult, findings: [null] }
+    scanResult: { ...validRawHistory[0].scanResult, id: 'malformed-history-item', findings: [null] }
   };
   const malformedNestedFinding = {
     ...validRawHistory[0],
     id: 'malformed-nested-finding',
     scanResult: {
       ...validRawHistory[0].scanResult,
+      id: 'malformed-nested-finding',
       findings: [{ ...validRawHistory[0].scanResult.findings[0], title: { unexpected: true } }]
     }
   };
@@ -233,6 +234,7 @@ async function run(): Promise<void> {
     id: 'malformed-metrics',
     scanResult: {
       ...validRawHistory[0].scanResult,
+      id: 'malformed-metrics',
       metrics: { ...validRawHistory[0].scanResult.metrics, score: 'not-a-number' }
     }
   };
@@ -242,7 +244,10 @@ async function run(): Promise<void> {
     malformedHistoryItem,
     malformedNestedFinding,
     malformedMetrics,
-    ...Array.from({ length: 45 }, (_, index) => ({ ...validRawHistory[0], id: 'history-overflow-' + index }))
+    ...Array.from({ length: 45 }, (_, index) => {
+      const id = 'history-overflow-' + index;
+      return { ...validRawHistory[0], id, scanResult: { ...validRawHistory[0].scanResult, id } };
+    })
   ];
   storage.setItem(historyKey, JSON.stringify(oversizedHistory));
   const validatedHistory = getScanHistory();
