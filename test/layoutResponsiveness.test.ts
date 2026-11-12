@@ -80,6 +80,22 @@ if (navbarSource.includes('role="dialog"') && navbarSource.includes('aria-modal=
   fail('Mobile drawer accessibility', 'Missing role="dialog" or aria-modal="true"');
 }
 
+if (navbarSource.includes('mobileDialogRef') && navbarSource.includes('querySelectorAll<HTMLElement>')) {
+  pass('Mobile navigation moves focus into its modal dialog');
+} else {
+  fail('Mobile drawer focus entry', 'Missing dialog focus target or focusable-element query');
+}
+if (navbarSource.includes('event.shiftKey') && navbarSource.includes('last.focus()') && navbarSource.includes('first.focus()')) {
+  pass('Mobile navigation traps forward and reverse Tab focus inside the dialog');
+} else {
+  fail('Mobile drawer focus trap', 'Missing forward/reverse Tab focus wrapping');
+}
+if (navbarSource.includes('previousFocus.focus()') && navbarSource.includes('event.key === \'Escape\'')) {
+  pass('Mobile navigation closes on Escape and restores the previous focus');
+} else {
+  fail('Mobile drawer focus restoration', 'Missing Escape handling or focus restoration');
+}
+
 // Ensure mobile bottom nav has pb-safe for notched mobile devices
 if (navbarSource.includes('pb-safe') && navbarSource.includes('md:hidden fixed bottom-0')) {
   pass('Mobile bottom navigation bar includes safe-area padding (pb-safe)');
