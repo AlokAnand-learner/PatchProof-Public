@@ -497,6 +497,10 @@ async function countZipEntriesBeforeParsing(
   }
 
 
+  if (totalEntries > maxEntries) {
+    throw new Error(`ZIP archive contains too many entries (maximum ${maxEntries}).`);
+  }
+
   // Do not trust the EOCD entry count by itself: a fake EOCD signature can be
   // embedded in the ZIP comment. Walk the bounded central directory and verify
   // that its actual record count and lengths agree before JSZip allocates entries.
@@ -539,9 +543,6 @@ async function countZipEntriesBeforeParsing(
     }
   }
 
-  if (totalEntries > maxEntries) {
-    throw new Error(`ZIP archive contains too many entries (maximum ${maxEntries}).`);
-  }
   return totalEntries;
 }
 
