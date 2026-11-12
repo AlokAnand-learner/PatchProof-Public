@@ -59,3 +59,10 @@ Do not mark Phase 1 as 100% while any unchecked verification item remains. Sourc
 - INVALID fixes are blocked in the apply handler; there is no confirmation bypass.
 - Snippet application validates one-based inclusive source line ranges before editing and rejects invalid or out-of-file ranges.
 - Full-file AI output remains preview-only. These checks constrain the UI edit operation; they do not establish semantic correctness or replace review and rescanning.
+
+## Fix validation API resource controls
+
+- The API validates optional input field types and limits source inputs to 2 MiB per field and 6 MiB aggregate UTF-8 bytes.
+- Fix validation and benchmark routes use the shared concurrency gate.
+- Full-file validation fails closed if the original snippet is missing, empty, or ambiguous (appears more than once).
+- CI includes request-contract and patch-target regression tests. These controls are not a semantic correctness guarantee.
