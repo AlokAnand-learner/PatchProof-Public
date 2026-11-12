@@ -34,4 +34,4 @@ await assert.rejects(runWithConcurrencyGate(asyncGate, async () => {
 }), /expected task failure/);
 assert.equal(asyncGate.activeCount(), 0, 'rejected tasks must also release their slot');
 
-console.log('Provider concurrency gate: 12 assertions passed.');
+console.log('Provider concurrency gate: 14 assertions passed.');
