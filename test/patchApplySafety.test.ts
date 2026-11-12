@@ -15,4 +15,4 @@ assert.ok(source.includes('Review Required'), 'unvalidated fixes must be clearly
 assert.ok(applyHandler.includes("viewMode === 'full'"), 'full-file model output must remain preview-only');
 assert.ok(!source.includes('Apply Anyway'), 'there must be no user-confirmation bypass for invalid patches');
 assert.match(source, /disabled=\{viewMode === 'full'\}/, 'only preview-only full-file mode should disable the apply control');
-console.log('Patch application UI contract: 5 assertions passed');
+console.log('Patch application UI contract: 7 assertions passed');
