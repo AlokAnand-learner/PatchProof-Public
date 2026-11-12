@@ -87,3 +87,31 @@ assert.notEqual(reassignedSsrFResult.findings.find(f => f.cwe.startsWith('CWE-91
 
 console.log('Alias propagation, reassignment, and test-context classification: 7 additional assertions passed.');
 
+
+const crossFunctionSource = `function readRequest(req) {
+  const requested = req.query.url;
+}
+function loadRemote() {
+  const requested = "https://trusted.example/";
+  fetch(requested);
+}`;
+const crossFunctionResult = analyzeSourceCodeContextAware(crossFunctionSource, 'src/remoteLoader.ts');
+assert.notEqual(
+  crossFunctionResult.findings.find(f => f.cwe.startsWith('CWE-918'))?.verificationStatus,
+  'LIKELY',
+  'request-derived values in a different function must not taint a same-named local variable'
+);
+
+const retainedAliasSource = `function load(req) {
+  const requested = req.query.url;
+  const alias = requested;
+  requested = "https://trusted.example/";
+  fetch(alias);
+}`;
+const retainedAliasResult = analyzeSourceCodeContextAware(retainedAliasSource, 'src/remoteLoader.ts');
+assert.equal(
+  retainedAliasResult.findings.find(f => f.cwe.startsWith('CWE-918'))?.verificationStatus,
+  'LIKELY',
+  'reassigning the original variable must not erase taint from an already-copied alias'
+);
+console.log('Function-scope isolation and alias value semantics: 2 additional assertions passed.');
