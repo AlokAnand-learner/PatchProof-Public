@@ -16,7 +16,9 @@ for (const input of invalid) {
 }
 const unsafePaths = [
   '../../etc/passwd', '/etc/shadow', 'C:\\Windows\\system.ini', 'src//app.ts',
-  'src/./app.ts', 'src/../app.ts', 'src\u0000/app.ts', 'a'.repeat(501) + '.ts'
+  'src/./app.ts', 'src/../app.ts', 'src\u0000/app.ts', 'a'.repeat(501) + '.ts',
+  'src/.. /evil.ts', 'src/evil.ts./file.ts', 'src/CON.ts', 'src/ folder/file.ts',
+  ' src/file.ts', 'src/file.ts ', 'src/hello:world.ts'
 ];
 for (const candidate of unsafePaths) {
   if (sanitizeRelativePath(candidate) !== null) throw new Error(`Unsafe relative path accepted: ${JSON.stringify(candidate)}`);
