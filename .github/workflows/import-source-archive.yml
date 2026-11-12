@@ -26,6 +26,10 @@ jobs:
 
       - name: Validate and import missing source files
         run: |
+          if [ ! -f import/PatchProof-source.zip ]; then
+            echo "No archive present; this may be the follow-up push that removed it."
+            exit 0
+          fi
           python3 scripts/import_source_archive.py import/PatchProof-source.zip --destination .
 
       - name: Remove uploaded archive after extraction
