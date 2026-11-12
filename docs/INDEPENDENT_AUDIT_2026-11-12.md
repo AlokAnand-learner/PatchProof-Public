@@ -274,3 +274,32 @@ CI success does not establish that PatchProof is vulnerability-free or release-r
 ### Current source-archive comparison correction
 
 The earlier follow-up text records a historical comparison of 57 exact matches and 25 preserved differences. A later CI read-only comparison checked the same 82 archive paths and reported **36 exact matches, 46 differing existing files, and 0 missing paths**. The earlier 57/25 figure is therefore a historical baseline, not the current count. All differing working-tree files remain preserved; no archive conflict was overwritten. The detailed 25-path disposition list in `docs/SOURCE_CONFLICT_RECONCILIATION.md` describes the original baseline and does not enumerate all 46 current differences.
+
+
+## Independent completion batches — 12 November 2026
+
+### Batch 1 — API route boundary regression
+- Added `test/apiRouteBoundary.test.mjs` to audit every API mutation route for session authentication, every GET route against the explicit public-read allowlist, and expensive provider/analysis routes for the shared concurrency gate.
+- Added the regression to the default test command and the focused security command.
+- Latest full app-validation run checked **18 mutation routes, 7 API GET routes, and 10 expensive routes**.
+
+### Batch 2 — DNS-pinned provider transport regression
+- Expanded pinned DNS tests to reject mixed public/private DNS answer sets, mismatched address-family metadata, and documentation IPv4 addresses.
+- The rule remains fail-closed: every answer in a resolved set must be a valid public address.
+
+### Batch 3 — Responsive readability correction
+- Increased the minimum code/technical typography from 0.72rem (11.52px) to 0.75rem (12px).
+- Added a responsive-layout regression assertion for the minimum size. This is a source-level CSS check; it does not replace real-device readability testing.
+
+### Batch 4 — Verification integration
+- Included the API route boundary regression in both the full and focused security test commands.
+- GitHub Actions run [43301370687](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43301370687) passed both application validation and repository preflight. Application validation completed TypeScript type-check, production build, local server startup, and the complete configured regression suite.
+- GitHub Actions run [43301370428](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43301370428) passed the lockfile workflow.
+
+### Batch 5 — Documentation and release-state accuracy
+- Reconciled the source-archive comparison records: the earlier 57-match / 25-conflict figure is historical; the latest CI audit of 82 archive paths reports **36 exact matches, 46 preserved conflicts, and 0 missing paths**.
+- No differing archive file was overwritten. The old 25-path disposition list is explicitly marked as a historical baseline, not a complete list of current conflicts.
+- Kept the release decision unchanged: no merge to `main`, no public deployment, and no release-readiness claim. Browser/device smoke testing, live DNS/TLS integration on supported environments, semantic review of archive conflicts, and real-world detection evaluation remain open.
+
+### Final verification boundary
+CI passing is reproducible automated evidence for the checked commit; it is not a penetration-test certification, does not prove zero vulnerabilities, and does not complete manual PC/Android acceptance.
