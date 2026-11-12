@@ -120,7 +120,24 @@ def main() -> int:
         all_infos = archive.infolist()
         if len(all_infos) > MAX_ENTRIES:
             raise SystemExit(f"archive has {len(all_infos)} entries; limit is {MAX_ENTRIES}")
-        infos = [item for item in all_infos if not item.is_dir()]
+        infos = []
+        directory_paths: set[str] = set()
+        for info in all_infos:
+            mode = (info.external_attr >> 16) & 0xFFFF
+            if stat.S_ISLNK(mode):
+                raise SystemExit(f"symlink entries are not allowed: {info.filename}")
+            if info.is_dir():
+                directory_name = info.filename[:-1] if info.filename.endswith("/") else info.filename
+                if directory_name == "source":
+                    continue
+                directory_rel = safe_relative_path(directory_name)
+                directory_key = unicodedata.normalize("NFC", directory_rel).casefold()
+                if directory_key in directory_paths:
+                    raise SystemExit(f"duplicate or case-colliding directory path: {directory_rel}")
+                directory_paths.add(directory_key)
+                continue
+            infos.append(info)
+
         for info in infos:
             rel = safe_relative_path(info.filename)
             normalized_key = unicodedata.normalize('NFC', rel).casefold()
@@ -128,9 +145,8 @@ def main() -> int:
                 raise SystemExit(f"duplicate or case-colliding normalized path: {rel}")
             seen.add(rel)
             seen_casefolded.add(normalized_key)
-            mode = (info.external_attr >> 16) & 0xFFFF
-            if stat.S_ISLNK(mode):
-                raise SystemExit(f"symlink entries are not allowed: {info.filename}")
+            if normalized_key in directory_paths:
+                raise SystemExit(f"file/directory path collision: {rel}")
             if info.file_size > MAX_FILE_BYTES:
                 raise SystemExit(f"file exceeds size limit: {rel}")
             total += info.file_size
