@@ -13,7 +13,11 @@ for (const url of [
   'http://user:pass@127.0.0.1:3000/api',
   '',
 ]) {
-  assert.throws(() => resolveSameOriginRequestUrl(url, origin), undefined, `must reject ${url}`);
+  assert.throws(
+    () => resolveSameOriginRequestUrl(url, origin),
+    (error: unknown) => error instanceof Error,
+    `must reject ${url}`,
+  );
 }
 assert.throws(() => resolveSameOriginRequestUrl('/api/scan', 'file:///tmp/app'));
 console.log('Same-origin authenticated request URL tests: 10 passed');
