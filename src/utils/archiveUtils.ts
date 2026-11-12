@@ -20,23 +20,46 @@ export function mergeStagedFileBatches(
   incoming: StagedFile[],
   limits: UploadLimits = DEFAULT_LIMITS
 ): { stagedFiles: StagedFile[]; skippedFiles: string[] } {
-  const stagedFiles = [...existing];
+  const stagedFiles: StagedFile[] = [];
   const skippedFiles: string[] = [];
-  const seenPaths = new Set(stagedFiles
-    .filter(file => typeof file.relativePath === 'string')
-    .map(file => file.relativePath.normalize('NFC').toLowerCase()));
-  let totalBytes = stagedFiles.reduce((total, file) =>
-    total + (typeof file.content === 'string' ? new Blob([file.content]).size : 0), 0);
+  const seenPaths = new Set<string>();
+  let totalBytes = 0;
   let totalLines = 0;
-  for (const existingFile of stagedFiles) {
-    const existingLineCount = typeof existingFile.content === 'string'
-      ? countSourceLinesWithinLimit(existingFile.content, MAX_SOURCE_LINES_PER_FILE)
-      : null;
-    if (existingLineCount === null) {
-      totalLines = MAX_SOURCE_LINES_PER_PROJECT;
-      break;
+
+  // Revalidate existing staged state as well as new selections. Component state
+  // is mutable client data; do not trust old paths, sizes, or line-count metadata.
+  for (const existingFile of existing) {
+    const safePath = sanitizeRelativePath(existingFile?.relativePath);
+    if (!safePath || !isSupportedSourceFile(safePath) ||
+        typeof existingFile.content !== 'string' || existingFile.content.length === 0) {
+      skippedFiles.push('Previously staged entry (Invalid path or source content rejected)');
+      continue;
     }
-    totalLines += existingLineCount;
+    const pathKey = safePath.normalize('NFC').toLocaleLowerCase('en-US');
+    if (seenPaths.has(pathKey)) {
+      skippedFiles.push(`${safePath} (Duplicate or case-colliding existing path rejected)`);
+      continue;
+    }
+    if (stagedFiles.length >= limits.maxFileCount) {
+      skippedFiles.push(`${safePath} (Existing staged project exceeds ${limits.maxFileCount} files)`);
+      continue;
+    }
+    const actualBytes = new Blob([existingFile.content]).size;
+    if (actualBytes > limits.maxSingleFileSize ||
+        actualBytes > limits.maxTotalExtractedSize - totalBytes) {
+      skippedFiles.push(`${safePath} (Existing staged content exceeds configured byte limits)`);
+      continue;
+    }
+    const lineCount = countSourceLinesWithinLimit(existingFile.content, MAX_SOURCE_LINES_PER_FILE);
+    if (lineCount === null || totalLines + lineCount > MAX_SOURCE_LINES_PER_PROJECT) {
+      skippedFiles.push(`${safePath} (Existing staged content exceeds configured source line limits)`);
+      continue;
+    }
+
+    seenPaths.add(pathKey);
+    totalBytes += actualBytes;
+    totalLines += lineCount;
+    stagedFiles.push({ ...existingFile, relativePath: safePath, size: actualBytes, lines: lineCount });
   }
 
   for (const file of incoming) {
