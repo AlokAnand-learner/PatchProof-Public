@@ -89,11 +89,11 @@ console.log('Alias propagation, reassignment, and test-context classification: 7
 
 
 const crossFunctionSource = `function readRequest(req) {
-  const requested = req.query.url;
+  const url = req.query.url;
 }
 function loadRemote() {
-  const requested = "https://trusted.example/";
-  fetch(requested);
+  const url = "https://trusted.example/";
+  fetch(url);
 }`;
 const crossFunctionResult = analyzeSourceCodeContextAware(crossFunctionSource, 'src/remoteLoader.ts');
 assert.notEqual(
@@ -103,10 +103,10 @@ assert.notEqual(
 );
 
 const retainedAliasSource = `function load(req) {
-  const requested = req.query.url;
-  const alias = requested;
-  requested = "https://trusted.example/";
-  fetch(alias);
+  const url = req.query.url;
+  const urlAlias = url;
+  url = "https://trusted.example/";
+  fetch(urlAlias);
 }`;
 const retainedAliasResult = analyzeSourceCodeContextAware(retainedAliasSource, 'src/remoteLoader.ts');
 assert.equal(
