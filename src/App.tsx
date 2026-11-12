@@ -199,17 +199,19 @@ export default function App() {
   const handleApplyPatchToSource = (newCode: string, targetFilePath?: string) => {
     setCode(newCode);
 
-    // If active scan is multi-file, update the file record in scanResult too
-    if (scanResult && scanResult.files && targetFilePath) {
-      const updatedFiles = scanResult.files.map(f => {
-        if (f.filePath === targetFilePath) {
-          return { ...f, content: newCode, patchedContent: newCode };
+    if (scanResult) {
+      const updatedFiles = scanResult.files?.map(file => {
+        if (!targetFilePath || file.filePath === targetFilePath) {
+          return { ...file, content: newCode, patchedContent: newCode };
         }
-        return f;
+        return file;
       });
       setScanResult({
         ...scanResult,
-        files: updatedFiles
+        // Keep the active scan's source snapshot synchronized so ResultsView can
+        // detect stale edits and offer a safe one-step undo.
+        originalCode: scanResult.isMultiFile ? scanResult.originalCode : newCode,
+        files: updatedFiles,
       });
     }
 
