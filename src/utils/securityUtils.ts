@@ -201,14 +201,17 @@ export function getScanHistory(): HistoryItem[] {
 /**
  * Saves scan to local storage with quota error handling and optional source-code privacy pruning.
  */
-export function saveScanToHistory(scan: ScanResult): HistoryItem[] {
+export interface HistorySaveResult {
+  history: HistoryItem[];
+  saved: boolean;
+}
+
+/** Save a review and report quota/storage failure separately from analysis success. */
+export function saveScanToHistoryWithStatus(scan: ScanResult): HistorySaveResult {
+  const current = getScanHistory();
   try {
-    const current = getScanHistory();
     const privacyEnabled = isPrivacyModeEnabled();
-
-    // If privacy mode enabled, strip full raw source files before writing to browser storage
     const sanitizedScan: ScanResult = privacyEnabled ? redactScanSource(scan) : scan;
-
     const newItem: HistoryItem = {
       id: scan.id,
       projectName: scan.projectName,
@@ -224,34 +227,39 @@ export function saveScanToHistory(scan: ScanResult): HistoryItem[] {
     };
 
     let updated = [newItem, ...current.filter(item => item.id !== scan.id)].slice(0, 40);
-
-    // Attempt to save with storage quota safety fallback
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    } catch (quotaErr) {
-      console.warn('Storage quota exceeded, pruning older history records...');
-      // Prune down to 10 entries and strip source code from all but the newest item
+    } catch {
+      // Retry with progressively smaller, privacy-redacted history records.
       updated = [
         newItem,
         ...current.filter(item => item.id !== scan.id).slice(0, 10).map(item => redactHistoryItem(item))
       ];
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-      } catch (finalQuotaErr) {
-        // If still full, store only the latest 3 lightweight entries
+      } catch {
         updated = updated.slice(0, 3);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        try {
+          localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+        } catch {
+          return { history: current, saved: false };
+        }
       }
     }
 
     if (typeof window !== 'undefined') {
       window.dispatchEvent(new CustomEvent('patchproof_history_updated'));
     }
-    return updated;
+    return { history: updated, saved: true };
   } catch (err) {
     console.error('Failed to save review to history:', err);
-    return [];
+    return { history: current, saved: false };
   }
+}
+
+/** Backwards-compatible history-only helper for existing callers and tests. */
+export function saveScanToHistory(scan: ScanResult): HistoryItem[] {
+  return saveScanToHistoryWithStatus(scan).history;
 }
 
 export function deleteScanFromHistory(id: string): HistoryItem[] {
