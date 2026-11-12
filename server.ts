@@ -39,7 +39,7 @@ import { loadRuntimeConfig } from './src/utils/runtimeConfig.ts';
 import { getContentSecurityPolicy } from './src/utils/securityHeaders.ts';
 import { countSourceLinesWithinLimit, MAX_SOURCE_LINES_PER_FILE, MAX_SOURCE_LINES_PER_PROJECT } from './src/utils/sourceLimits.ts';
 import { buildAiCoverageNotice, countFindingOrigins } from './src/engine/analysisCoverage.ts';
-import { createConcurrencyGate } from './src/utils/concurrencyGate.ts';
+import { createConcurrencyGate, runWithConcurrencyGate } from './src/utils/concurrencyGate.ts';
 
 dotenv.config();
 
@@ -64,14 +64,13 @@ const MAX_AI_FILES_PER_PROJECT = 10;
 const providerTaskGate = createConcurrencyGate(2);
 function withProviderTask(handler: RequestHandler): RequestHandler {
   return (req: Request, res: Response, next: NextFunction) => {
-    const release = providerTaskGate.tryAcquire();
-    if (!release) {
-      return res.status(429).json({ error: 'PatchProof is already processing the maximum number of provider or analysis tasks. Please retry shortly.' });
-    }
-    Promise.resolve()
-      .then(() => handler(req, res, next))
-      .catch(next)
-      .finally(release);
+    void runWithConcurrencyGate(providerTaskGate, () => Promise.resolve(handler(req, res, next)))
+      .then(result => {
+        if (!result.acquired) {
+          res.status(429).json({ error: 'PatchProof is already processing the maximum number of provider or analysis tasks. Please retry shortly.' });
+        }
+      })
+      .catch(next);
   };
 }
 
