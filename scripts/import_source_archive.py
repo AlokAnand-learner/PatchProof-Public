@@ -131,8 +131,15 @@ def main() -> int:
         directory_paths: dict[str, str] = {}
         for info in all_infos:
             mode = (info.external_attr >> 16) & 0xFFFF
+            file_type = stat.S_IFMT(mode)
             if stat.S_ISLNK(mode):
                 raise SystemExit(f"symlink entries are not allowed: {info.filename}")
+            if file_type not in (0, stat.S_IFREG, stat.S_IFDIR):
+                raise SystemExit(f"special filesystem entries are not allowed: {info.filename}")
+            if info.is_dir() and file_type == stat.S_IFREG:
+                raise SystemExit(f"directory entry has a regular-file mode: {info.filename}")
+            if not info.is_dir() and file_type == stat.S_IFDIR:
+                raise SystemExit(f"file entry has a directory mode: {info.filename}")
             if info.is_dir():
                 directory_name = info.filename[:-1] if info.filename.endswith("/") else info.filename
                 if directory_name == "source":
