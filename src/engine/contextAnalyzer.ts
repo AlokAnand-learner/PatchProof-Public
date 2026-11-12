@@ -182,7 +182,7 @@ function hasTaintSource(
     // conservatively as a boundary: this may lose an outer-scope hint, but
     // cannot manufacture cross-function source-to-sink evidence.
     const trimmedLine = line.text.trim();
-    const startsFunction = /^(?:(?:export|default|async)\\s+)*(?:function\\b|(?:const|let|var)\\s+[A-Za-z_$][\\w$]*\\s*=\\s*(?:async\\s*)?(?:\\([^)]*\\)|[A-Za-z_$][\\w$]*)\\s*=>)/.test(trimmedLine);
+    const startsFunction = /^(?:(?:export|default|async)\s+)*(?:function\b|(?:const|let|var)\s+[A-Za-z_$][\w$]*\s*=\s*(?:async\s*)?(?:\([^)]*\)|[A-Za-z_$][\w$]*)\s*=>)/.test(trimmedLine);
     if (startsFunction || trimmedLine === '}') {
       taintedVariables.clear();
       continue;
