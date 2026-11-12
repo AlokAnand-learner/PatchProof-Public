@@ -53,3 +53,9 @@ Do not mark Phase 1 as 100% while any unchecked verification item remains. Sourc
 - [x] Development and production startup explicitly select their runtime modes without shell-specific environment syntax.
 - [x] Clean script uses Node.js filesystem APIs and is cross-platform.
 - [x] Bun is the single selected package manager; the committed `bun.lock` was verified with a frozen installation in GitHub Actions.
+
+## Patch application safeguards
+
+- INVALID fixes are blocked in the apply handler; there is no confirmation bypass.
+- Snippet application validates one-based inclusive source line ranges before editing and rejects invalid or out-of-file ranges.
+- Full-file AI output remains preview-only. These checks constrain the UI edit operation; they do not establish semantic correctness or replace review and rescanning.
