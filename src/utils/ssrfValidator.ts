@@ -5,6 +5,40 @@
 
 import net from 'net';
 
+/** Parse a canonical IPv6 literal into its 128-bit integer representation. */
+function ipv6ToBigInt(address: string): bigint | null {
+  let input = address.toLowerCase();
+  if (input.includes('.')) {
+    const lastColon = input.lastIndexOf(':');
+    if (lastColon < 0) return null;
+    const ipv4Tail = input.slice(lastColon + 1);
+    if (!net.isIPv4(ipv4Tail)) return null;
+    const octets = ipv4Tail.split('.').map(Number);
+    const high = ((octets[0] << 8) | octets[1]).toString(16);
+    const low = ((octets[2] << 8) | octets[3]).toString(16);
+    input = input.slice(0, lastColon + 1) + high + ':' + low;
+  }
+
+  const parts = input.split('::');
+  if (parts.length > 2) return null;
+  const left = parts[0] ? parts[0].split(':') : [];
+  const right = parts.length === 2 && parts[1] ? parts[1].split(':') : [];
+  const missing = 8 - left.length - right.length;
+  if ((parts.length === 1 && missing !== 0) || (parts.length === 2 && missing < 1)) return null;
+  const groups = [...left, ...Array(missing).fill('0'), ...right];
+  if (groups.length !== 8 || groups.some(group => !/^[0-9a-f]{1,4}$/.test(group))) return null;
+
+  return groups.reduce((value, group) => (value << 16n) | BigInt(parseInt(group, 16)), 0n);
+}
+
+function ipv6InCidr(address: string, network: string, prefixLength: number): boolean {
+  const addressValue = ipv6ToBigInt(address);
+  const networkValue = ipv6ToBigInt(network);
+  if (addressValue === null || networkValue === null) return false;
+  const shift = BigInt(128 - prefixLength);
+  return (addressValue >> shift) === (networkValue >> shift);
+}
+
 export interface SsrfValidationResult {
   isValid: boolean;
   sanitizedUrl?: string;
@@ -78,57 +112,31 @@ export function isRestrictedOrPrivateIp(ip: string): boolean {
   if (net.isIPv6(ip)) {
     const normalized = ip.toLowerCase();
 
-    // ::1 (Loopback) or :: (Unspecified)
-    if (normalized === '::1' || normalized === '::') return true;
+    // IPv4-mapped and IPv4-compatible IPv6 destinations are rejected outright.
+    // They are not appropriate remote provider destination forms and can create
+    // inconsistent policy decisions across URL, resolver, and socket layers.
+    if (normalized.startsWith('::ffff:') || normalized.startsWith('::')) return true;
 
-    // IPv4-mapped IPv6 (::ffff:127.0.0.1 or Node's canonical ::ffff:7f00:1).
-    // URL.hostname returns IPv6 literals in brackets, so callers normalize those
-    // brackets before reaching this helper.
-    if (normalized.startsWith('::ffff:')) {
-      const mappedPart = normalized.substring(7);
-      if (net.isIPv4(mappedPart)) {
-        return isRestrictedOrPrivateIp(mappedPart);
-      }
+    // Only globally-unicast 2000::/3 addresses are eligible for remote provider
+    // connections. This rejects reserved, discard-only, link-local, ULA, multicast,
+    // and other non-global IPv6 space by default.
+    if (!ipv6InCidr(normalized, '2000::', 3)) return true;
 
-      // WHATWG URL parsing canonicalizes dotted IPv4-mapped literals to two
-      // hexadecimal 16-bit groups (for example ::ffff:7f00:1).
-      const mappedGroups = mappedPart.split(':');
-      if (mappedGroups.length === 2 && mappedGroups.every((group) => /^[0-9a-f]{1,4}$/.test(group))) {
-        const high = Number.parseInt(mappedGroups[0], 16);
-        const low = Number.parseInt(mappedGroups[1], 16);
-        const mappedIpv4 = [high >> 8, high & 0xff, low >> 8, low & 0xff].join('.');
-        return isRestrictedOrPrivateIp(mappedIpv4);
-      }
+    // Explicit non-global/special-purpose blocks inside 2000::/3.
+    const blockedPrefixes: Array<[string, number]> = [
+      ['2001::', 32],       // Teredo
+      ['2001:2::', 48],     // Benchmarking
+      ['2001:10::', 28],    // Deprecated ORCHID
+      ['2001:db8::', 32],   // Documentation
+      ['2002::', 16],       // 6to4 transition
+      ['3fff::', 20],       // Documentation
+    ];
+    if (blockedPrefixes.some(([network, prefix]) => ipv6InCidr(normalized, network, prefix))) {
+      return true;
     }
 
-    // fe80::/10 (Link-Local)
-    if (/^fe[89ab]/i.test(normalized)) return true;
-
-    // fc00::/7 (Unique Local Address - private)
-    if (/^f[cd]/i.test(normalized)) return true;
-
-    // fec0::/10 (deprecated site-local unicast).
-    if (/^fec[0-9a-f]:/i.test(normalized)) return true;
-
-    // 2001:db8::/32 (documentation-only prefix).
-    if (normalized.startsWith('2001:db8:')) return true;
-
-    // 2001::/32 (Teredo) and 2002::/16 (6to4) embed IPv4 routing information.
-    if (normalized.startsWith('2001::') || normalized.startsWith('2002:')) return true;
-
-    // NAT64 translation prefixes can encode IPv4 destinations; reject them at this boundary.
-    if (normalized.startsWith('64:ff9b::') || normalized.startsWith('64:ff9b:1:')) return true;
-
-    // ff00::/8 (Multicast)
-    if (normalized.startsWith('ff')) return true;
-
     return false;
-  }
-
-  return false;
-}
-
-const CLOUD_METADATA_HOSTNAMES = new Set([
+  }const CLOUD_METADATA_HOSTNAMES = new Set([
   '169.254.169.254',
   'metadata.google.internal',
   'metadata',
