@@ -313,7 +313,9 @@ export function generateMarkdownReport(scan: ScanResult): string {
   md += `**Heuristic Risk Indicator:** ${scan.metrics.score} / 100 (Band: ${scan.metrics.grade})  \n`;
   md += `**Analysis Engine:** ${scan.modelUsed || 'Context-Aware Static Rules (Local)'}  \n`;
   md += `**Score limitation:** This weighted indicator reflects detected findings from the configured checks; it is not a probability, certification, or proof of security.  \n`;
-  md += `**Transmission Boundary:** ${scan.transmissionMode === 'CLOUD_AI_TRANSMITTED' ? 'Remote AI analysis (consent recorded)' : 'Local analysis (no remote AI transmission recorded)'}  \n\n`;
+  md += `**Transmission Boundary:** ${scan.transmissionMode === 'CLOUD_AI_TRANSMITTED' ? 'Remote AI analysis (consent recorded)' : 'Local analysis (no remote AI transmission recorded)'}  \n`;
+  if (scan.analysisNotice) md += `**Analysis Coverage:** ${scan.analysisNotice}  \n`;
+  md += `\n`;
 
   md += `## Executive Summary\n\n`;
   md += `${scan.summary}\n\n`;
