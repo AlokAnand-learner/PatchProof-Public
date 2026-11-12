@@ -70,11 +70,16 @@ Limitations:
 
 ## Phase 4 — Upload and archive safety
 
+**Progress: 60% (engineering estimate; integration gates remain open).**
+
 Completed:
 - ZIP and folder ingestion are in-memory; uploaded source is not written to disk or executed.
 - Added strict cross-platform path checks for traversal, absolute paths, ambiguous whitespace/dot segments, reserved Windows device names, and invalid filename characters.
 - Added case/Unicode-collision rejection for folder uploads and ZIP entry paths.
 - Per-file, total extracted size, archive size, entry-count, file-count, symlink, and binary-content checks are present.
+- The reviewed-archive importer enforces UTF-8, bounded actual decompression, compression-ratio limits, safe portable names, and file/directory collision rejection.
+- High-confidence credential patterns include private keys and AWS, GitHub, Google, Stripe, Slack, GitLab, and npm tokens.
+- A separate untrusted-source AI boundary helper serializes source as JSON data, provides a fixed defensive system instruction, applies path/file/total limits, and flags common prompt-injection indicators. It deliberately preserves source text and does not claim heuristic detection is complete.
 
 Still required:
 - Wire the untrusted-source boundary into every AI provider adapter and verify uploaded content cannot grant tools, filesystem, or network access.
