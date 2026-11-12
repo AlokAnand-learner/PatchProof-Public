@@ -20,6 +20,7 @@ export interface AiCoverageNoticeInput {
   completed: number;
   failed: number;
   truncated: number;
+  truncatedFiles?: string[];
   maxCharactersPerFile: number;
   skippedByBudget?: number;
   offlineMode: boolean;
@@ -32,12 +33,12 @@ export function buildAiCoverageNotice(input: AiCoverageNoticeInput): string {
   const {
     attempted, completed, failed, truncated, maxCharactersPerFile,
     offlineMode, cloudConsentRequired, cloudConsentGranted,
-    skippedByBudget = 0
+    skippedByBudget = 0, truncatedFiles = []
   } = input;
 
   if (completed > 0) {
     const partial = truncated > 0
-      ? `; ${truncated} file(s) were truncated for AI review while local static checks covered the full accepted files`
+      ? `; ${truncated} file(s) were truncated for AI review while local static checks covered the full accepted files. Truncated AI-reviewed paths: ${truncatedFiles.join(', ') || 'path list unavailable'}`
       : '';
     const failures = failed > 0 ? ` AI review also failed for ${failed} file(s); local checks were retained.` : '';
     const budget = skippedByBudget > 0 ? ` ${skippedByBudget} additional eligible file(s) received static-only review because the per-project AI request cap was reached.` : '';
