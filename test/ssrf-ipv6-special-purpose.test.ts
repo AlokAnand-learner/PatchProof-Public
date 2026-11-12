@@ -8,6 +8,9 @@ const blocked = [
   'https://[2002:7f00:1::1]/api',
   'https://[64:ff9b::c000:201]/api',
   'https://[64:ff9b:1::c000:201]/api',
+  'https://[::ffff:169.254.169.254]/api',
+  'https://[::ffff:10.0.0.1]/api',
+  'https://[::ffff:127.0.0.1]/api',
 ];
 
 for (const endpoint of blocked) {
@@ -25,4 +28,4 @@ for (const endpoint of publicEndpoints) {
   assert.equal(result.isValid, true, `globally routable IPv6 endpoint should remain eligible: ${endpoint}`);
 }
 
-console.log('Special-purpose IPv6 SSRF regression checks: 8 passed');
+console.log('Special-purpose IPv6 SSRF regression checks: 11 passed');
