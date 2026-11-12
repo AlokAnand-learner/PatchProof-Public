@@ -262,35 +262,44 @@ export function saveScanToHistory(scan: ScanResult): HistoryItem[] {
   return saveScanToHistoryWithStatus(scan).history;
 }
 
-export function deleteScanFromHistory(id: string): HistoryItem[] {
+export interface HistoryMutationResult {
+  history: HistoryItem[];
+  saved: boolean;
+}
+
+export function deleteScanFromHistoryWithStatus(id: string): HistoryMutationResult {
+  const current = getScanHistory();
   try {
-    const current = getScanHistory();
     const updated = current.filter(item => item.id !== id);
     localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('patchproof_history_updated'));
-    }
-    return updated;
+    if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('patchproof_history_updated'));
+    return { history: updated, saved: true };
   } catch (err) {
     console.error('Failed to delete review:', err);
-    return [];
+    return { history: current, saved: false };
+  }
+}
+
+export function deleteScanFromHistory(id: string): HistoryItem[] {
+  return deleteScanFromHistoryWithStatus(id).history;
+}
+
+export function deleteMultipleScansFromHistoryWithStatus(ids: string[]): HistoryMutationResult {
+  const current = getScanHistory();
+  try {
+    const idSet = new Set(ids);
+    const updated = current.filter(item => !idSet.has(item.id));
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+    if (typeof window !== 'undefined') window.dispatchEvent(new CustomEvent('patchproof_history_updated'));
+    return { history: updated, saved: true };
+  } catch (err) {
+    console.error('Failed to delete selected reviews:', err);
+    return { history: current, saved: false };
   }
 }
 
 export function deleteMultipleScansFromHistory(ids: string[]): HistoryItem[] {
-  try {
-    const idSet = new Set(ids);
-    const current = getScanHistory();
-    const updated = current.filter(item => !idSet.has(item.id));
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(new CustomEvent('patchproof_history_updated'));
-    }
-    return updated;
-  } catch (err) {
-    console.error('Failed to delete selected reviews:', err);
-    return [];
-  }
+  return deleteMultipleScansFromHistoryWithStatus(ids).history;
 }
 
 export function clearScanHistory(): boolean {
