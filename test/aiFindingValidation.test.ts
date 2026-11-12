@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import assert from 'node:assert/strict';
 import { validateAIModelFindings } from '../src/engine/aiFindingValidation';
 
@@ -47,3 +49,12 @@ assert.equal(bounded.title.length, 180);
 assert.equal(bounded.severity, 'MEDIUM');
 assert.equal(bounded.confidence, 'LOW');
 console.log('AI finding validation tests: 18 passed');
+
+const longerSource = [...source, 'const hidden = req.body.secret;', 'exec(hidden);'].join('\\n');
+const submittedPrefix = longerSource.split('\\n').slice(0, 3).join('\\n');
+assert.equal(validateAIModelFindings([{ ...valid, startLine: 5, endLine: 5, snippet: 'exec(hidden);' }], submittedPrefix).length, 0,
+  'AI findings outside the submitted prefix must be rejected even if they match the full file');
+const serverSource = fs.readFileSync(path.join(process.cwd(), 'server.ts'), 'utf8');
+assert.ok(serverSource.includes('validateAIModelFindings(parsed?.findings, aiInputContent)'),
+  'multi-file AI findings must be validated against the submitted prefix');
+console.log('AI truncation boundary: 2 assertions passed.');
