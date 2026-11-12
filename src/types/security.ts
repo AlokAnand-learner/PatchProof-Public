@@ -255,11 +255,3 @@ export interface SystemStatus {
     model?: string;
   };
 }
-export interface AdvancedAnalysisSettings {
-  autoRemediation: boolean;
-  severityThreshold: 'ALL' | 'MEDIUM' | 'HIGH';
-  confidenceThreshold: 'ALL' | 'HIGH_MEDIUM' | 'HIGH';
-  strictSanitizerValidation: boolean;
-  suppressTestFixtures: boolean;
-  contextLines: number;
-}
