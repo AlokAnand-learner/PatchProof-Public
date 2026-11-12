@@ -2,7 +2,7 @@
 
 ## Current repository state
 
-The public development repository is being populated on the isolated working branch `work/ssrf-special-purpose-ipv4-2026-11-12`. The reviewed source archive contains 80 files (864,155 uncompressed bytes). At the latest audit, 40 of those 80 archive paths are represented in the working branch (50% by archive path count). This is a transfer measure only; it does not mean half of the product's functionality is release-ready.
+The public development repository is being populated on the isolated working branch `work/ssrf-special-purpose-ipv4-2026-11-12`. The reviewed source archive contains 82 files (867,926 uncompressed bytes). At the latest audit, 40 of those 82 archive paths are represented in the working branch (49% by archive path count). This is a transfer measure only; it does not mean half of the product's functionality is release-ready.
 
 The branch now contains a hash-pinned archive importer and GitHub Actions workflow. The updated reviewed archive is ready for the one-time upload described in [SOURCE_IMPORT_HANDOFF.md](SOURCE_IMPORT_HANDOFF.md). The importer adds missing files and preserves differing existing files for explicit reconciliation.
 
@@ -12,12 +12,12 @@ These percentages are engineering estimates, not test coverage or acceptance per
 
 | Phase | Progress | Current state |
 |---|---:|---|
-| 1. Safe source import | 50% | 40/80 archive paths represented; remaining source files await guarded import |
-| 2. Reproducible setup | 35% | Bun selected, lockfile and Node pin present; dependency installation/build/typecheck still blocked |
-| 3. Detection precision | 35% | Bounded alias taint and review-only fixture classification added; benchmark remains small and synthetic |
-| 4. Upload/archive safety | 40% | Path normalization and collision checks added; dependency-backed ZIP suite still pending |
-| 5. Privacy/local boundary | 55% | Local-only host/origin policy, SSRF controls, cloud consent, and privacy-default history are implemented |
-| 6. UX/release readiness | 35% | Inert controls removed, history-clear result surfaced, benchmark disclosures improved; full app smoke test pending |
+| 1. Safe source import | 49% | 40/82 archive paths represented; remaining source files await guarded import |
+| 2. Reproducible setup | 40% | Bun selected, lockfile and Node pin present; dependency installation/build/typecheck still blocked |
+| 3. Detection precision | 40% | Bounded alias taint and review-only fixture classification added; benchmark remains small and synthetic |
+| 4. Upload/archive safety | 45% | Path normalization and collision checks added; dependency-backed ZIP suite still pending |
+| 5. Privacy/local boundary | 60% | Local-only host/origin policy, SSRF controls, cloud consent, and privacy-default history are implemented |
+| 6. UX/release readiness | 40% | Inert controls removed, history-clear result surfaced, benchmark disclosures improved; full app smoke test pending |
 
 ## Phase 1 — Safe source import
 
@@ -83,9 +83,9 @@ Still required:
 Completed:
 - Loopback-only listener configuration, Host and Origin validation, disabled proxy trust, rate limiting, pre-body authentication, and bounded JSON parsing are present.
 - SSRF validation blocks private, loopback, link-local, metadata, special-purpose IPv4, and restricted IPv6 destinations; trusted local providers are restricted to loopback and allowed ports.
-- Remote provider transmission requires explicit server-side consent; local Ollama/custom loopback use does not require cloud consent.
+- Remote provider transmission requires explicit server-side consent; local Ollama/custom loopback use does not require cloud consent. Connection tests now enforce the same consent and offline-mode gates.
 - Privacy mode is enabled by default and removes full source and full-file patches from browser history.
-- History clear now reports success or failure rather than silently claiming success.
+- History clear now reports success or failure rather than silently claiming success. Production CSP no longer permits `unsafe-eval`.
 
 Still required:
 - Add DNS resolution/pinning protections for user-configured remote custom endpoints to reduce DNS-rebinding risk.
@@ -109,8 +109,8 @@ Still required:
 
 ## Verification performed in this work session
 
-- 20 of the 22 scripted test files were executed successfully in focused mode.
-- 300 focused assertions/cases passed across the executed test files.
+- 21 of the 23 scripted test files were executed successfully in focused mode.
+- 311 focused assertions/cases passed across the executed test files.
 - The two not completed were the JSZip-backed upload suite (dependency unavailable) and the server-backed authentication boundary suite (server/dependencies not running).
 - TypeScript/TSX syntax transpilation completed for 62 files with zero syntax diagnostics.
 - Full `tsc --noEmit` is blocked because project dependencies are not installed (`vite/client` is unavailable).
