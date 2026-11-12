@@ -351,7 +351,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
                 <div
                   key={finding.id}
                   onClick={() => handleSelectFinding(finding)}
-                  className={`p-4 rounded-xl border transition cursor-pointer relative overflow-hidden ${
+                  className={`pp-interactive-card p-4 rounded-xl border transition cursor-pointer relative overflow-hidden ${
                     isMarkedFP
                       ? 'opacity-60 bg-[#F4F6FA]/60 dark:bg-[#141B2A]/50 border-[#DCE3ED] dark:border-[#35445A]'
                       : isSelected
