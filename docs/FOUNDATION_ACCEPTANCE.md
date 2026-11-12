@@ -27,6 +27,7 @@ Phase 1 is complete only when all items below are implemented and verified.
 - [x] ZIP end-of-central-directory and central-directory records are cross-checked before JSZip parsing, including false EOCD signatures in comments; actual decompressed bytes are streamed under per-file and project-wide budgets.
 - [x] Folder uploads reject excessive selections and verify actual UTF-8 content bytes against file metadata.
 - [x] Client ingestion and server analysis cap source expansion at 100,000 lines per file and 300,000 lines per project before allocating line arrays.
+- [x] Multi-batch staging revalidates previously staged paths, actual bytes and line counts, and rejects duplicate, case/Unicode-colliding, and file/directory-conflicting paths before retaining a combined project.
 - [x] Server independently validates multi-file project paths and content.
 - [x] Single-file labels are reduced to safe supported filenames; client language labels are allowlisted.
 - [x] Dependency-backed ZIP/folder upload suite passes in the complete project environment.
