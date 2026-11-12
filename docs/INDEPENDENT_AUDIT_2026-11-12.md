@@ -102,3 +102,23 @@ The findings above describe the repository snapshot inspected at the time of the
 - The current local-only deployment boundary must remain in force until a separate deployment threat model and security review are completed.
 
 The application is still **not release-ready**. Passing CI is meaningful regression evidence, not proof of zero vulnerabilities or a complete penetration test.
+
+
+### Further product-trust and resource controls
+
+- The results view and exported reports now state whether AI ran, whether it failed or fell back to static checks, and when only a prefix of a source file was sent to AI. Multi-file AI requests are capped at 10 files per project; the remaining eligible files still receive local static checks and are identified as AI-unreviewed.
+- Finding-origin metrics are derived from actual finding tags rather than hardcoded values. AI findings remain NEEDS_REVIEW; AI output is not allowed to label itself confirmed.
+- Expensive provider and analysis routes are limited to two concurrent tasks per local server process.
+- A finding's static pattern-suppression marker can no longer be mistaken for patch validation. Fix-validation descriptions no longer claim full AST/compiler or runtime verification.
+- Full-file AI rewrites are no longer exposed as validated output. Suggested snippets can be exported as patch artifacts; full-file AI output is not applied or exported through the patch viewer.
+- The results screen and reports use “Heuristic Risk Indicator” language and explicitly state that a clean pattern scan is not proof of security.
+- Provider key and cloud-source handling disclosures were corrected. Users are told that keys are sent to the selected provider endpoint and that source may be transmitted when cloud consent is enabled.
+- Browser-history write failures are now reported separately from successful analysis, so a completed review is not mislabeled as failed or silently claimed to be saved.
+- View transitions and card motion were added with a reduced-motion override.
+
+### Verification still required
+
+- CI on the current branch must pass after the latest batch; intermediate failed runs from staged test/code corrections are not accepted as final evidence.
+- Manual local browser/device validation remains pending, including upload-to-analysis, patch export/apply flow, mobile layouts, keyboard navigation and reduced-motion behavior.
+- The 25 differing source files still require semantic reconciliation against the original supplied source archive. The archive itself must be available to complete that comparison.
+- Detection accuracy claims remain limited to the small synthetic benchmark; no production-grade recall/precision claim is made.
