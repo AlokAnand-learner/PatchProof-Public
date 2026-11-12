@@ -73,7 +73,7 @@ assert.equal(redacted.includes('example_secret_value_123456'), false);
 assert.equal(redacted.includes(fakeToken), false);
 assert.match(redacted, /apiKey = "\[REDACTED\]"/);
 assert.equal(redacted.split('\n').length, secretSource.split('\n').length, 'redaction must preserve line count');
-const shortSecretSource = 'password: x\\napi_token=abc\\nnormal: visible';
+const shortSecretSource = 'password: x\napi_token=abc\nnormal: visible';
 const shortRedacted = redactLikelySecrets([{ path: 'src/short-config.yml', content: shortSecretSource }])[0].content;
 assert.equal(shortRedacted.includes('password: x'), false, 'short YAML password values must be redacted');
 assert.equal(shortRedacted.includes('api_token=abc'), false, 'short dotenv token values must be redacted');
@@ -83,7 +83,7 @@ const prefixedSecretSource = [
   'GEMINI_API_KEY: google-example-secret',
   'STRIPE_SECRET_KEY=sk_test_example_secret',
   'DATABASE_URL=postgres://user:password@localhost/db',
-].join('\\n');
+].join('\n');
 const prefixedRedacted = redactLikelySecrets([{ path: 'src/env.ts', content: prefixedSecretSource }])[0].content;
 for (const secret of ['sk-example-openai-secret', 'google-example-secret', 'sk_test_example_secret', 'postgres://user:password@localhost/db']) {
   assert.equal(prefixedRedacted.includes(secret), false, `prefixed credential ${secret} must be redacted`);
