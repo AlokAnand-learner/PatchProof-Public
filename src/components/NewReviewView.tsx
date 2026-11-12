@@ -635,10 +635,10 @@ export const NewReviewView: React.FC<NewReviewViewProps> = ({
       <div className="p-4 rounded-xl bg-white dark:bg-[#1B2638] border border-[#DCE3ED] dark:border-[#35445A] space-y-1.5 text-xs text-[#526078] dark:text-[#C2CDDC] leading-relaxed shadow-xs">
         <div className="flex items-center gap-2 text-[#17243B] dark:text-[#F1F5FC] font-semibold">
           <Lock className="w-4 h-4 text-[#2458D3] dark:text-[#4779E8]" />
-          <span>Code Review Security & Sandbox Guarantee</span>
+          <span>Source Handling & Review Safety</span>
         </div>
         <p className="text-xs text-[#526078] dark:text-[#C2CDDC]">
-          Uploaded files and archives are inspected strictly in-memory. Uploaded code is never executed. Build and dependency folders (such as <code>node_modules</code> and <code>.git</code>) are excluded by default to keep review scopes clean.
+          Uploaded code is analyzed as text and is never executed. Static checks run on the local PatchProof server. If cloud AI consent is enabled, source content or excerpts may be sent to the selected provider; that provider's retention and training terms apply. Build and dependency folders (such as <code>node_modules</code> and <code>.git</code>) are excluded by default.
         </p>
       </div>
     </div>
