@@ -56,6 +56,7 @@ const { host: HOST, port: PORT } = loadRuntimeConfig(process.env);
 // In-memory rate limiting with bounded memory pruning (max 120 requests per minute per IP)
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const MAX_RATE_LIMIT_ENTRIES = 10_000;
+const MAX_AI_FILES_PER_PROJECT = 10;
 
 // Bound expensive provider/analysis work independently from the per-IP rate limit.
 const providerTaskGate = createConcurrencyGate(2);
@@ -602,6 +603,7 @@ async function startServer() {
         let aiReviewCompletedFiles = 0;
         let aiReviewFailedFiles = 0;
         let aiTruncatedFiles = 0;
+        let aiBudgetSkippedFiles = 0;
         const fileRecords: any[] = [];
         const skippedFiles: string[] = [];
         const seenProjectPaths = new Set<string>();
@@ -671,7 +673,7 @@ async function startServer() {
           let fileFindings = staticFindings;
 
           // 2. Run secondary reasoning only when server-side consent or a trusted local route permits it
-          if (fileContent.trim().length > 15 && canUseConfiguredAi) {
+          if (fileContent.trim().length > 15 && canUseConfiguredAi && aiReviewAttemptedFiles < MAX_AI_FILES_PER_PROJECT) {
             aiReviewAttemptedFiles += 1;
             const aiInputContent = fileContent.slice(0, 35000);
             if (aiInputContent.length < fileContent.length) aiTruncatedFiles += 1;
@@ -750,6 +752,10 @@ CRITICAL RULES:
               aiReviewFailedFiles += 1;
               // Keep the deterministic local result and disclose the AI fallback in the response.
             }
+          }
+
+          if (fileContent.trim().length > 15 && canUseConfiguredAi && aiReviewAttemptedFiles >= MAX_AI_FILES_PER_PROJECT && !fileFindings.some(item => item.verificationType === 'AI_HYPOTHESIS' && item.filePath === filePath)) {
+            aiBudgetSkippedFiles += 1;
           }
 
           allFindings.push(...fileFindings);
@@ -872,6 +878,7 @@ CRITICAL RULES:
             failed: aiReviewFailedFiles,
             truncated: aiTruncatedFiles,
             maxCharactersPerFile: 35000,
+            skippedByBudget: aiBudgetSkippedFiles,
             offlineMode: provState.offlineMode,
             cloudConsentRequired: requiresCloudConsent(provState.activeProvider, activeEndpoint),
             cloudConsentGranted: provState.cloudConsentGranted
@@ -1130,6 +1137,7 @@ CRITICAL RULES:
           failed: aiReviewFailed ? 1 : 0,
           truncated: aiTruncated ? 1 : 0,
           maxCharactersPerFile: 45000,
+          skippedByBudget: 0,
           offlineMode: provState.offlineMode,
           cloudConsentRequired: requiresCloudConsent(provState.activeProvider, activeEndpoint),
           cloudConsentGranted: provState.cloudConsentGranted
