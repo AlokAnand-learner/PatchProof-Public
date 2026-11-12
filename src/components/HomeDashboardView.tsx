@@ -110,20 +110,20 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
             {totalCriticalIssues}
           </div>
           <span className="text-xs text-[#68758A] dark:text-[#7E8D9F] mt-1 block">
-            {totalCriticalIssues > 0 ? 'Requires immediate patch' : 'Zero critical flaws detected'}
+            {totalCriticalIssues > 0 ? 'Requires immediate patch' : 'No critical patterns detected in analyzed files'}
           </span>
         </div>
 
-        {/* Metric 4: Average Health Score */}
+        {/* Metric 4: Average Heuristic Risk Score */}
         <div className="p-5 rounded-xl bg-white dark:bg-[#161D2D] border border-[#DCE3ED] dark:border-[#232E42] shadow-xs">
           <span className="text-xs font-semibold text-[#526078] dark:text-[#A6B4C9] uppercase tracking-wider block">
             Average Health
           </span>
           <div className="text-3xl font-bold text-[#17243B] dark:text-[#F1F4FA] mt-2 font-mono tabular-nums">
-            {totalReviews > 0 ? `${avgHealthScore}/100` : '100%'}
+            {totalReviews > 0 ? `${avgHealthScore}/100` : '—'}
           </div>
           <span className="text-xs text-[#68758A] dark:text-[#7E8D9F] mt-1 block">
-            {totalReviews > 0 ? 'Across scanned projects' : 'Baseline security score'}
+            {totalReviews > 0 ? 'Weighted static indicators across reviews' : 'No reviews yet'}
           </span>
         </div>
       </div>
