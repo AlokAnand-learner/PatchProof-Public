@@ -740,7 +740,7 @@ async function runAuthBoundaryTests() {
             '  const alias = original;',
             '  db.query("SELECT * FROM users WHERE name=\'" + alias + "\'");',
             '}',
-          ].join('\\n'),
+          ].join('\n'),
         }]
       })
     });
