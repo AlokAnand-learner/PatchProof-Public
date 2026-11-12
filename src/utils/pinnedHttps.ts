@@ -18,7 +18,7 @@ export function validatePublicDnsAnswers(
     throw new Error('Remote provider hostname did not resolve to a public address.');
   }
   for (const answer of answers) {
-    if (!answer || net.isIP(answer.address) === 0 || isRestrictedOrPrivateIp(answer.address)) {
+    if (!answer || net.isIP(answer.address) === 0 || net.isIP(answer.address) !== answer.family || isRestrictedOrPrivateIp(answer.address)) {
       throw new Error('Remote provider hostname resolved to a restricted or non-public address.');
     }
   }
@@ -32,6 +32,7 @@ export function createPinnedLookup(
   hostname: string,
   answers: readonly { address: string; family: number }[],
 ): (requestedHost: string, options: any, callback: any) => void {
+  validatePublicDnsAnswers(hostname, answers);
   const normalizedHost = hostname.replace(/^\[|\]$/g, '').toLowerCase();
   const pinnedAnswers = answers.map((answer) => ({ address: answer.address, family: answer.family }));
   return (requestedHost: string, options: any, callback: any) => {
@@ -69,9 +70,22 @@ export async function fetchPinnedHttpsResponseText(
   }
 
   const hostname = target.hostname.replace(/^\[|\]$/g, '').toLowerCase();
-  const answers = net.isIP(hostname)
-    ? [{ address: hostname, family: net.isIPv4(hostname) ? 4 : 6 }]
-    : await dns.lookup(hostname, { all: true, verbatim: true });
+  let answers: { address: string; family: number }[];
+  if (net.isIP(hostname)) {
+    answers = [{ address: hostname, family: net.isIPv4(hostname) ? 4 : 6 }];
+  } else {
+    let dnsTimer: ReturnType<typeof setTimeout> | undefined;
+    try {
+      answers = await Promise.race([
+        dns.lookup(hostname, { all: true, verbatim: true }),
+        new Promise<never>((_resolve, reject) => {
+          dnsTimer = setTimeout(() => reject(new Error('Remote provider DNS lookup timed out.')), Math.min(timeoutMs, 5000));
+        }),
+      ]);
+    } finally {
+      if (dnsTimer) clearTimeout(dnsTimer);
+    }
+  }
   validatePublicDnsAnswers(hostname, answers);
   const pinnedLookup = createPinnedLookup(hostname, answers);
 
