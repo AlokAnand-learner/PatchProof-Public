@@ -103,6 +103,12 @@ if (navbarSource.includes('pb-safe') && navbarSource.includes('md:hidden fixed b
   fail('Mobile bottom nav', 'Missing pb-safe or mobile bottom fixed layout');
 }
 
+if ((navbarSource.match(/aria-current={activeTab ===/g) ?? []).length >= 5) {
+  pass('Mobile navigation exposes the active page to assistive technology');
+} else {
+  fail('Mobile active navigation state', 'Missing aria-current="page" on active mobile navigation items');
+}
+
 if (navbarSource.includes('min-h-11 min-w-11')) {
   pass('Mobile bottom navigation controls meet minimum 44px touch target dimensions');
 } else {
