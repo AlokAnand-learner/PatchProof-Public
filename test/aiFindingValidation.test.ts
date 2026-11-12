@@ -1,7 +1,7 @@
 import fs from 'node:fs';
 import path from 'node:path';
 import assert from 'node:assert/strict';
-import { validateAIModelFindings } from '../src/engine/aiFindingValidation';
+import { validateAIModelFindings, sanitizeAIText } from '../src/engine/aiFindingValidation';
 
 const source = ['const user = input;', 'db.query(user);', 'return true;'].join('\n');
 const valid = {
@@ -48,7 +48,10 @@ const bounded = validateAIModelFindings([{ ...valid, title: 'x'.repeat(500), sev
 assert.equal(bounded.title.length, 180);
 assert.equal(bounded.severity, 'MEDIUM');
 assert.equal(bounded.confidence, 'LOW');
-console.log('AI finding validation tests: 18 passed');
+assert.equal(sanitizeAIText('Summary\\u202Etxt\\u0000\\u0007 hidden', 12), 'Summarytxt h', 'AI report prose removes direction controls and control characters before truncation');
+assert.equal(sanitizeAIText('   ', 100), '', 'empty AI summaries remain empty rather than receiving fabricated content');
+assert.equal(sanitizeAIText('x'.repeat(20), 8), 'x'.repeat(8), 'AI report prose is bounded before it reaches the UI');
+console.log('AI finding validation tests: 21 passed');
 
 const longerSource = [...source, 'const hidden = req.body.secret;', 'exec(hidden);'].join('\n');
 const submittedPrefix = longerSource.split('\n').slice(0, 3).join('\n');
