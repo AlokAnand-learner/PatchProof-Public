@@ -175,6 +175,18 @@ function hasTaintSource(
 
   for (const line of priorLines) {
     if (isCommentOrDoc(line.text, false).isComment) continue;
+
+    // This bounded scan has no lexical-scope model. Reset at clear function
+    // boundaries so a request-derived value in one function cannot taint a
+    // same-named local in the next. A bare closing brace is treated
+    // conservatively as a boundary: this may lose an outer-scope hint, but
+    // cannot manufacture cross-function source-to-sink evidence.
+    const trimmedLine = line.text.trim();
+    const startsFunction = /^(?:(?:export|default|async)\\s+)*(?:function\\b|(?:const|let|var)\\s+[A-Za-z_$][\\w$]*\\s*=\\s*(?:async\\s*)?(?:\\([^)]*\\)|[A-Za-z_$][\\w$]*)\\s*=>)/.test(trimmedLine);
+    if (startsFunction || trimmedLine === '}') {
+      taintedVariables.clear();
+      continue;
+    }
     const assignment = /^\s*(?:(?:const|let|var)\s+|(?:[A-Za-z_$][\w$.[\]<>?]*\s+))?([A-Za-z_$][\w$]*)\s*=\s*(.+?)\s*;?\s*$/.exec(line.text);
     if (!assignment) continue;
 
