@@ -14,14 +14,33 @@ PatchProof is a local-first source-code security review application. It combines
 
 ## Project status
 
-This repository is being populated from the working PatchProof source archive in controlled batches. A branch may contain only part of the application until the complete source tree, dependency lockfile, and test environment have been imported and verified. Do not treat a partial import as a runnable release.
+This repository is being populated from the reviewed PatchProof source archive in controlled batches. The current working branch contains the foundation and security work, but it is not yet a verified runnable release. Do not merge it into `main` until the full source tree, dependency installation, typecheck, build, test suite, and local smoke test pass.
 
 See [the architecture](docs/ARCHITECTURE.md), [foundation acceptance checklist](docs/FOUNDATION_ACCEPTANCE.md), and [development roadmap](docs/DEVELOPMENT_ROADMAP.md).
 
 ## Runtime requirements
 
 - Node.js 20.19 or later; development is pinned to 22.16.0 in `.nvmrc`.
-- The source archive includes a Bun lockfile. Package-manager and lockfile alignment must be finalized before claiming reproducible installs.
+- Bun with support for the committed `bun.lock` lockfile.
+
+## Run locally
+
+```bash
+bun install --frozen-lockfile
+bun run dev
+```
+
+Open `http://127.0.0.1:3000`.
+
+For verification:
+
+```bash
+bun run test
+bun run typecheck
+bun run build
+```
+
+Bun is the selected package manager. Use the committed lockfile with `bun install --frozen-lockfile`; do not use `npm install` as the canonical workflow because npm does not consume `bun.lock`.
 
 ## Verification gate
 
