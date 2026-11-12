@@ -38,8 +38,8 @@ if (emptySuiteMetrics.totalTestCases !== 0 || emptySuiteMetrics.evaluatedCases !
 }
 console.log('Empty evaluation-suite metric edge case: 6 assertions passed.');
 
-if (results.excludedCases !== 4 || results.evaluatedCases !== 9) {
-  throw new Error(`Expected 9 scored cases and 4 review-only cases; got ${results.evaluatedCases} scored and ${results.excludedCases} excluded.`);
+if (results.excludedCases !== 9 || results.evaluatedCases !== 12 || results.totalTestCases !== 21) {
+  throw new Error(`Expected 12 scored cases and 9 review-only cases across 21 fixtures; got ${results.evaluatedCases} scored and ${results.excludedCases} excluded.`);
 }
 if (results.results.some(result => !result.cweMatches || !result.lineRangesValid)) {
   throw new Error('Evaluation fixtures must match their expected CWE and contain valid source line ranges.');
