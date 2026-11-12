@@ -41,6 +41,11 @@ console.log('Empty evaluation-suite metric edge case: 6 assertions passed.');
 if (results.excludedCases !== 4 || results.evaluatedCases !== 9) {
   throw new Error(`Expected 9 scored cases and 4 review-only cases; got ${results.evaluatedCases} scored and ${results.excludedCases} excluded.`);
 }
+if (results.results.some(result => !result.cweMatches || !result.lineRangesValid)) {
+  throw new Error('Evaluation fixtures must match their expected CWE and contain valid source line ranges.');
+}
+console.log('Expected CWE and source line-range assertions passed for all evaluation fixtures.');
+
 if (results.falsePositives !== 0 || results.falseNegatives !== 0) {
   throw new Error(`Unexpected binary classification errors: ${results.falsePositives} FP, ${results.falseNegatives} FN.`);
 }
