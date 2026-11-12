@@ -123,7 +123,7 @@ export const NewReviewView: React.FC<NewReviewViewProps> = ({
     setErrorMessage(null);
     try {
       const result = await processZipUpload(file, { excludeCommonDirs });
-      setStagedFiles(result.stagedFiles);
+      commitStagedFiles(result.stagedFiles);
       setSkippedNotice(result.skippedFiles);
       if (result.projectName) setProjectName(result.projectName);
     } catch (err: any) {
@@ -163,7 +163,7 @@ export const NewReviewView: React.FC<NewReviewViewProps> = ({
     if (files.length === 1 && files[0].name.toLowerCase().endsWith('.zip')) {
       try {
         const result = await processZipUpload(files[0], { excludeCommonDirs });
-        setStagedFiles(result.stagedFiles);
+        commitStagedFiles(result.stagedFiles);
         setSkippedNotice(result.skippedFiles);
         if (result.projectName) setProjectName(result.projectName);
       } catch (err: any) {
