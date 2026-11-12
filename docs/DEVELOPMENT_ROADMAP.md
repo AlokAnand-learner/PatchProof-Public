@@ -21,15 +21,15 @@ These percentages are engineering estimates, not test coverage or acceptance per
 
 ## Phase 1 — Safe source import
 
-**Progress: 50% by source-archive path count. Acceptance remains incomplete.**
+**Progress: 49% by source-archive path count. Acceptance remains incomplete.**
 
 Completed:
 - Imported or recreated project configuration, Node version pin, Vite/TypeScript setup, example-only environment template, metadata, entrypoint, and visual assets.
-- Added or imported local Host/Origin validation, bounded provider response handling, model-name validation, request-error sanitization, SSRF endpoint validation, and AI finding trust-boundary checks.
+- Added or imported local Host/Origin validation, bounded provider response handling, model-name validation, request-error sanitization, SSRF endpoint validation, and AI finding trust-boundary checks, and production CSP without `unsafe-eval`.
 - Added a guarded source archive importer with strict path, symlink, size, compression-ratio, UTF-8, and high-confidence secret-pattern checks.
-- Pinned the importer to the reviewed archive SHA-256: `cd7cb5eaff8bc9284991b2fe5d6542c249e8c0ded9f3e15d2c20c5e33b98ebed`.
+- Pinned the importer to the reviewed archive SHA-256: `2e3d3b2099823ac953528bd43bbd70acb2b194ff2d4e10d78a9b5d7ac33a8a9e`.
 - Added a GitHub Actions workflow that imports missing files and removes the temporary archive after a successful import.
-- Updated the handoff instructions for the 80-file archive.
+- Updated the handoff instructions for the 82-file archive.
 
 Still required:
 - Upload the exact reviewed archive to `import/PatchProof-source.zip` on this working branch.
@@ -83,9 +83,9 @@ Still required:
 Completed:
 - Loopback-only listener configuration, Host and Origin validation, disabled proxy trust, rate limiting, pre-body authentication, and bounded JSON parsing are present.
 - SSRF validation blocks private, loopback, link-local, metadata, special-purpose IPv4, and restricted IPv6 destinations; trusted local providers are restricted to loopback and allowed ports.
-- Remote provider transmission requires explicit server-side consent; local Ollama/custom loopback use does not require cloud consent. Connection tests now enforce the same consent and offline-mode gates.
+- Remote provider transmission requires explicit server-side consent; local Ollama/custom loopback use does not require cloud consent. Provider connection tests enforce the same consent and offline-mode gates. Connection tests now enforce the same consent and offline-mode gates.
 - Privacy mode is enabled by default and removes full source and full-file patches from browser history.
-- History clear now reports success or failure rather than silently claiming success. Production CSP no longer permits `unsafe-eval`.
+- History clear now reports success or failure rather than silently claiming success. Production CSP no longer permits `unsafe-eval`. Production CSP no longer permits `unsafe-eval`.
 
 Still required:
 - Add DNS resolution/pinning protections for user-configured remote custom endpoints to reduce DNS-rebinding risk.
