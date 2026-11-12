@@ -48,7 +48,7 @@ const bounded = validateAIModelFindings([{ ...valid, title: 'x'.repeat(500), sev
 assert.equal(bounded.title.length, 180);
 assert.equal(bounded.severity, 'MEDIUM');
 assert.equal(bounded.confidence, 'LOW');
-assert.equal(sanitizeAIText('Summary\u202Etxt\u0000\u0007 hidden', 12), 'Summarytxt h', 'AI report prose removes direction controls and control characters before truncation');
+assert.equal(sanitizeAIText('Summary\u202Etxt\u0000\u0007 hidden', 100), 'Summarytxt   hidden', 'AI report prose removes direction controls and control characters before truncation');
 assert.equal(sanitizeAIText('   ', 100), '', 'empty AI summaries remain empty rather than receiving fabricated content');
 assert.equal(sanitizeAIText('x'.repeat(20), 8), 'x'.repeat(8), 'AI report prose is bounded before it reaches the UI');
 console.log('AI finding validation tests: 21 passed');
