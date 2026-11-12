@@ -6,6 +6,8 @@ import {
   requiresCloudConsent,
   setActiveProvider,
   setCloudConsent,
+  setOfflineMode,
+  testProviderConnection,
   updateProviderConfig
 } from '../src/engine/providerEngine';
 
@@ -43,12 +45,28 @@ async function run(): Promise<void> {
     catch (error) { remoteBlocked = String(error).toLowerCase().includes('consent'); }
     assert('Remote custom endpoint is blocked before fetch when consent is absent', remoteBlocked && fetchCalls === 0);
 
+    const remoteTest = await testProviderConnection({ provider: 'custom', model: 'mock', endpoint: 'https://ai.example.com/v1' });
+    assert('Remote custom connection test is blocked before sending a request without consent', !remoteTest.success && remoteTest.message.toLowerCase().includes('consent') && fetchCalls === 0);
+
+    const hostedTest = await testProviderConnection({ provider: 'gemini', model: 'gemini-test' });
+    assert('Hosted Gemini connection test is blocked before contacting the provider without consent', !hostedTest.success && hostedTest.message.toLowerCase().includes('consent') && fetchCalls === 0);
+
+    setCloudConsent(true);
+    setOfflineMode(true);
+    const offlineRemoteTest = await testProviderConnection({ provider: 'custom', model: 'mock', endpoint: 'https://ai.example.com/v1' });
+    assert('Strict offline mode blocks remote custom connection tests even when consent was previously granted', !offlineRemoteTest.success && offlineRemoteTest.message.toLowerCase().includes('offline') && fetchCalls === 0);
+    setOfflineMode(false);
+    setCloudConsent(false);
+
     updateProviderConfig('custom', { endpoint: 'http://127.0.0.1:8000/v1' });
     setActiveProvider('custom');
     setCloudConsent(false);
     const localResponse = await generateAnalysisWithActiveProvider('synthetic local test prompt');
     assert('Trusted local custom endpoint can run without cloud consent', localResponse === 'mock local model response');
     assert('Local custom request is confined to the configured loopback endpoint', lastUrl === 'http://127.0.0.1:8000/v1/chat/completions');
+
+    const localConnectionTest = await testProviderConnection({ provider: 'custom', model: 'mock', endpoint: 'http://127.0.0.1:8000/v1' });
+    assert('Trusted local custom connection test remains available without cloud consent', localConnectionTest.success && lastUrl === 'http://127.0.0.1:8000/v1/models');
   } finally {
     globalThis.fetch = originalFetch;
     setCloudConsent(false);
