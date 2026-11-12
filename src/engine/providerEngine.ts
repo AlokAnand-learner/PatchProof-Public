@@ -3,7 +3,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { GoogleGenAI } from '@google/genai';
 import { ProviderType, ProviderConfig, OllamaModelInfo, SystemStatus } from '../types/security';
 import { validateEndpointUrl, sanitizeErrorMessage } from '../utils/ssrfValidator';
 import { normalizeModelName } from '../utils/modelName';
@@ -143,6 +142,46 @@ async function fetchResponseText(
   } finally {
     clearTimeout(timer);
   }
+}
+
+async function requestGoogleGenerateContent(
+  apiKey: string,
+  model: string,
+  contents: string,
+  systemInstruction: string | undefined,
+  timeoutMs: number,
+  maxResponseBytes: number,
+): Promise<any> {
+  const requestBody: Record<string, unknown> = {
+    contents: [{ role: 'user', parts: [{ text: contents }] }],
+    generationConfig: { maxOutputTokens: 2048, temperature: 0.1 },
+  };
+  if (systemInstruction) {
+    requestBody.systemInstruction = { parts: [{ text: systemInstruction }] };
+  }
+
+  const requestUrl = `https://generativelanguage.googleapis.com/v1beta/models/${encodeURIComponent(model)}:generateContent`;
+  const { response, bodyText } = await fetchPinnedHttpsResponseText(requestUrl, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'x-goog-api-key': apiKey,
+    },
+    body: JSON.stringify(requestBody),
+    redirect: 'error',
+  }, timeoutMs, maxResponseBytes);
+
+  if (!response.ok) {
+    const errorData: any = parseProviderJson(bodyText || '{}');
+    throw new Error(sanitizeErrorMessage(errorData?.error?.message || `Google API returned HTTP ${response.status}`));
+  }
+  return parseProviderJson(bodyText);
+}
+
+function extractGoogleResponseText(data: any): string {
+  const parts = data?.candidates?.[0]?.content?.parts;
+  if (!Array.isArray(parts)) return '';
+  return parts.map((part: any) => typeof part?.text === 'string' ? part.text : '').join('');
 }
 
 export function isValidProvider(provider: unknown): provider is ProviderType {
@@ -441,25 +480,17 @@ export async function testProviderConnection(params: {
         throw new Error('API key is not configured for Google Gemini/Gemma API.');
       }
 
-      const client = new GoogleGenAI({
-        apiKey: keyToUse,
-        httpOptions: {
-          timeout: 6000,
-          retryOptions: { attempts: 1 },
-          headers: {
-            'User-Agent': 'PatchProof-local',
-          },
-        },
-      });
-
       const targetModel = model || (provider === 'gemma' ? 'gemma-2-9b-it' : 'gemini-3.8-flash');
-      const testRes = await client.models.generateContent({
-        model: targetModel,
-        contents: 'Ping: reply with one word "OK"',
-        config: { maxOutputTokens: 10, temperature: 0 },
-      });
+      const testRes = await requestGoogleGenerateContent(
+        keyToUse,
+        targetModel,
+        'Ping: reply with one word "OK"',
+        undefined,
+        6000,
+        64 * 1024,
+      );
 
-      const reply = testRes.text || '';
+      const reply = extractGoogleResponseText(testRes);
       return {
         success: true,
         latencyMs: Date.now() - startTime,
@@ -653,24 +684,16 @@ export async function generateAnalysisWithActiveProvider(
       throw new Error(`Google API key not configured for ${activeProvider}.`);
     }
 
-    const client = new GoogleGenAI({
-      apiKey: keyToUse,
-      httpOptions: {
-        timeout: 18000,
-        retryOptions: { attempts: 1 },
-        headers: {
-          'User-Agent': 'PatchProof-local',
-        },
-      },
-    });
+    const response = await requestGoogleGenerateContent(
+      keyToUse,
+      activeModel || (activeProvider === 'gemma' ? 'gemma-2-9b-it' : 'gemini-3.8-flash'),
+      userPayload,
+      systemInstruction,
+      18000,
+      2 * 1024 * 1024,
+    );
 
-    const response = await client.models.generateContent({
-      model: activeModel || (activeProvider === 'gemma' ? 'gemma-2-9b-it' : 'gemini-3.8-flash'),
-      contents: userPayload,
-      config: { systemInstruction, maxOutputTokens: 2048, temperature: 0.1, automaticContinuation: false },
-    });
-
-    return response.text || '';
+    return extractGoogleResponseText(response);
   }
 
   // C. OPENAI or CUSTOM OPENAI-COMPATIBLE
