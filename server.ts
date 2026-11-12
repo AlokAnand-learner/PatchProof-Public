@@ -540,7 +540,8 @@ async function startServer() {
       }
 
       const optionalTextFields: Array<[string, unknown]> = [
-        ['originalSnippet', originalSnippet ?? originalCode],
+        ['originalSnippet', originalSnippet],
+        ['originalCode', originalCode],
         ['surroundingContext', surroundingContext],
         ['fullSourceCode', fullSourceCode],
         ['language', language],
