@@ -29,7 +29,7 @@ assert.equal(validateAIModelFindings([{ ...valid, startLine: 1.5 }], source).len
 assert.equal(validateAIModelFindings([{ ...valid, startLine: '2' }], source).length, 0);
 assert.equal(validateAIModelFindings([null, 'bad', []], source).length, 0);
 assert.equal(validateAIModelFindings({ findings: [valid] }, source).length, 0);
-assert.equal(validateAIModelFindings(Array.from({ length: 110 }, () => valid), source).length, 100);
+assert.equal(validateAIModelFindings(Array.from({ length: 110 }, () => valid), source).length, 1, 'repeated findings are deduplicated after the input cap');
 const bounded = validateAIModelFindings([{ ...valid, title: 'x'.repeat(500), severity: 'NUCLEAR', confidence: 'CERTAIN' }], source)[0];
 assert.equal(bounded.title.length, 180);
 assert.equal(bounded.severity, 'MEDIUM');
