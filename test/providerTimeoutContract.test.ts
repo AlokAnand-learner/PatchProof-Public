@@ -13,6 +13,15 @@ assert.equal(/Promise\.race\([\s\S]{0,300}generateAnalysisWithActiveProvider\(/.
 assert.equal((server.match(/await generateAnalysisWithActiveProvider\(/g) || []).length, 3,
   'Every provider analysis route must await completion before releasing its request/concurrency scope.');
 
+assert.ok(server.includes('function withProviderTask(handler: RequestHandler): RequestHandler'),
+  'expensive routes must hold their concurrency slot around the actual handler Promise.');
+assert.ok(server.includes('.finally(release)'),
+  'concurrency slots must be released only after handler completion or rejection.');
+assert.equal(server.includes("res.once('close', releaseOnce)"), false,
+  'client disconnect must not release capacity while asynchronous work is still running.');
+assert.equal(server.includes('limitProviderTasks'), false,
+  'the old response-lifecycle-only concurrency middleware must be removed.');
+
 assert.ok(provider.includes('const controller = new AbortController();'),
   'Ordinary provider HTTP transport must use an abort controller.');
 assert.ok(provider.includes('setTimeout(() => controller.abort(), timeoutMs)'),
@@ -24,4 +33,4 @@ assert.ok(pinned.includes('deadlineTimer = setTimeout(() => request.destroy('),
 assert.ok(pinned.includes('request.destroy(new Error'),
   'Pinned HTTPS transport must abort the underlying socket on deadline or response overflow.');
 
-console.log('Provider timeout/cancellation contract: 7 assertions passed.');
+console.log('Provider timeout and concurrency lifecycle contract: 11 assertions passed.');
