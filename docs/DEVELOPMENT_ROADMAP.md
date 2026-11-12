@@ -2,7 +2,7 @@
 
 ## Current repository state
 
-The public development repository is being populated on the isolated working branch `work/ssrf-special-purpose-ipv4-2026-11-12`. The reviewed source archive contains 80 files (865,386 uncompressed bytes). At the latest audit, 40 of those 80 archive paths are represented in the working branch (50% by archive path count). This is a transfer measure only; it does not mean half of the product's functionality is release-ready.
+The public development repository is being populated on the isolated working branch `work/ssrf-special-purpose-ipv4-2026-11-12`. The reviewed source archive contains 80 files (864,155 uncompressed bytes). At the latest audit, 40 of those 80 archive paths are represented in the working branch (50% by archive path count). This is a transfer measure only; it does not mean half of the product's functionality is release-ready.
 
 The branch now contains a hash-pinned archive importer and GitHub Actions workflow. The updated reviewed archive is ready for the one-time upload described in [SOURCE_IMPORT_HANDOFF.md](SOURCE_IMPORT_HANDOFF.md). The importer adds missing files and preserves differing existing files for explicit reconciliation.
 
@@ -27,7 +27,7 @@ Completed:
 - Imported or recreated project configuration, Node version pin, Vite/TypeScript setup, example-only environment template, metadata, entrypoint, and visual assets.
 - Added or imported local Host/Origin validation, bounded provider response handling, model-name validation, request-error sanitization, SSRF endpoint validation, and AI finding trust-boundary checks.
 - Added a guarded source archive importer with strict path, symlink, size, compression-ratio, UTF-8, and high-confidence secret-pattern checks.
-- Pinned the importer to the reviewed archive SHA-256: `a6185755a2366f868ff10d101a74a13dc880ec00774f42d0fb2506142adc9740`.
+- Pinned the importer to the reviewed archive SHA-256: `cd7cb5eaff8bc9284991b2fe5d6542c249e8c0ded9f3e15d2c20c5e33b98ebed`.
 - Added a GitHub Actions workflow that imports missing files and removes the temporary archive after a successful import.
 - Updated the handoff instructions for the 80-file archive.
 
