@@ -27,6 +27,11 @@ assert.ok(source.includes('Every remote HTTPS endpoint is DNS-pinned'), 'OpenAI 
 assert.ok(source.includes('Remote OpenAI and custom HTTPS endpoints must use DNS-pinned transport'), 'OpenAI and remote custom analysis must share pinned transport');
 assert.ok(source.includes("redirect: 'error'"), 'provider requests must reject redirects');
 assert.ok(source.includes('async function requestGoogleGenerateContent('), 'Google provider requests must use the shared bounded transport');
+const googleConnectionStart = source.indexOf('// 2. GEMINI or Hosted GEMMA');
+const googleConnectionEnd = source.indexOf('// 3. OPENAI or CUSTOM OPENAI-COMPATIBLE', googleConnectionStart);
+assert.ok(googleConnectionStart >= 0 && googleConnectionEnd > googleConnectionStart, 'Google connection test adapter must be discoverable');
+assert.ok(source.slice(googleConnectionStart, googleConnectionEnd).includes('requestGoogleGenerateContent('), 'Google connection tests must use the pinned transport helper');
+
 const googleTransportStart = source.indexOf('async function requestGoogleGenerateContent(');
 const googleTransportEnd = source.indexOf('function extractGoogleResponseText', googleTransportStart);
 assert.ok(googleTransportStart >= 0 && googleTransportEnd > googleTransportStart, 'Google transport helper must be present');
