@@ -2,7 +2,7 @@
 
 ## Current repository state
 
-The public development repository is being populated on the isolated working branch `work/ssrf-special-purpose-ipv4-2026-11-12`. The reviewed source archive contains 82 files (867,926 uncompressed bytes). At the latest audit, 40 of those 82 archive paths are represented in the working branch (49% by archive path count). This is a transfer measure only; it does not mean half of the product's functionality is release-ready.
+The public development repository is being populated on the isolated working branch `work/ssrf-special-purpose-ipv4-2026-11-12`. The reviewed source archive contains 82 files (868,355 uncompressed bytes). At the latest audit, 40 of those 82 archive paths are represented in the working branch (49% by archive path count). This is a transfer measure only; it does not mean half of the product's functionality is release-ready.
 
 The branch now contains a hash-pinned archive importer and GitHub Actions workflow. The updated reviewed archive is ready for the one-time upload described in [SOURCE_IMPORT_HANDOFF.md](SOURCE_IMPORT_HANDOFF.md). The importer adds missing files and preserves differing existing files for explicit reconciliation.
 
@@ -27,7 +27,7 @@ Completed:
 - Imported or recreated project configuration, Node version pin, Vite/TypeScript setup, example-only environment template, metadata, entrypoint, and visual assets.
 - Added or imported local Host/Origin validation, bounded provider response handling, model-name validation, request-error sanitization, SSRF endpoint validation, and AI finding trust-boundary checks, and production CSP without `unsafe-eval`.
 - Added a guarded source archive importer with strict path, symlink, size, compression-ratio, UTF-8, and high-confidence secret-pattern checks.
-- Pinned the importer to the reviewed archive SHA-256: `2e3d3b2099823ac953528bd43bbd70acb2b194ff2d4e10d78a9b5d7ac33a8a9e`.
+- Pinned the importer to the reviewed archive SHA-256: `f6a0cbe3ab7e1fc0c1c8ab33ad3218ad903ac65a1fc5267342b6cd642c9770b5`.
 - Added a GitHub Actions workflow that imports missing files and removes the temporary archive after a successful import.
 - Updated the handoff instructions for the 82-file archive.
 
