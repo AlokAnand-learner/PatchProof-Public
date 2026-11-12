@@ -118,6 +118,31 @@ function redactScanSource(scan: ScanResult): ScanResult {
   };
 }
 
+function isHistoryItemRecord(value: unknown): value is HistoryItem {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const item = value as Record<string, unknown>;
+  const scan = item.scanResult;
+  if (!scan || typeof scan !== 'object' || Array.isArray(scan)) return false;
+  const scanRecord = scan as Record<string, unknown>;
+  const metrics = scanRecord.metrics;
+  if (!metrics || typeof metrics !== 'object' || Array.isArray(metrics)) return false;
+  const findings = scanRecord.findings;
+  if (!Array.isArray(findings) || !findings.every(finding =>
+    !!finding && typeof finding === 'object' && !Array.isArray(finding)
+  )) return false;
+
+  return typeof item.id === 'string' && item.id.length > 0 && item.id.length <= 200 &&
+    typeof item.projectName === 'string' && item.projectName.length <= 500 &&
+    typeof item.fileName === 'string' && item.fileName.length <= 500 &&
+    typeof item.language === 'string' && item.language.length <= 80 &&
+    typeof item.timestamp === 'string' && item.timestamp.length <= 80 &&
+    typeof item.score === 'number' && Number.isFinite(item.score) &&
+    ['A+', 'A', 'B', 'C', 'D', 'F'].includes(String(item.grade)) &&
+    typeof item.totalFindings === 'number' && Number.isFinite(item.totalFindings) &&
+    typeof item.criticalCount === 'number' && Number.isFinite(item.criticalCount) &&
+    typeof item.highCount === 'number' && Number.isFinite(item.highCount);
+}
+
 function redactHistoryItem(item: HistoryItem): HistoryItem {
   if (!item || typeof item !== 'object' || !item.scanResult || typeof item.scanResult !== 'object') {
     return item;
@@ -155,7 +180,8 @@ export function setPrivacyMode(enabled: boolean): boolean {
         if (!Array.isArray(parsedHistory)) {
           throw new Error('Saved review history has an unexpected format.');
         }
-        const redactedHistory = parsedHistory.map(item => redactHistoryItem(item as HistoryItem));
+        const validHistory = parsedHistory.filter(isHistoryItemRecord).slice(0, 40);
+        const redactedHistory = validHistory.map(item => redactHistoryItem(item));
         localStorage.setItem(STORAGE_KEY, JSON.stringify(redactedHistory));
       }
     }
@@ -178,10 +204,17 @@ export function getScanHistory(): HistoryItem[] {
       throw new Error('Saved review history has an unexpected format.');
     }
 
-    if (!isPrivacyModeEnabled()) return parsedHistory as HistoryItem[];
+    const validHistory = parsedHistory.filter(isHistoryItemRecord).slice(0, 40);
+    if (!isPrivacyModeEnabled()) {
+      const validJson = JSON.stringify(validHistory);
+      if (validJson !== raw) {
+        try { localStorage.setItem(STORAGE_KEY, validJson); } catch { /* Keep the validated in-memory view. */ }
+      }
+      return validHistory;
+    }
 
     // Migrate legacy records automatically when privacy mode is the default or enabled.
-    const redactedHistory = parsedHistory.map(item => redactHistoryItem(item as HistoryItem));
+    const redactedHistory = validHistory.map(item => redactHistoryItem(item));
     const redactedJson = JSON.stringify(redactedHistory);
     if (redactedJson !== raw) {
       try {
