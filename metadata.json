@@ -1,0 +1,9 @@
+{
+  "name": "PatchProof",
+  "description": "Local-first code security review application with static analysis and optional AI hypotheses.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "LOCAL_SOURCE_REVIEW",
+    "OPTIONAL_CONSENT_BASED_AI"
+  ]
+}
