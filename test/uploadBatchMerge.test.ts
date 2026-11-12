@@ -50,7 +50,7 @@ assert.ok(fileDirectoryConflict.skippedFiles.some(item => item.includes('file/di
 
 const duplicate = mergeStagedFileBatches([first], [makeFile('SRC/FIRST.TS', 'const duplicate = true;')]);
 assert.equal(duplicate.stagedFiles.length, 1);
-assert.ok(duplicate.skippedFiles.some(item => item.includes('Duplicate or case-colliding')));
+assert.ok(duplicate.skippedFiles.some(item => item.includes('Duplicate, case-colliding, or file/directory-conflicting path rejected')));
 
 const fileCap = mergeStagedFileBatches([first], [second], { ...DEFAULT_LIMITS, maxFileCount: 1 });
 assert.equal(fileCap.stagedFiles.length, 1);
