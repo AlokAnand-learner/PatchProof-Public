@@ -542,7 +542,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       >
         <button
           onClick={() => handleNav('dashboard')}
-          className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-md cursor-pointer ${
+          className={`flex flex-col items-center gap-0.5 min-h-11 min-w-11 py-1 px-2.5 rounded-md cursor-pointer ${
             activeTab === 'dashboard' ? 'text-[#2458D3] dark:text-[#4779E8] font-bold' : 'text-[#526078] dark:text-[#C2CDDC]'
           }`}
         >
@@ -552,7 +552,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         <button
           onClick={() => handleNav('new-review')}
-          className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-md cursor-pointer ${
+          className={`flex flex-col items-center gap-0.5 min-h-11 min-w-11 py-1 px-2.5 rounded-md cursor-pointer ${
             activeTab === 'new-review' ? 'text-[#2458D3] dark:text-[#4779E8] font-bold' : 'text-[#526078] dark:text-[#C2CDDC]'
           }`}
         >
@@ -563,7 +563,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
         {hasActiveResults && (
           <button
             onClick={() => handleNav('results')}
-            className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-md cursor-pointer ${
+            className={`flex flex-col items-center gap-0.5 min-h-11 min-w-11 py-1 px-2.5 rounded-md cursor-pointer ${
               activeTab === 'results' ? 'text-[#2458D3] dark:text-[#4779E8] font-bold' : 'text-[#2458D3] dark:text-[#93C5FD]'
             }`}
           >
@@ -574,7 +574,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         <button
           onClick={() => handleNav('history')}
-          className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-md cursor-pointer ${
+          className={`flex flex-col items-center gap-0.5 min-h-11 min-w-11 py-1 px-2.5 rounded-md cursor-pointer ${
             activeTab === 'history' ? 'text-[#2458D3] dark:text-[#4779E8] font-bold' : 'text-[#526078] dark:text-[#C2CDDC]'
           }`}
         >
@@ -584,7 +584,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
 
         <button
           onClick={() => handleNav('reports')}
-          className={`flex flex-col items-center gap-0.5 py-1 px-2.5 rounded-md cursor-pointer ${
+          className={`flex flex-col items-center gap-0.5 min-h-11 min-w-11 py-1 px-2.5 rounded-md cursor-pointer ${
             activeTab === 'reports' ? 'text-[#2458D3] dark:text-[#4779E8] font-bold' : 'text-[#526078] dark:text-[#C2CDDC]'
           }`}
         >
