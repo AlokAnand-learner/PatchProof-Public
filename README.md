@@ -42,6 +42,17 @@ bun run build
 
 Bun is the selected package manager. Do not use `--frozen-lockfile` until the matching lockfile has been committed and verified. The canonical frozen-install command will be `bun install --frozen-lockfile` after that gate is satisfied.
 
+## Read-only repository preflight
+
+Before attempting dependency installation or the full test script, run the standard-library preflight:
+
+```bash
+python3 scripts/repo_preflight.py .
+python3 scripts/repo_preflight.py . --json
+```
+
+It checks that test files referenced by `package.json` exist, reports a missing Bun lockfile, and flags common secret-bearing filenames. It does not modify the repository and is not a substitute for dependency-backed tests or a security audit.
+
 ## Verification gate
 
 Phase 1 is not complete until the complete source tree is present, dependency installation succeeds from the committed lockfile, typecheck and production build pass, all automated tests pass, and a local upload-to-analysis smoke test succeeds.
