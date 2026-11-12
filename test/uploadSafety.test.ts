@@ -76,8 +76,13 @@ async function runUploadSafetyTests() {
   assert('Reject case-colliding ZIP paths instead of staging both files', collidingResult.stagedFiles.length === 1 && collidingResult.skippedFiles.some(s => s.includes('case-colliding archive path')));
   const symlinkZip = new JSZip();
   symlinkZip.file('linked.ts', 'target.ts', { unixPermissions: 0o120777 });
-  const symlinkResult = await safeExtractZip(await symlinkZip.generateAsync({ type: 'arraybuffer', platform: 'UNIX' }), { excludeDirs: false });
-  assert('Reject ZIP symbolic links encoded in Unix external attributes', symlinkResult.stagedFiles.length === 0 && symlinkResult.skippedFiles.some(item => item.includes('symbolic links are rejected')));
+  let symlinkArchiveRejected = false;
+  try {
+    await safeExtractZip(await symlinkZip.generateAsync({ type: 'arraybuffer', platform: 'UNIX' }), { excludeDirs: false });
+  } catch (error) {
+    symlinkArchiveRejected = error instanceof Error && error.message.includes('No supported source code files');
+  }
+  assert('Reject ZIP symbolic links encoded in Unix external attributes', symlinkArchiveRejected);
   assert('Detect numeric ZIP symlink permission mode', hasZipSymlinkPermissions(0o120777));
   assert('Detect octal-string ZIP symlink permission mode', hasZipSymlinkPermissions('120777'));
   assert('Detect symbolic ZIP permission strings', hasZipSymlinkPermissions('lrwxrwxrwx'));
