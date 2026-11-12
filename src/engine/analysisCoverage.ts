@@ -21,6 +21,7 @@ export interface AiCoverageNoticeInput {
   failed: number;
   truncated: number;
   maxCharactersPerFile: number;
+  skippedByBudget?: number;
   offlineMode: boolean;
   cloudConsentRequired: boolean;
   cloudConsentGranted: boolean;
@@ -30,7 +31,8 @@ export interface AiCoverageNoticeInput {
 export function buildAiCoverageNotice(input: AiCoverageNoticeInput): string {
   const {
     attempted, completed, failed, truncated, maxCharactersPerFile,
-    offlineMode, cloudConsentRequired, cloudConsentGranted
+    offlineMode, cloudConsentRequired, cloudConsentGranted,
+    skippedByBudget = 0
   } = input;
 
   if (completed > 0) {
@@ -38,11 +40,13 @@ export function buildAiCoverageNotice(input: AiCoverageNoticeInput): string {
       ? `; ${truncated} file(s) were truncated for AI review while local static checks covered the full accepted files`
       : '';
     const failures = failed > 0 ? ` AI review also failed for ${failed} file(s); local checks were retained.` : '';
-    return `AI review completed for ${completed} of ${attempted} attempted files. At most the first ${maxCharactersPerFile.toLocaleString()} characters per file were sent to AI${partial}. AI findings remain hypotheses until independently reviewed.${failures}`;
+    const budget = skippedByBudget > 0 ? ` ${skippedByBudget} additional eligible file(s) received static-only review because the per-project AI request cap was reached.` : '';
+    return `AI review completed for ${completed} of ${attempted} attempted files. At most the first ${maxCharactersPerFile.toLocaleString()} characters per file were sent to AI${partial}. AI findings remain hypotheses until independently reviewed.${failures}${budget}`;
   }
   if (attempted > 0) {
     return `AI review did not complete for the attempted files${failed > 0 ? ` (${failed} failure(s))` : ''}. Local static checks completed; no AI coverage is claimed.`;
   }
+  if (skippedByBudget > 0) return `${skippedByBudget} eligible file(s) received static-only review because the per-project AI request cap was reached.`;
   if (offlineMode) return 'Offline mode is active. Only local static checks ran.';
   if (cloudConsentRequired && !cloudConsentGranted) {
     return 'Cloud AI was not used because explicit cloud consent is not enabled. Local static checks ran.';
