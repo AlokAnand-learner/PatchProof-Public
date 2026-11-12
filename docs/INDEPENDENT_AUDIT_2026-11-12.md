@@ -142,3 +142,12 @@ The application is still **not release-ready**. Passing CI is meaningful regress
 - A separate deployment threat model before any non-loopback/public deployment.
 
 CI success does not establish that PatchProof is vulnerability-free or release-ready.
+
+
+### Follow-up engineering — persisted history integrity
+
+- Browser history loading now validates required record fields and the nested scan-result shape before returning records to the UI. Malformed entries are ignored rather than passed through as typed history records.
+- Loaded history is capped at 40 entries, matching the save-time retention cap. The validated representation is persisted when possible, including when privacy mode is explicitly disabled.
+- Enabling privacy mode now filters malformed records before redacting retained history.
+- Regression tests cover malformed records, oversized history lists, storage write failures, and failed single/bulk deletion.
+- Both CI jobs passed at code commit `f90089aa5c162659ca518087266fdf9535f56ef7` in [run 43287475452](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43287475452). The following branch change updates architecture documentation only.
