@@ -49,6 +49,8 @@ Phase 1 is complete only when all items below are implemented and verified.
 - [x] History persistence failures are surfaced separately from successful code analysis.
 - [x] Browser history validates nested scan metadata, metrics, findings, line ranges, and project-file records before rendering; malformed records are excluded.
 - [x] Exported reports and the results screen disclose AI coverage and heuristic score limitations.
+- [x] Settings privacy and cloud-consent controls expose accessible switch semantics; cloud consent stays disabled until the local server reports operational status, and privacy state synchronizes across tabs.
+- [x] Benchmark failures are visible, false-positive target status reflects the actual result, and the suite description does not hard-code a stale fixture count.
 
 ## Phase 1 completion rule
 Do not mark Phase 1 as 100% while any unchecked verification item remains. Source-level implementation is not equivalent to a successful build or runtime test.
