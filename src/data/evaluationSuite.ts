@@ -258,7 +258,7 @@ export function runEvaluationSuite(testCases: EvaluationTestCase[] = EVALUATION_
     const topClassification = expectedFinding?.verificationStatus || 'FALSE_POSITIVE';
     const classificationMatches = topClassification === tc.expectedClassification;
     const cweMatches = !tc.expectedCwe || !!expectedFinding;
-    const sourceLineCount = tc.code.split('\\n').length;
+    const sourceLineCount = tc.code.split('\n').length;
     const lineRangesValid = findings.every(f =>
       Number.isInteger(f.startLine) && Number.isInteger(f.endLine) &&
       f.startLine >= 1 && f.endLine >= f.startLine && f.endLine <= sourceLineCount
