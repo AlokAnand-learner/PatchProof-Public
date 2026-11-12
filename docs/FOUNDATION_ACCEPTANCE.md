@@ -15,10 +15,10 @@ Phase 1 is complete only when all items below are implemented and verified.
 - [x] Host and port are validated before listening; only loopback hosts are accepted.
 - [x] Proxy trust is disabled and Express identifies itself as little as practical.
 - [x] Production Content Security Policy excludes `unsafe-eval`; development-only allowances are gated by runtime mode.
-- [ ] Dependencies installed from the declared manifest.
-- [ ] Full TypeScript typecheck passes.
-- [ ] Production build passes.
-- [ ] Full test suite passes.
+- [x] Dependencies installed from the declared manifest with the committed Bun lockfile.
+- [x] Full TypeScript typecheck passes in GitHub Actions.
+- [x] Production build passes in GitHub Actions.
+- [x] Full test suite passes in GitHub Actions, including server-backed and JSZip-backed tests.
 
 ## Source ingestion
 - [x] ZIP and folder uploads preserve relative paths and reject traversal, absolute paths, ambiguous separators, control characters, and cross-platform path aliases.
@@ -26,12 +26,14 @@ Phase 1 is complete only when all items below are implemented and verified.
 - [x] Per-file, archive-size, ZIP-entry-count, project-size, and file-count limits exist.
 - [x] Server independently validates multi-file project paths and content.
 - [x] Single-file labels are reduced to safe supported filenames; client language labels are allowlisted.
-- [ ] Dependency-backed ZIP/folder upload suite passes in the complete project environment.
+- [x] Dependency-backed ZIP/folder upload suite passes in the complete project environment.
 - [ ] End-to-end upload-to-analysis smoke test passes in a running local application.
 - [x] AI source-boundary helper keeps uploaded source as JSON data separate from a fixed defensive system instruction, applies file/path/size limits, and flags common prompt-injection indicators without mutating the source.
-- [ ] Every provider adapter uses that boundary and has no tool, shell, arbitrary filesystem, or arbitrary network capability while reviewing untrusted source.
-- [ ] Provider integration tests confirm prompt-injection-like source comments remain data and cannot trigger actions or disclose secrets.
-- [ ] Secret scanning/redaction is enforced before any cloud provider receives uploaded source.
+- [x] Ollama, Gemini, OpenAI-compatible, and Anthropic request branches use the source boundary; no tool declarations are sent and uploaded source is not executed by PatchProof.
+- [ ] Provider-specific request contract tests cover each provider branch, including hosted Gemini and Anthropic.
+- [x] Local Ollama, local OpenAI-compatible, and mocked remote custom provider integration tests confirm prompt-injection-like source remains separate from system instructions and cannot add tool declarations.
+- [ ] Hosted Gemini and Anthropic request contracts have not yet been exercised with provider-specific mocks or live credentials.
+- [x] High-confidence credential patterns are redacted before any remote provider receives source; this is defense-in-depth, not a complete secret scanner.
 
 ## Phase 1 completion rule
 Do not mark Phase 1 as 100% while any unchecked verification item remains. Source-level implementation is not equivalent to a successful build or runtime test.
