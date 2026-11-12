@@ -9,7 +9,7 @@ assert.doesNotMatch(productionPolicy, /script-src[^;]*unsafe-eval/);
 assert.doesNotMatch(productionPolicy, /script-src[^;]*unsafe-inline/);
 assert.match(developmentPolicy, /script-src 'self' 'unsafe-inline' 'unsafe-eval';/);
 assert.match(productionPolicy, /object-src 'none';/);
-assert.match(productionPolicy, /frame-ancestors 'self';/);
+assert.match(productionPolicy, /frame-ancestors 'none';/);
 assert.match(productionPolicy, /base-uri 'self';/);
 assert.match(productionPolicy, /connect-src 'self';/);
 assert.doesNotMatch(productionPolicy, /ws:\/\//, 'production CSP must not permit browser connections to arbitrary loopback ports');
