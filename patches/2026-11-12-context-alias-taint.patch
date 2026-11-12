@@ -1,0 +1,46 @@
+--- a/src/engine/contextAnalyzer.ts
++++ b/src/engine/contextAnalyzer.ts
+@@ -176,7 +176,14 @@
+     if (!assignment) continue;
+     const variable = assignment[1];
+     const expression = assignment[2];
++    // Preserve simple, explicit alias assignments (for example:
++    // const input = req.query.command; const command = input; os.popen(command)).
++    // This is intentionally limited to a single identifier so arbitrary
++    // expressions, properties, and function calls are not treated as proven taint.
++    const alias = /^\s*([A-Za-z_$][\w$]*)\s*$/.exec(expression);
++    const aliasSourceLine = alias ? assignments.get(alias[1]) : undefined;
+     if (sourceExpression.test(expression)) assignments.set(variable, line.lineNum);
++    else if (aliasSourceLine !== undefined) assignments.set(variable, line.lineNum);
+     else assignments.delete(variable);
+   }
+
+--- a/test/contextAnalyzerContext.test.ts
++++ b/test/contextAnalyzerContext.test.ts
+@@ -41,4 +41,25 @@
+ assert.equal(mixedResult.findings.find(finding => finding.cwe.startsWith('CWE-78'))?.verificationType, 'STATIC_RULE_MATCH');
+ assert.equal(mixedResult.findings.find(finding => finding.cwe.startsWith('CWE-78'))?.patchVerificationStatus, 'UNVERIFIED_REVIEW_REQUIRED');
+ 
+-console.log('Context analyzer context: 26 assertions passed.');
++
++// Simple identifier aliases must retain the source relationship; otherwise a
++// common two-step assignment silently downgrades a real tainted sink to review.
++const aliasedCommand = `const input = req.query.command;
++const command = input;
++os.popen(command)`;
++const aliasedResult = analyzeSourceCodeContextAware(aliasedCommand, 'src/network_tool.py');
++const aliasedFinding = aliasedResult.findings.find(finding => finding.cwe.startsWith('CWE-78'));
++assert.ok(aliasedFinding, 'command sink should be detected after a simple alias assignment');
++assert.equal(aliasedFinding?.verificationStatus, 'LIKELY', 'a direct request source preserved through a simple alias should be marked likely, not confirmed');
++assert.equal(aliasedFinding?.confidence, 'HIGH');
++
++// Reassignment to a non-source value must break the simple alias chain.
++const reassignedCommand = `const input = req.query.command;
++let command = input;
++command = 'ping localhost';
++os.popen(command)`;
++const reassignedResult = analyzeSourceCodeContextAware(reassignedCommand, 'src/network_tool.py');
++const reassignedFinding = reassignedResult.findings.find(finding => finding.cwe.startsWith('CWE-78'));
++assert.equal(reassignedFinding?.verificationStatus, 'NEEDS_REVIEW', 'reassignment must invalidate the earlier taint alias');
++
++console.log('Context analyzer context: 32 assertions passed.');
