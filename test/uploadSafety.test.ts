@@ -180,6 +180,14 @@ async function runUploadSafetyTests() {
     text: async () => content
   }) as unknown as File;
 
+  let oversizedSelectionRejected = false;
+  try {
+    await processFiles(new Array(5001) as unknown as File[]);
+  } catch (err: any) {
+    oversizedSelectionRejected = err.message.includes('too many files');
+  }
+  assert('Reject oversized folder selections before copying or reading file entries', oversizedSelectionRejected);
+
   try {
     const mixedUpload = await processFiles([
       makeMockFile('secret.ts', '../../outside/secret.ts', 'const secret = 1;'),
