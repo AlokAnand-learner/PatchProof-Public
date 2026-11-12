@@ -115,3 +115,12 @@ assert.equal(
   'reassigning the original variable must not erase taint from an already-copied alias'
 );
 console.log('Function-scope isolation and alias value semantics: 2 additional assertions passed.');
+
+const paddedSqlLine = `${' '.repeat(5000)}db.query("SELECT * FROM users WHERE name = " + user);`;
+const paddedSqlResult = analyzeSourceCodeContextAware(paddedSqlLine, 'src/paddedQuery.ts');
+assert.ok(
+  paddedSqlResult.findings.some(f => f.cwe.startsWith('CWE-89')),
+  'SQL sinks after a long same-line prefix must not be hidden beyond the bounded inspection window'
+);
+console.log('Long-line window coverage: 1 additional assertion passed.');
+
