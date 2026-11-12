@@ -148,3 +148,10 @@ A phase is complete only when its implementation is present in the repository an
 ## Current archive reconciliation correction
 
 Older roadmap entries refer to the historical 57-match / 25-conflict comparison. The later CI read-only comparison checked all 82 reviewed archive paths and reported **36 exact matches, 46 preserved conflicts, and 0 missing paths**. Treat 57/25 only as the initial baseline. No differing working-tree file was overwritten; see `docs/SOURCE_CONFLICT_RECONCILIATION.md` for the reconciliation policy. This path comparison is not semantic equivalence verification.
+
+
+## Five-batch independent work completed — 12 November 2026
+
+The latest code-validation commit passed both CI jobs in [run 43301370687](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43301370687): repository preflight, TypeScript type-check, production build, local server startup, and the complete configured regression suite. The independent work added API route authentication/concurrency contract coverage, expanded fail-closed pinned-DNS regression cases, and a 12px minimum code-text CSS guard. The focused security command includes the API route boundary test. The archive comparison is now recorded as 36 exact matches, 46 preserved conflicts, and 0 missing paths (82 paths checked); earlier 57/25 counts are historical.
+
+This does not close manual acceptance gates or authorize release. Real PC/Android browser testing, controlled DNS/TLS integration, semantic reconciliation of the 46 differing archive paths, larger independent detection corpora, and release approval remain outstanding. Keep `main` and public deployment unchanged.
