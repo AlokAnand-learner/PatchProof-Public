@@ -8,6 +8,9 @@ assert.match(settings, /role="switch"[\s\S]{0,160}aria-checked=\{privacyModeEnab
   'privacy control must expose switch semantics and its current state');
 assert.ok(settings.includes('useState<boolean>(() => isPrivacyModeEnabled())'), 'privacy switch state must be initialized from persisted preference');
 assert.ok(settings.includes('setPrivacyModeEnabled(nextState)'), 'privacy switch must update React state after a successful preference change');
+assert.ok(settings.includes("window.addEventListener('storage', handleStorage)"), 'privacy preference must synchronize across browser tabs');
+assert.ok(settings.includes("event.key === null || event.key === 'patchproof_privacy_no_source'"), 'privacy switch must refresh when its persisted preference changes in another tab');
+
 assert.match(settings, /aria-label="Enable privacy mode for saved source code"/,
   'privacy switch must have an accessible name');
 assert.match(settings, /role="switch"[\s\S]{0,220}aria-checked=\{Boolean\(serverStatus\?\.cloudConsentGranted\)\}/,
@@ -26,4 +29,4 @@ assert.ok(settings.includes('severity, status, file, and text filters are availa
 assert.doesNotMatch(settings, /Runs 13 built-in synthetic fixtures/,
   'benchmark description must not hard-code an outdated fixture count');
 
-console.log('Settings accessibility and feedback contract: 12 assertions passed');
+console.log('Settings accessibility and feedback contract: 14 assertions passed');
