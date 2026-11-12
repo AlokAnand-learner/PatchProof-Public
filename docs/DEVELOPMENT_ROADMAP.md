@@ -93,7 +93,7 @@ Still required:
 
 Completed:
 - Loopback-only listener configuration, Host and Origin validation, disabled proxy trust, rate limiting, pre-body authentication, and bounded JSON parsing are present.
-- SSRF validation blocks private, loopback, link-local, metadata, special-purpose IPv4, and restricted IPv6 destinations; trusted local providers are restricted to loopback and allowed ports.
+- SSRF validation blocks private, loopback, link-local, metadata, special-purpose IPv4, and restricted IPv6 destinations; special-purpose IPv6 coverage now explicitly rejects deprecated site-local, documentation, Teredo, 6to4, and NAT64 translation prefixes. Trusted local providers are restricted to loopback and allowed ports.
 - Remote provider transmission requires explicit server-side consent; local Ollama/custom loopback use does not require cloud consent. Provider connection tests enforce the same consent and offline-mode gates. Connection tests now enforce the same consent and offline-mode gates.
 - Privacy mode is enabled by default and removes full source and full-file patches from browser history.
 - History clear now reports success or failure rather than silently claiming success. Production CSP no longer permits `unsafe-eval`. Production CSP no longer permits `unsafe-eval`.
@@ -122,7 +122,7 @@ Still required:
 
 ## Verification performed in this work session
 
-- Latest focused GitHub Actions run passed 40 Python repository/archive tests, 10 same-origin API tests, 13 untrusted-source boundary checks, and 14 AI-finding validation checks (including duplicate suppression).
+- Latest focused GitHub Actions run passed 40 Python repository/archive tests, 10 same-origin API tests, 13 untrusted-source boundary checks, 14 AI-finding validation checks (including duplicate suppression), and 8 special-purpose IPv6 SSRF checks.
 - Earlier foundation audit: 21 of the 23 scripted test files were executed successfully in focused mode.
 - 311 focused assertions/cases passed across the executed test files.
 - The two not completed were the JSZip-backed upload suite (dependency unavailable) and the server-backed authentication boundary suite (server/dependencies not running).
