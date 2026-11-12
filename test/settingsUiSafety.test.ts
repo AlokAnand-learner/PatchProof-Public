@@ -15,6 +15,8 @@ assert.match(settings, /aria-label="Enable privacy mode for saved source code"/,
   'privacy switch must have an accessible name');
 assert.ok(settings.includes('aria-checked={Boolean(serverStatus?.cloudConsentGranted)}'),
   'cloud consent control must expose switch semantics and server-backed state');
+assert.ok(settings.includes("if (!res.ok) throw new Error('Local status request failed.')"), 'non-success status responses must not enable cloud consent controls');
+assert.ok(settings.includes("if (data?.status !== 'operational') throw new Error('Local server is not operational.')"), 'only an operational local server may enable consent controls');
 assert.match(settings, /disabled=\{!serverStatus \|\| serverStatus\.status === 'offline'\}/,
   'cloud consent must not be toggled before server status is known');
 assert.match(settings, /aria-label="Allow source code transmission to the selected cloud AI provider"/,
@@ -29,4 +31,4 @@ assert.ok(settings.includes('severity, status, file, and text filters are availa
 assert.doesNotMatch(settings, /Runs 13 built-in synthetic fixtures/,
   'benchmark description must not hard-code an outdated fixture count');
 
-console.log('Settings accessibility and feedback contract: 14 assertions passed');
+console.log('Settings accessibility and feedback contract: 16 assertions passed');
