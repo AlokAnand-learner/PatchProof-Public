@@ -235,6 +235,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
         <div className="p-3.5 rounded-xl bg-white dark:bg-[#1B2638] border border-[#DCE3ED] dark:border-[#35445A] flex items-center justify-between col-span-2 sm:col-span-1 shadow-sm">
           <div>
             <span className="text-[11px] text-[#526078] dark:text-[#C2CDDC] block font-medium">Heuristic Risk Indicator</span>
+            <span className="text-[10px] text-[#68758A] dark:text-[#9BAAC0] block">Weighted static signals, not a security guarantee</span>
             <span className="text-2xl font-bold text-[#17243B] dark:text-[#F1F5FC] mt-0.5 block font-mono tabular-nums">{scan.metrics.score}/100</span>
           </div>
           <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm ${getGradeBadge(scan.metrics.grade)}`}>
@@ -396,9 +397,11 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
                               ? 'bg-amber-500/10 text-amber-800 dark:text-amber-300 border-amber-500/30'
                               : fixStatus === 'NEEDS_REVIEW'
                               ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30'
+                               : fixStatus === 'NOT_APPLICABLE'
+                              ? 'bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/30'
                               : 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30'
                           }`}>
-                            Fix: {fixStatus}
+                            Fix: {fixStatus === 'NOT_APPLICABLE' ? 'Not applicable' : fixStatus}
                           </span>
                         )}
 
