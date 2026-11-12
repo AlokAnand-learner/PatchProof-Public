@@ -1,0 +1,43 @@
+--- a/src/utils/ssrfValidator.ts
++++ b/src/utils/ssrfValidator.ts
+@@ -34,6 +34,22 @@ export function isRestrictedOrPrivateIp(ip: string): boolean {
+     // 192.168.0.0/16 (Private-Use)
+     if (p0 === 192 && p1 === 168) return true;
+ 
++    // 100.64.0.0/10 (Shared Address Space / carrier-grade NAT).
++    // This is not globally reachable and should not be a remote provider target.
++    if (p0 === 100 && p1 >= 64 && p1 <= 127) return true;
++
++    // 192.0.0.0/24 (IETF Protocol Assignments). Conservatively block the
++    // entire special-purpose block rather than maintain per-address exceptions.
++    if (p0 === 192 && p1 === 0 && p2 === 0) return true;
++
++    // 192.88.99.0/24 (deprecated 6to4 relay anycast).
++    if (p0 === 192 && p1 === 88 && p2 === 99) return true;
++
++    // 198.18.0.0/15 (benchmarking).
++    if (p0 === 198 && (p1 === 18 || p1 === 19)) return true;
++
+     // 192.0.2.0/24 (TEST-NET-1)
+     if (p0 === 192 && p1 === 0 && p2 === 2) return true;
+ 
+--- a/test/ssrf.test.ts
++++ b/test/ssrf.test.ts
+@@ -35,6 +35,18 @@ const private3 = validateEndpointUrl('http://172.16.0.5:8000');
+ assert('Block 172.16.0.0/12 private IP', !private3.isValid);
+ 
++// Special-purpose IPv4 blocks must not be accepted as public provider hosts.
++const sharedAddress = validateEndpointUrl('http://100.100.10.20/api');
++assert('Block 100.64.0.0/10 shared carrier-grade NAT address space', !sharedAddress.isValid && sharedAddress.isLocal);
++
++const protocolAssignment = validateEndpointUrl('http://192.0.0.8/api');
++assert('Block 192.0.0.0/24 IETF protocol-assignment space', !protocolAssignment.isValid && protocolAssignment.isLocal);
++
++const sixToFourRelay = validateEndpointUrl('http://192.88.99.1/api');
++assert('Block deprecated 192.88.99.0/24 6to4 relay anycast', !sixToFourRelay.isValid && sixToFourRelay.isLocal);
++
++const benchmarkRange = validateEndpointUrl('http://198.19.0.1/api');
++assert('Block 198.18.0.0/15 benchmarking range', !benchmarkRange.isValid && benchmarkRange.isLocal);
++
+ const loopbackRemote = validateEndpointUrl('http://127.0.0.1:11434', { allowLocalTrusted: false });
+ assert('Block 127.0.0.1 when allowLocalTrusted is false', !loopbackRemote.isValid);
