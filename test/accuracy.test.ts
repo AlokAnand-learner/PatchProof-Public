@@ -10,8 +10,17 @@ console.log('===========================================================');
 
 const results = runEvaluationSuite();
 
+if (results.excludedCases !== 4 || results.evaluatedCases !== 9) {
+  throw new Error(`Expected 9 scored cases and 4 review-only cases; got ${results.evaluatedCases} scored and ${results.excludedCases} excluded.`);
+}
+if (results.falsePositives !== 0 || results.falseNegatives !== 0) {
+  throw new Error(`Unexpected binary classification errors: ${results.falsePositives} FP, ${results.falseNegatives} FN.`);
+}
+
 console.log(`\nEvaluation Timestamp: ${results.timestamp}`);
 console.log(`Total Test Cases   : ${results.totalTestCases}`);
+console.log(`Scored Cases       : ${results.evaluatedCases}`);
+console.log(`Review-only Cases  : ${results.excludedCases} (excluded from binary metrics)`);
 console.log(`True Positives (TP): ${results.truePositives}`);
 console.log(`True Negatives (TN): ${results.trueNegatives}`);
 console.log(`False Positives(FP): ${results.falsePositives}`);
