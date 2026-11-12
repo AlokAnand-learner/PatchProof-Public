@@ -286,12 +286,14 @@ export function runEvaluationSuite(testCases: EvaluationTestCase[] = EVALUATION_
   });
 
   const evaluatedCases = testCases.length - excludedCases;
+  // Undefined denominators are reported conservatively as 0 rather than
+  // presenting an empty positive class as perfect precision or recall.
   const precision = (truePositives + falsePositives) > 0
     ? Number(((truePositives / (truePositives + falsePositives)) * 100).toFixed(1))
-    : 100;
+    : 0;
   const recall = (truePositives + falseNegatives) > 0
     ? Number(((truePositives / (truePositives + falseNegatives)) * 100).toFixed(1))
-    : 100;
+    : 0;
   const f1Score = (precision + recall) > 0
     ? Number(((2 * (precision * recall)) / (precision + recall)).toFixed(1))
     : 0;
