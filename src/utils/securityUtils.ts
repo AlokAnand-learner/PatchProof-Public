@@ -421,13 +421,13 @@ export function generateHtmlReport(scan: ScanResult): string {
   const linesAnalyzed = safeReportNumber(metrics.linesAnalyzed);
 
   const findingsHtml = findings.length === 0
-    ? '<div class="empty-state">No security vulnerabilities were identified in this review.</div>'
+    ? '<div class="empty-state">No matching vulnerability patterns were identified in the analyzed files. This does not prove the code is vulnerability-free; static analysis has coverage and context limitations.</div>'
     : findings.map((f, i) => {
       const sevClass = safeSeverityClass(f.severity);
       const hasFixValidation = Boolean(f.fixValidation && typeof f.fixValidation === 'object');
       const valStatus = hasFixValidation
         ? safeValidationStatus(f.fixValidation?.status || 'NEEDS_REVIEW')
-        : 'NOT RUN';
+        : f.verificationStatus === 'FALSE_POSITIVE' ? 'NOT APPLICABLE' : 'NOT RUN';
       const valScore = hasFixValidation && typeof f.fixValidation?.overallScore === 'number' && Number.isFinite(f.fixValidation.overallScore)
         ? safeReportNumber(f.fixValidation.overallScore, 0, 0, 100)
         : null;
@@ -470,7 +470,7 @@ export function generateHtmlReport(scan: ScanResult): string {
             <div class="code-block patch">
               <div class="code-title" style="display:flex; justify-content:space-between; align-items:center;">
                 <span>Recommended Patch</span>
-                <span style="font-size:10px; font-weight:bold; padding:2px 8px; border-radius:12px; background:${valStatus === 'VALIDATED' ? 'rgba(16,185,129,0.2)' : valStatus === 'PARTIALLY_VALIDATED' ? 'rgba(245,158,11,0.2)' : 'rgba(239,68,68,0.2)'}; color:${valStatus === 'VALIDATED' ? '#34d399' : valStatus === 'PARTIALLY_VALIDATED' ? '#fbbf24' : '#f87171'};">
+                <span style="font-size:10px; font-weight:bold; padding:2px 8px; border-radius:12px; background:${valStatus === 'VALIDATED' ? 'rgba(16,185,129,0.2)' : valStatus === 'PARTIALLY_VALIDATED' ? 'rgba(245,158,11,0.2)' : valStatus === 'NOT APPLICABLE' ? 'rgba(100,116,139,0.2)' : 'rgba(239,68,68,0.2)'}; color:${valStatus === 'VALIDATED' ? '#34d399' : valStatus === 'PARTIALLY_VALIDATED' ? '#fbbf24' : valStatus === 'NOT APPLICABLE' ? '#cbd5e1' : '#f87171'};">
                   ${escapeHtml(valStatus)}${valScore === null ? ' (not executed)' : ` (Confidence: ${valScore}%)`}
                 </span>
               </div>
@@ -631,9 +631,9 @@ export function generateHtmlReport(scan: ScanResult): string {
         </div>
       </div>
       <div class="score-badge">
-        <div class="stat-label">Security Score</div>
+        <div class="stat-label">Heuristic Risk Indicator</div>
         <div class="score-val">${score} <span style="font-size: 1rem; color: #fff;">/ 100</span></div>
-        <div class="stat-label" style="margin-top: 0.2rem;">Grade: ${escapeHtml(metrics.grade)}</div>
+        <div class="stat-label" style="margin-top: 0.2rem;">Band: ${escapeHtml(metrics.grade)}</div>\n        <div class="stat-label" style="margin-top: 0.35rem; max-width: 180px;">Weighted static signals; not a security guarantee</div>
       </div>
     </div>
 
