@@ -15,7 +15,7 @@ import { DeveloperToolsView } from './components/DeveloperToolsView';
 import { ScanProgress } from './components/ScanProgress';
 import { SAMPLE_CODES } from './data/sampleCodes';
 import { ScanResult, SampleCode, HistoryItem, StagedFile, SystemStatus } from './types/security';
-import { saveScanToHistory, getScanHistory } from './utils/securityUtils';
+import { saveScanToHistoryWithStatus, getScanHistory } from './utils/securityUtils';
 import { authenticatedFetch, getSessionToken } from './utils/apiClient';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { PatchProofLogo } from './components/PatchProofLogo';
@@ -132,10 +132,12 @@ export default function App() {
 
       const data: ScanResult = await response.json();
       setScanResult(data);
-      const updatedHistory = saveScanToHistory(data);
-      setHistory(updatedHistory);
+      const historySave = saveScanToHistoryWithStatus(data);
+      setHistory(historySave.history);
       setActiveTab('results');
-      showToast(`Review complete: ${data.metrics.totalFindings} potential ${data.metrics.totalFindings === 1 ? 'issue' : 'issues'} identified.`);
+      showToast(historySave.saved
+        ? `Review complete: ${data.metrics.totalFindings} potential ${data.metrics.totalFindings === 1 ? 'issue' : 'issues'} identified.`
+        : 'Review completed, but history could not be saved. Export the report if you need a retained copy.');
     } catch (err: any) {
       console.error('Review error:', err);
       setErrorBanner(err.message || 'Unable to complete code review. Please try again.');
@@ -173,10 +175,12 @@ export default function App() {
 
       const data: ScanResult = await response.json();
       setScanResult(data);
-      const updatedHistory = saveScanToHistory(data);
-      setHistory(updatedHistory);
+      const historySave = saveScanToHistoryWithStatus(data);
+      setHistory(historySave.history);
       setActiveTab('results');
-      showToast(`Project review complete: ${data.metrics.totalFindings} issues identified across ${stagedFiles.length} files.`);
+      showToast(historySave.saved
+        ? `Project review complete: ${data.metrics.totalFindings} potential issues identified across ${stagedFiles.length} files.`
+        : 'Project review completed, but history could not be saved. Export the report if you need a retained copy.');
     } catch (err: any) {
       console.error('Project review error:', err);
       setErrorBanner(err.message || 'Unable to complete project review. Please try again.');
