@@ -4,7 +4,7 @@ The source archive is the reviewed 79-file PatchProof source snapshot. It is not
 
 ## One-time upload
 
-1. Download the exact archive named `PatchProof-Phase1-Foundation-Hardening-2026-11-12-IPv6-SSRF-fix.zip`.
+1. Download the exact archive named `PatchProof-Phase1-Foundation-Hardening-2026-11-12-Continuous-Phases.zip`.
 2. In GitHub, open branch `work/ssrf-special-purpose-ipv4-2026-11-12` in this repository.
 3. Upload the archive at the exact path `import/PatchProof-source.zip` and commit it directly to that branch.
 
@@ -18,8 +18,8 @@ The importer prints any existing paths whose contents differ from the archive. T
 
 ## Reviewed archive identity
 
-- Files: 79
-- Uncompressed content: 858,868 bytes
-- SHA-256: `1c359f76a577537f7ed832503860a17e9c1a129dd3d43856441e2d3ac634e480`
+- Files: 80
+- Uncompressed content: 865,386 bytes
+- SHA-256: `a6185755a2366f868ff10d101a74a13dc880ec00774f42d0fb2506142adc9740`
 
 The ZIP includes synthetic token-shaped strings used by redaction tests and an intentionally vulnerable sample-code fixture. The importer has narrowly scoped allowances for the two exact synthetic token test values; it does not treat them as credentials.
