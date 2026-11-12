@@ -27,7 +27,7 @@ Completed:
 - Imported or recreated project configuration, Node version pin, Vite/TypeScript setup, example-only environment template, metadata, entrypoint, and visual assets.
 - Added or imported local Host/Origin validation, bounded provider response handling, model-name validation, request-error sanitization, SSRF endpoint validation, and AI finding trust-boundary checks, and production CSP without `unsafe-eval`.
 - Added a guarded source archive importer with strict path, symlink, size, compression-ratio, UTF-8, and high-confidence secret-pattern checks, including AWS, GitHub, Google, Stripe, Slack, GitLab, npm, and private-key patterns.
-- Added a provider-neutral untrusted-source boundary helper: it separates a fixed defensive system instruction from JSON-encoded source data, enforces file/path/size limits, and flags common prompt-injection-like text without deleting source content. This helper is not yet wired into provider adapters.
+- Added a provider-neutral untrusted-source boundary helper and wired it into Ollama, Gemini/Gemma, OpenAI-compatible, and Anthropic request branches. It separates a fixed defensive system instruction from JSON-encoded source data, enforces file/path/size limits, and flags common prompt-injection-like text without deleting source content.
 - Expanded ZIP collision checks to include implicit parent directories and cross-platform case/Unicode aliases.
 - Pinned the importer to the reviewed archive SHA-256: `f6a0cbe3ab7e1fc0c1c8ab33ad3218ad903ac65a1fc5267342b6cd642c9770b5`.
 - Added a GitHub Actions workflow that imports missing files and removes the temporary archive after a successful import.
@@ -71,7 +71,7 @@ Limitations:
 
 ## Phase 4 — Upload and archive safety
 
-**Progress: 60% (engineering estimate; integration gates remain open).**
+**Progress: 82% engineering estimate; integration gates remain open.**
 
 Completed:
 - ZIP and folder ingestion are in-memory; uploaded source is not written to disk or executed.
@@ -93,7 +93,7 @@ Still required:
 Completed:
 - Loopback-only listener configuration, Host and Origin validation, disabled proxy trust, rate limiting, pre-body authentication, and bounded JSON parsing are present.
 - SSRF validation blocks private, loopback, link-local, metadata, special-purpose IPv4, and restricted IPv6 destinations; special-purpose IPv6 coverage now explicitly rejects deprecated site-local, documentation, Teredo, 6to4, and NAT64 translation prefixes. Trusted local providers are restricted to loopback and allowed ports.
-- Remote provider transmission requires explicit server-side consent; local Ollama/custom loopback use does not require cloud consent. Provider connection tests enforce the same consent and offline-mode gates. Connection tests now enforce the same consent and offline-mode gates.
+- Remote provider transmission requires explicit server-side consent; local Ollama/custom loopback use does not require cloud consent. Provider connection tests enforce the same consent and offline-mode gates.
 - Privacy mode is enabled by default and removes full source and full-file patches from browser history.
 - History clear now reports success or failure rather than silently claiming success. Production CSP no longer permits `unsafe-eval`. Production CSP no longer permits `unsafe-eval`.
 
