@@ -266,7 +266,7 @@ export function checkSyntax(patch: string, language: string): FixCheckResult {
   return {
     passed: true,
     status: 'PASS',
-    name: 'Syntax & AST Parsing',
+    name: 'Syntax and Structural Checks',
     message: 'Configured static syntax and delimiter checks passed. This is not a full compiler or runtime check.'
   };
 }
