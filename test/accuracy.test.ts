@@ -30,6 +30,14 @@ if (noPositiveMetrics.precision !== 0 || noPositiveMetrics.recall !== 0 ||
 }
 console.log('Empty positive-class metric edge case: 4 assertions passed.');
 
+const emptySuiteMetrics = runEvaluationSuite([]);
+if (emptySuiteMetrics.totalTestCases !== 0 || emptySuiteMetrics.evaluatedCases !== 0 ||
+    emptySuiteMetrics.precision !== 0 || emptySuiteMetrics.recall !== 0 ||
+    emptySuiteMetrics.f1Score !== 0 || emptySuiteMetrics.accuracy !== 0) {
+  throw new Error('An empty evaluation suite must report zero metrics, not artificial perfect accuracy.');
+}
+console.log('Empty evaluation-suite metric edge case: 6 assertions passed.');
+
 if (results.excludedCases !== 4 || results.evaluatedCases !== 9) {
   throw new Error(`Expected 9 scored cases and 4 review-only cases; got ${results.evaluatedCases} scored and ${results.excludedCases} excluded.`);
 }
