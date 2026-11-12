@@ -30,7 +30,7 @@ const hostileLabels = validateAIModelFindings([{
   owaspCategory: 'A05\\u202E:Injection',
 }], source)[0];
 assert.equal(hostileLabels.title, 'Alerttxt.exe', 'bidirectional override controls must not survive in labels');
-assert.equal(hostileLabels.cwe, 'CWE-Other', 'malformed CWE identifiers must fall back to a safe label');
+assert.equal(hostileLabels.cwe, 'CWE-89', 'bidirectional controls are removed before validating CWE identifiers');
 assert.equal(hostileLabels.explanation, 'line one line two', 'control and bidirectional formatting characters must be removed from model prose');
 const normalCwe = validateAIModelFindings([{ ...valid, cwe: 'cwe-89' }], source)[0];
 assert.equal(normalCwe.cwe, 'CWE-89', 'valid CWE identifiers are normalized');
