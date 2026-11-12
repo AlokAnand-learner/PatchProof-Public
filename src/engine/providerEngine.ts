@@ -530,7 +530,7 @@ export async function testProviderConnection(params: {
         throw new Error('Anthropic API key is required to test connection.');
       }
 
-      const { response: res, bodyText } = await fetchResponseText(
+      const { response: res, bodyText } = await fetchPinnedHttpsResponseText(
         'https://api.anthropic.com/v1/messages', {
           method: 'POST',
           headers: {
@@ -725,7 +725,7 @@ export async function generateAnalysisWithActiveProvider(
   // D. ANTHROPIC
   if (activeProvider === 'anthropic') {
     if (!cfg.apiKey) throw new Error('Anthropic API key required.');
-    const { response: res, bodyText } = await fetchResponseText(
+    const { response: res, bodyText } = await fetchPinnedHttpsResponseText(
       'https://api.anthropic.com/v1/messages', {
         method: 'POST',
         headers: {
