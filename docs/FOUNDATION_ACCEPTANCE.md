@@ -45,6 +45,7 @@ Phase 1 is complete only when all items below are implemented and verified.
 - [x] Fix validation labels describe static checks rather than claiming full AST/compiler or runtime verification.
 - [x] Full-file AI rewrites are not applied or exported as validated source; snippet exports are emitted as patch artifacts.
 - [x] History persistence failures are surfaced separately from successful code analysis.
+- [x] Browser history validates nested scan metadata, metrics, findings, line ranges, and project-file records before rendering; malformed records are excluded.
 - [x] Exported reports and the results screen disclose AI coverage and heuristic score limitations.
 
 ## Phase 1 completion rule
