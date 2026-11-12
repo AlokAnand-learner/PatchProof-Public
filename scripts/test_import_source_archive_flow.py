@@ -123,6 +123,59 @@ class SourceArchiveImportFlowTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 import_source_archive.main()
 
+    def test_non_utf8_source_file_is_rejected(self) -> None:
+        self.write_zip([("source/src/app.ts", b"\\xff\\xfe", False)])
+        with self.assertRaises(UnicodeDecodeError):
+            self.run_import()
+        self.assertFalse((self.destination / "src/app.ts").exists())
+
+    def test_per_file_extraction_limit_is_enforced(self) -> None:
+        self.write_zip([("source/src/app.ts", b"1234", False)])
+        with patch.object(import_source_archive, "MAX_FILE_BYTES", 3):
+            with self.assertRaises(SystemExit):
+                self.run_import()
+
+    def test_total_extraction_limit_is_enforced(self) -> None:
+        self.write_zip([
+            ("source/src/a.ts", b"123", False),
+            ("source/src/b.ts", b"456", False),
+        ])
+        with patch.object(import_source_archive, "MAX_FILE_BYTES", 4), patch.object(import_source_archive, "MAX_TOTAL_BYTES", 5):
+            with self.assertRaises(SystemExit):
+                self.run_import()
+
+    def test_archive_entry_count_limit_includes_directories(self) -> None:
+        self.write_zip([
+            ("source/src/", b"", False),
+            ("source/src/a.ts", b"a", False),
+        ])
+        with patch.object(import_source_archive, "MAX_ENTRIES", 1):
+            with self.assertRaises(SystemExit):
+                self.run_import()
+
+    def test_compression_ratio_limit_is_enforced(self) -> None:
+        self.write_zip([("source/src/app.ts", b"A" * 4096, False)])
+        with patch.object(import_source_archive, "MAX_COMPRESSION_RATIO", 1):
+            with self.assertRaises(SystemExit):
+                self.run_import()
+
+    def test_unicode_normalization_collisions_are_rejected(self) -> None:
+        self.write_zip([
+            ("source/src/café.ts", b"one", False),
+            ("source/src/cafe\\u0301.ts", b"two", False),
+        ])
+        with self.assertRaises(SystemExit):
+            self.run_import()
+
+    def test_destination_symlink_is_rejected(self) -> None:
+        outside = self.root / "outside"
+        outside.mkdir()
+        (self.destination / "src").symlink_to(outside, target_is_directory=True)
+        self.write_zip([("source/src/app.ts", b"safe", False)])
+        with self.assertRaises(SystemExit):
+            self.run_import()
+        self.assertFalse((outside / "app.ts").exists())
+
     def test_malformed_zip_is_rejected_without_writing(self) -> None:
         self.archive_path.write_bytes(b"not a zip archive")
         digest = hashlib.sha256(self.archive_path.read_bytes()).hexdigest()
