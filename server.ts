@@ -753,8 +753,6 @@ CRITICAL RULES:
               aiReviewFailedFiles += 1;
               // Keep the deterministic local result and disclose the AI fallback in the response.
             }
-          }
-
           } else if (aiEligibleForFile) {
             aiBudgetSkippedFiles += 1;
           }
