@@ -61,6 +61,23 @@ try {
   assert.equal('tools' in custom.body, false);
   assert.equal(custom.redirect, 'error', 'custom provider fetch must reject redirects');
 
+  // Remote custom endpoints require consent and receive redacted source only.
+  const fakeApiKey = 'example_secret_value_123456';
+  const fakeGitHubToken = 'ghp_' + 'B'.repeat(24);
+  updateProviderConfig('custom', { endpoint: 'https://ai.example.com/v1', selectedModel: 'test-model' });
+  setActiveProvider('custom', 'test-model');
+  setCloudConsent(true);
+  await generateAnalysisWithActiveProvider(trustedTask, [{
+    path: 'src/config.ts',
+    content: 'const apiKey = "' + fakeApiKey + '";\\nconst token = "' + fakeGitHubToken + '";',
+  }]);
+  const remote = requests.at(-1)!;
+  const remoteSource = JSON.parse(remote.body.messages[1].content).sourceFiles[0].content;
+  assert.equal(remoteSource.includes(fakeApiKey), false);
+  assert.equal(remoteSource.includes(fakeGitHubToken), false);
+  assert.match(remoteSource, /\\[REDACTED\\]/);
+  assert.equal(remote.redirect, 'error');
+
   // Legacy free-form prompts are also treated as untrusted data, never as system instructions.
   await generateAnalysisWithActiveProvider(injectedSource);
   const legacy = requests.at(-1)!;
