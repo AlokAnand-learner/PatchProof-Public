@@ -9,6 +9,7 @@ assert.ok(routeStart >= 0 && routeEnd > routeStart, 'fix validation handler must
 const handler = source.slice(routeStart, routeEnd);
 assert.ok(handler.includes("typeof patch !== 'string'"), 'patch must be type-checked');
 assert.ok(handler.includes("typeof value !== 'string'"), 'optional request fields must be type-checked');
+assert.ok(handler.includes("['originalCode', originalCode]"), 'both original source aliases must be type-checked');
 assert.ok(handler.includes("Buffer.byteLength(value, 'utf8') > 2 * 1024 * 1024"), 'individual source fields must have a byte limit');
 assert.ok(handler.includes("> 6 * 1024 * 1024"), 'combined source fields must have an aggregate byte limit');
 assert.ok(handler.includes('metadata exceeds the allowed length'), 'metadata lengths must be bounded');
