@@ -19,7 +19,7 @@ The importer prints any existing paths whose contents differ from the archive. T
 ## Reviewed archive identity
 
 - Files: 82
-- Uncompressed content: 867,926 bytes
-- SHA-256: `2e3d3b2099823ac953528bd43bbd70acb2b194ff2d4e10d78a9b5d7ac33a8a9e`
+- Uncompressed content: 868,355 bytes
+- SHA-256: `f6a0cbe3ab7e1fc0c1c8ab33ad3218ad903ac65a1fc5267342b6cd642c9770b5`
 
 The ZIP includes synthetic token-shaped strings used by redaction tests and an intentionally vulnerable sample-code fixture. The importer has narrowly scoped allowances for the two exact synthetic token test values; it does not treat them as credentials.
