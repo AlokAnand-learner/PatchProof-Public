@@ -10,6 +10,67 @@ export const DEFAULT_LIMITS: UploadLimits = {
   maxArchiveEntries: 5000                  // Bound ZIP metadata/entry iteration, including skipped files
 };
 
+/**
+ * Merge another selection into an existing staged project while enforcing the
+ * same cumulative limits as a single folder/ZIP ingestion. Sizes and line counts
+ * are recomputed from content, never trusted from the staged metadata.
+ */
+export function mergeStagedFileBatches(
+  existing: StagedFile[],
+  incoming: StagedFile[],
+  limits: UploadLimits = DEFAULT_LIMITS
+): { stagedFiles: StagedFile[]; skippedFiles: string[] } {
+  const stagedFiles = [...existing];
+  const skippedFiles: string[] = [];
+  const seenPaths = new Set(stagedFiles.map(file => file.relativePath.normalize('NFC').toLocaleLowerCase('en-US')));
+  let totalBytes = stagedFiles.reduce((total, file) =>
+    total + (typeof file.content === 'string' ? new Blob([file.content]).size : 0), 0);
+  let totalLines = stagedFiles.reduce((total, file) =>
+    total + (typeof file.content === 'string' ? countSourceLinesWithinLimit(file.content, MAX_SOURCE_LINES_PER_FILE) || 0 : 0), 0);
+
+  for (const file of incoming) {
+    const safePath = sanitizeRelativePath(file?.relativePath);
+    if (!safePath || !isSupportedSourceFile(safePath) || typeof file.content !== 'string' || file.content.length === 0) {
+      skippedFiles.push('Selected entry (Invalid path or source content rejected)');
+      continue;
+    }
+    const pathKey = safePath.normalize('NFC').toLocaleLowerCase('en-US');
+    if (seenPaths.has(pathKey)) {
+      skippedFiles.push(`${safePath} (Duplicate or case-colliding path rejected)`);
+      continue;
+    }
+    if (stagedFiles.length >= limits.maxFileCount) {
+      skippedFiles.push(`${safePath} (Combined project exceeds ${limits.maxFileCount} files)`);
+      continue;
+    }
+    const actualBytes = new Blob([file.content]).size;
+    if (actualBytes > limits.maxSingleFileSize) {
+      skippedFiles.push(`${safePath} (Exceeds ${Math.floor(limits.maxSingleFileSize / 1024 / 1024)}MB single file limit)`);
+      continue;
+    }
+    if (actualBytes > limits.maxTotalExtractedSize - totalBytes) {
+      skippedFiles.push(`${safePath} (Combined project exceeds total content size limit)`);
+      continue;
+    }
+    const lineCount = countSourceLinesWithinLimit(file.content, MAX_SOURCE_LINES_PER_FILE);
+    if (lineCount === null) {
+      skippedFiles.push(`${safePath} (Exceeds per-file source line limit of ${MAX_SOURCE_LINES_PER_FILE})`);
+      continue;
+    }
+    if (totalLines + lineCount > MAX_SOURCE_LINES_PER_PROJECT) {
+      skippedFiles.push(`${safePath} (Combined project exceeds source line limit of ${MAX_SOURCE_LINES_PER_PROJECT})`);
+      continue;
+    }
+
+    seenPaths.add(pathKey);
+    totalBytes += actualBytes;
+    totalLines += lineCount;
+    stagedFiles.push({ ...file, relativePath: safePath, size: actualBytes, lines: lineCount });
+  }
+
+  return { stagedFiles, skippedFiles };
+}
+
 export const DEFAULT_EXCLUDED_DIRS = [
   'node_modules',
   '.git',
