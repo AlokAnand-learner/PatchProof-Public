@@ -37,6 +37,7 @@ import { classifyRequestBodyError } from './src/utils/requestError.ts';
 import { isAllowedLocalHostHeader, isAllowedLocalOrigin } from './src/utils/localHostPolicy.ts';
 import { loadRuntimeConfig } from './src/utils/runtimeConfig.ts';
 import { getContentSecurityPolicy } from './src/utils/securityHeaders.ts';
+import { countSourceLinesWithinLimit, MAX_SOURCE_LINES_PER_FILE, MAX_SOURCE_LINES_PER_PROJECT } from './src/utils/sourceLimits.ts';
 
 dotenv.config();
 
@@ -627,9 +628,19 @@ async function startServer() {
             continue;
           }
 
+          const sourceLineCount = countSourceLinesWithinLimit(fileContent, MAX_SOURCE_LINES_PER_FILE);
+          if (sourceLineCount === null) {
+            skippedFiles.push(`${filePath} (Exceeds per-file source line limit of ${MAX_SOURCE_LINES_PER_FILE})`);
+            continue;
+          }
+          if (totalLines + sourceLineCount > MAX_SOURCE_LINES_PER_PROJECT) {
+            skippedFiles.push(`${filePath} (Project source line limit of ${MAX_SOURCE_LINES_PER_PROJECT} reached)`);
+            continue;
+          }
+
           cumulativeSize += fileSize;
           const lines = fileContent.split('\n');
-          totalLines += lines.length;
+          totalLines += sourceLineCount;
 
           // 1. Run in-memory Context-Aware Static Analysis on this file
           const { findings: staticFindings } = analyzeSourceCodeContextAware(fileContent, filePath);
@@ -861,8 +872,11 @@ CRITICAL RULES:
       const safeLanguage = typeof language === 'string' && allowedLanguages.has(language)
         ? language
         : detectedLanguage;
+      const lineCount = countSourceLinesWithinLimit(code, MAX_SOURCE_LINES_PER_FILE);
+      if (lineCount === null) {
+        return res.status(400).json({ error: `Source file exceeds the ${MAX_SOURCE_LINES_PER_FILE}-line analysis limit.` });
+      }
       const lines = code.split('\n');
-      const lineCount = lines.length;
 
       // 1. Run in-memory Context-Aware Analysis
       const { findings: staticFindings, metrics: staticMetrics } = analyzeSourceCodeContextAware(code, safeFileName);
