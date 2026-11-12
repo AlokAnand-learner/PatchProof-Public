@@ -166,3 +166,12 @@ CI success does not establish that PatchProof is vulnerability-free or release-r
 - The heuristic now inspects up to 200 preceding lines from the same file, while retaining its function-boundary resets and keeping displayed evidence snippets small. This remains a bounded lexical heuristic, not AST, control-flow, or interprocedural taint analysis.
 - Added a regression case with intervening ordinary statements and retained cross-function isolation and multiline-comment cases.
 - Both CI jobs passed for the new analyzer and regression-test commits in runs [43289649501](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43289649501) and [43289655700](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43289655700). The latest branch head is the test commit.
+
+### Follow-up engineering — patch application guardrails
+
+- The patch viewer now refuses to apply fixes marked INVALID inside the application handler itself; there is no “Apply Anyway” confirmation path that can bypass the validation state.
+- Snippet application now rejects non-integer, non-positive, reversed, or out-of-file line ranges rather than allowing JavaScript array splicing to append or replace unintended content.
+- Full-file AI output remains preview-only. The apply action also rejects empty suggested patches.
+- Added a source-contract regression test and included it in both the complete test chain and focused security chain.
+- Both CI jobs passed after the patch-application change in [run 43290244089](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43290244089); the final package/test-chain update passed in [run 43290283049](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43290283049).
+- This guardrail does not prove a patch is semantically correct or eliminate stale-content risks; review and a fresh scan remain necessary.
