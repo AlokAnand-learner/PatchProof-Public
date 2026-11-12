@@ -1,0 +1,44 @@
+{
+  "name": "patchproof",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "tsx scripts/dev.ts",
+    "build": "vite build",
+    "start": "tsx scripts/start.ts",
+    "preview": "vite preview",
+    "clean": "node scripts/clean.mjs",
+    "lint": "tsc --noEmit",
+    "test": "tsx test/runtimeConfig.test.ts && tsx test/localHostPolicy.test.ts && tsx test/singleFileName.test.ts && tsx test/accuracy.test.ts && tsx test/contextAnalyzerContext.test.ts && tsx test/sanitizationPrecision.test.ts && tsx test/reportSafety.test.ts && tsx test/ssrf.test.ts && tsx test/fixValidator.test.ts && tsx test/uploadSafety.test.ts && tsx test/prototypePollution.test.ts && tsx test/redos.test.ts && tsx test/layoutResponsiveness.test.ts && tsx test/authBoundary.test.ts && tsx test/historyPrivacy.test.ts && tsx test/cloudConsent.test.ts && tsx test/aiFindingValidation.test.ts && tsx test/requestError.test.ts && tsx test/middlewareOrder.test.ts && tsx test/modelName.test.ts && tsx test/httpResponse.test.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@google/genai": "^3.0.0",
+    "@tailwindcss/vite": "^4.3.3",
+    "@types/jszip": "^3.4.0",
+    "@vitejs/plugin-react": "^6.1.1",
+    "dotenv": "^17.2.3",
+    "express": "^4.21.2",
+    "jszip": "^3.10.2",
+    "lucide-react": "^0.546.0",
+    "motion": "^12.23.24",
+    "react": "^19.0.1",
+    "react-dom": "^19.0.1",
+    "vite": "^8.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.14.0",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "autoprefixer": "^10.4.21",
+    "esbuild": "^0.25.0",
+    "tailwindcss": "^4.3.3",
+    "tsx": "^4.21.0",
+    "typescript": "^7.0.2",
+    "@types/express": "^4.17.21"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  }
+}
