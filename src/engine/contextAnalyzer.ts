@@ -160,12 +160,24 @@ export function analyzeFileContext(filePath: string): AnalysisContext {
 function hasTaintSource(
   contextLines: { lineNum: number; text: string }[],
   sinkLineNum: number,
-  sinkLineText: string
+  sinkLineText: string,
+  fullSourceLines?: string[]
 ): boolean {
   const sourceExpression = /req\.(?:query|body|params|headers|cookies)\b|request\.(?:args|json|form|GET|POST|values|files)\b|\$_(?:GET|POST|REQUEST|COOKIE|SERVER)\b|r\.URL\.Query\s*\(|getParameter\s*\(|getQueryString\s*\(|process\.argv\b|prompt\s*\(|input\s*\(/i;
   if (sourceExpression.test(sinkLineText)) return true;
 
-  const priorLines = contextLines
+  // Use a bounded lookback from the full file rather than the short evidence
+  // snippet. This catches ordinary statements between a source and sink while
+  // keeping the heuristic's work bounded. The evidence shown to users remains
+  // the small surrounding window; this is not interprocedural taint analysis.
+  const sourceContext = fullSourceLines
+    ? fullSourceLines.slice(Math.max(0, sinkLineNum - 1 - 200), sinkLineNum - 1)
+        .map((text, index, selected) => ({
+          lineNum: Math.max(1, sinkLineNum - selected.length) + index,
+          text,
+        }))
+    : contextLines;
+  const priorLines = sourceContext
     .filter(line => line.lineNum < sinkLineNum)
     .sort((a, b) => a.lineNum - b.lineNum);
   // Track direct request-derived assignments and simple identifier aliases in
@@ -642,7 +654,7 @@ export function verifyAndClassifyCandidates(
     }
 
     // 3. Context Verification: Does untrusted taint input reach this dangerous sink?
-    const hasInputTaint = hasTaintSource(c.surroundingLines, c.lineNum, c.lineText);
+    const hasInputTaint = hasTaintSource(c.surroundingLines, c.lineNum, c.lineText, fullCodeLines);
 
     let finalClassification: VerificationStatus = 'NEEDS_REVIEW';
     let finalConfidence: Confidence = 'MEDIUM';
