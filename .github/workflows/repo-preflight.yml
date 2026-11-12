@@ -17,6 +17,10 @@ on:
       - test/apiClientOrigin.test.ts
       - src/engine/untrustedSourceBoundary.ts
       - test/untrustedSourceBoundary.test.ts
+      - src/engine/aiFindingValidation.ts
+      - test/aiFindingValidation.test.ts
+      - src/engine/aiFindingValidation.ts
+      - test/aiFindingValidation.test.ts
       - package.json
       - .github/workflows/repo-preflight.yml
   pull_request:
