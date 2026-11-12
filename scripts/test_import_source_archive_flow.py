@@ -109,6 +109,14 @@ class SourceArchiveImportFlowTests(unittest.TestCase):
         with self.assertRaises(SystemExit):
             self.run_import()
 
+    def test_case_colliding_implicit_directories_are_rejected(self) -> None:
+        self.write_zip([
+            ("source/Foo/a.ts", b"one", False),
+            ("source/foo/b.ts", b"two", False),
+        ])
+        with self.assertRaises(SystemExit):
+            self.run_import()
+
     def test_file_directory_collision_is_rejected(self) -> None:
         self.write_zip([
             ("source/config", b"file\n", False),
