@@ -28,6 +28,10 @@ Phase 1 is complete only when all items below are implemented and verified.
 - [x] Single-file labels are reduced to safe supported filenames; client language labels are allowlisted.
 - [ ] Dependency-backed ZIP/folder upload suite passes in the complete project environment.
 - [ ] End-to-end upload-to-analysis smoke test passes in a running local application.
+- [x] AI source-boundary helper keeps uploaded source as JSON data separate from a fixed defensive system instruction, applies file/path/size limits, and flags common prompt-injection indicators without mutating the source.
+- [ ] Every provider adapter uses that boundary and has no tool, shell, arbitrary filesystem, or arbitrary network capability while reviewing untrusted source.
+- [ ] Provider integration tests confirm prompt-injection-like source comments remain data and cannot trigger actions or disclose secrets.
+- [ ] Secret scanning/redaction is enforced before any cloud provider receives uploaded source.
 
 ## Phase 1 completion rule
 Do not mark Phase 1 as 100% while any unchecked verification item remains. Source-level implementation is not equivalent to a successful build or runtime test.
