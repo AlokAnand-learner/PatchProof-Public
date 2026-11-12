@@ -14,10 +14,10 @@ These percentages are engineering estimates, not test coverage or acceptance per
 |---|---:|---|
 | 1. Safe source import | 75% | All 82 paths accounted for; 57 exact matches and 25 preserved differences; final conflict review and runtime smoke test remain |
 | 2. Reproducible setup | 75% | Frozen install, typecheck, production build, and full test suite pass in CI; one postinstall warning is still being investigated |
-| 3. Detection precision | 42% | Bounded alias taint, review-only fixture classification, source-derived evidence, duplicate suppression, and safe model-label normalization added; benchmark remains small and synthetic |
-| 4. Upload/archive safety | 78% | ZIP/folder tests pass; source boundary is wired into all four provider adapters; remote credential redaction and provider request tests added |
+| 3. Detection precision | 45% | Alias propagation/reassignment regressions cover SQL, command, and URL-fetch sinks; empty positive-class metrics no longer report artificial 100% precision/recall; benchmark remains small and synthetic |
+| 4. Upload/archive safety | 82% | ZIP/folder and server-backed upload-to-analysis tests pass; all provider request branches use the source boundary; contract, prompt-injection, and remote credential-redaction tests added |
 | 5. Privacy/local boundary | 72% | Local-only boundary, consent, privacy defaults, remote-source credential redaction, redirect rejection, and DNS-pinned custom HTTPS requests are implemented and regression-tested |
-| 6. UX/release readiness | 45% | Responsive layout checks and reduced-motion support are in place; real-device browser smoke and full accessibility review remain |
+| 6. UX/release readiness | 52% | Reduced-motion support, modal keyboard focus trapping/restoration, and 44px mobile navigation targets are implemented and regression-tested; real-device browser smoke remains |
 
 ## Phase 1 — Safe source import
 
@@ -59,6 +59,8 @@ Completed:
 - Expanded the local context lookback to five preceding lines while keeping analysis bounded.
 - Test, sample, and documentation findings with source-to-sink indicators remain visible as informational `NEEDS_REVIEW` items rather than likely production vulnerabilities; they do not reduce the production score.
 - Reworked benchmark accounting so review-only cases are excluded from binary precision/recall calculations.
+- Added alias propagation and reassignment regression cases for SQL, command-execution, and URL-fetch sinks.
+- Empty precision/recall denominators now return conservative zero values rather than an artificial perfect score; a dedicated edge-case test covers this.
 - AI-generated findings are deduplicated by normalized title, CWE, and exact source line range; snippets continue to be derived from source rather than accepted from model output.\n- Untrusted model-supplied labels and prose have non-printing control and bidirectional formatting characters removed; CWE identifiers are constrained to a recognized `CWE-<number>` or `CWE-Other` form.
 - The built-in suite has 13 synthetic fixtures: 9 binary-scored cases and 4 review-only cases. The latest focused run produced 3 TP, 6 TN, 0 FP, and 0 FN for the 9 scored fixtures.
 
@@ -83,7 +85,7 @@ Completed:
 Still required:
 - The fixed system instruction and separate JSON source payload are now wired into Ollama, Gemini, OpenAI-compatible, and Anthropic request branches. No tool declarations are sent by these review requests.
 - JSZip-backed ZIP/folder tests pass in the complete suite; malformed archives, duplicate entries, path collisions, and decompression limits have regression coverage.
-- Local Ollama/custom and mocked remote custom provider tests verify the source boundary, absence of tool declarations, redirect rejection, and credential redaction. Hosted Gemini/Anthropic requests have not been exercised against live credentials.
+- Local Ollama/custom and remote custom payload-preparation tests verify the source boundary, absence of tool declarations, redirect rejection, and credential redaction. Provider adapter source-contract tests cover all four provider request shapes. Hosted Gemini/Anthropic requests have not been exercised against live credentials.
 - Complete a real-browser upload-to-analysis smoke test and inspect memory use under configured limits.
 
 ## Phase 5 — Privacy and local boundary
@@ -114,18 +116,24 @@ Completed:
 Still required:
 - Run the application in a real browser and verify upload, analysis, provider selection, reports, history, clear-history, mobile layout, and error recovery.
 - Verify empty, loading, and failure states on Android-sized viewports.
-- Complete keyboard/accessibility checks and document supported languages and known limitations. Global reduced-motion support is implemented and regression-tested.
+- Mobile navigation moves focus into the drawer, traps forward/reverse Tab, closes on Escape, and restores prior focus. Bottom navigation controls have a minimum 44px touch target. Global reduced-motion support is implemented and regression-tested.
+- Complete screen-reader and color-contrast review; automated source-level checks do not replace assistive-technology testing.
 - Keep public deployment disabled until a separate deployment threat model and security review are complete.
 
 ## Verification performed in this work session
 
-- Latest full GitHub Actions run passed the Python repository/archive preflight (43 tests), type-check, production build, local server startup, and the complete Node regression suite. The provider boundary tests include 22 assertions, the source boundary suite includes 17 checks, and the pinned DNS suite includes 10 checks. The read-only archive comparison reports 57 exact matches, 25 preserved differences, and no missing paths.
+- Latest full GitHub Actions run passed the Python repository/archive preflight (43 tests), type-check, production build, local server startup, and complete Node regression suite. Provider boundary tests include 22 assertions, provider adapter contract tests 16, source boundary tests 17, pinned DNS tests 10, and mobile layout/accessibility tests 14. The read-only archive comparison reports 57 exact matches, 25 preserved differences, and no missing paths.
 - Earlier foundation audit: 21 of the 23 scripted test files were executed successfully in focused mode.
 - The latest focused workflow passed 40 Python repository/archive tests, 10 same-origin API tests, 13 untrusted-source boundary checks, 18 AI-finding validation checks, 10 special-purpose IPv4 checks, and 8 special-purpose IPv6 checks (102 reported checks across the focused groups).
 - The complete suite now includes JSZip-backed upload safety and server-backed authentication boundary tests; both pass in CI.
 - TypeScript type-check and production build pass after the reviewed source import.
 - A single postinstall warning remains under investigation; the explicit `bun pm untrusted` audit reports zero untrusted dependencies.
 - A real-device browser smoke test remains unverified because the app is not running on the user's local device.
+
+## Manual verification still required
+
+- Open the app on the user's Android device and verify the real file/folder picker, upload, navigation, orientation changes, and small-screen layout. GitHub-hosted CI cannot inspect the user's device or local browser.
+- Live Gemini/Anthropic provider calls require the user's own approved credentials and explicit cloud consent; request-shape tests pass without sending source to hosted services.
 
 ## Acceptance rule
 
