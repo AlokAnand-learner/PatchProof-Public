@@ -24,10 +24,10 @@ assert.equal(duplicatePair[0].severity, 'HIGH', 'the first source-validated occu
 assert.equal(Object.hasOwn(accepted[0], 'verificationStatus'), false, 'model verification labels are not trusted');
 const hostileLabels = validateAIModelFindings([{
   ...valid,
-  title: 'Alert\\u202Etxt.exe',
-  cwe: 'CWE-89\\u202E',
-  explanation: 'line one\\u0000\\u202Eline two\\u0007',
-  owaspCategory: 'A05\\u202E:Injection',
+  title: 'Alert\u202Etxt.exe',
+  cwe: 'CWE-89\u202E',
+  explanation: 'line one\u0000\u202Eline two\u0007',
+  owaspCategory: 'A05\u202E:Injection',
 }], source)[0];
 assert.equal(hostileLabels.title, 'Alerttxt.exe', 'bidirectional override controls must not survive in labels');
 assert.equal(hostileLabels.cwe, 'CWE-89', 'bidirectional controls are removed before validating CWE identifiers');
