@@ -597,7 +597,7 @@ async function startServer() {
   app.post('/api/analyze', requireSessionAuth, withProviderTask(async (req: Request, res: Response) => {
     const startTime = Date.now();
     try {
-      const { code, fileName, language, projectName, files } = req.body;
+      const { code, fileName, projectName, files } = req.body;
       const provState = getProviderState();
       const activeEndpoint = provState.providers[provState.activeProvider]?.endpoint;
 
