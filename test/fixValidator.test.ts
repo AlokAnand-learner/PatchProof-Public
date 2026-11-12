@@ -125,6 +125,27 @@ const undefResult = validateRemediationPatch(
 );
 assert('Patch containing undefined identifier does not receive VALIDATED status', undefResult.status !== 'VALIDATED' && undefResult.undefinedVariables.length > 0);
 
+// 10. Full-file validation must locate the exact original snippet exactly once
+const missingTarget = validateRemediationPatch(
+  'const safe = true;',
+  'const original = true;',
+  'CWE-89',
+  'javascript',
+  'app.js',
+  'const untouched = true;'
+);
+assert('Reject full-file validation when the original snippet is absent', !missingTarget.fullFileValidationPassed && missingTarget.status === 'INVALID');
+
+const duplicateTarget = validateRemediationPatch(
+  'const safe = true;',
+  'const original = true;',
+  'CWE-89',
+  'javascript',
+  'app.js',
+  'const original = true;\nconst original = true;'
+);
+assert('Reject full-file validation when the original snippet is ambiguous', !duplicateTarget.fullFileValidationPassed && duplicateTarget.status === 'INVALID');
+
 console.log('===========================================================');
 console.log(`Results: ${passCount} passed, ${failCount} failed.`);
 
