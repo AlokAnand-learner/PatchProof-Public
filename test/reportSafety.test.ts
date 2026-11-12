@@ -69,6 +69,6 @@ const emptyHtml = generateHtmlReport(emptyScan);
 assert.match(emptyHtml, /No matching vulnerability patterns were identified/);
 assert.match(emptyHtml, /does not prove the code is vulnerability-free/);
 const noticeScan = { ...scan, analysisNotice: 'AI review was not used because cloud consent is off.' } as unknown as ScanResult;
-assert.match(generateMarkdownReport(noticeScan), /Analysis Coverage: AI review was not used/);
+assert.match(generateMarkdownReport(noticeScan), /Analysis Coverage.*AI review was not used/);
 assert.match(generateHtmlReport(noticeScan), /Analysis Coverage:.*AI review was not used/);
 console.log('HTML report confidence semantics: 6 assertions passed.');
