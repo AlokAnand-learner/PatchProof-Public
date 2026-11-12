@@ -32,7 +32,7 @@ const duplicateExisting = mergeStagedFileBatches(
   [second],
 );
 assert.equal(duplicateExisting.stagedFiles.length, 2, 'case-colliding existing entries must be normalized to one');
-assert.ok(duplicateExisting.skippedFiles.some(item => item.includes('Duplicate or case-colliding existing path')));
+assert.ok(duplicateExisting.skippedFiles.some(item => item.includes('Duplicate, case-colliding, or file/directory-conflicting existing path')));
 
 const directoryCaseCollision = mergeStagedFileBatches(
   [makeFile('Src/first.ts', 'const first = true;')],
