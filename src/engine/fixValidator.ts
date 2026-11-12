@@ -93,7 +93,7 @@ export function validateFix(params: FixValidationParams): FixValidationResult {
   // 4. Security Regression & Insecure Fallback Check
   const regressionCheck = checkSecurityRegressions(patchTrimmed, vulnerabilityCwe, filePath);
 
-  // 5. Vulnerability Neutralization Check (Strict semantic validation)
+  // 5. Vulnerability-specific neutralization heuristics (not semantic proof)
   const neutralizationCheck = checkVulnerabilityNeutralization(
     originalSnippet,
     patchTrimmed,
@@ -133,7 +133,7 @@ export function validateFix(params: FixValidationParams): FixValidationResult {
   // Derive Security Improvement description
   let securityImprovement = '';
   if (neutralizationCheck.passed) {
-    securityImprovement = `Neutralizes ${vulnerabilityCwe} by eliminating direct sink interpolation and applying defensive controls.`;
+    securityImprovement = `Static checks found mitigation indicators for ${vulnerabilityCwe}; verify the exact data flow, dependencies, and runtime behavior manually.`;
   } else {
     securityImprovement = `Fix does not fully address ${vulnerabilityCwe}; dangerous patterns or unparameterized queries remain in the proposed code.`;
   }
