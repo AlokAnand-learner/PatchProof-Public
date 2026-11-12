@@ -572,7 +572,7 @@ export async function safeExtractZip(
     // checking only numbers can miss a symlink encoded as a string.
     const unixMode = typeof unixPerms === 'number'
       ? unixPerms
-      : typeof unixPerms === 'string' && /^\\d{3,6}$/.test(unixPerms)
+      : typeof unixPerms === 'string' && /^[0-7]{3,6}$/.test(unixPerms)
         ? Number.parseInt(unixPerms, 8)
         : null;
     const symbolicMode = typeof unixPerms === 'string' && unixPerms.trim().startsWith('l');
