@@ -23,8 +23,8 @@ import {
 import { HistoryItem, ScanResult } from '../types/security';
 import { 
   getScanHistory, 
-  deleteScanFromHistory, 
-  deleteMultipleScansFromHistory,
+  deleteScanFromHistoryWithStatus, 
+  deleteMultipleScansFromHistoryWithStatus,
   clearScanHistory, 
   getGradeBadge, 
   downloadTextFile, 
@@ -146,8 +146,12 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onLoadScan, onStartNew
     try {
       if (confirmDialog.type === 'single' && confirmDialog.targetId) {
         const idToDelete = confirmDialog.targetId;
-        const updated = deleteScanFromHistory(idToDelete);
-        setHistory(updated);
+        const result = deleteScanFromHistoryWithStatus(idToDelete);
+        setHistory(result.history);
+        if (!result.saved) {
+          showFeedback('Review could not be deleted because browser storage rejected the change.', 'error');
+          return;
+        }
         setSelectedIds(prev => {
           const next = new Set(prev);
           next.delete(idToDelete);
@@ -156,8 +160,12 @@ export const HistoryView: React.FC<HistoryViewProps> = ({ onLoadScan, onStartNew
         showFeedback(`Successfully deleted review "${confirmDialog.targetTitle || 'record'}".`);
       } else if (confirmDialog.type === 'selected') {
         const idsArray = Array.from(selectedIds);
-        const updated = deleteMultipleScansFromHistory(idsArray);
-        setHistory(updated);
+        const result = deleteMultipleScansFromHistoryWithStatus(idsArray);
+        setHistory(result.history);
+        if (!result.saved) {
+          showFeedback('Selected reviews could not be deleted because browser storage rejected the change.', 'error');
+          return;
+        }
         setSelectedIds(new Set());
         showFeedback(`Successfully deleted ${idsArray.length} selected review ${idsArray.length === 1 ? 'record' : 'records'}.`);
       } else if (confirmDialog.type === 'clear-all') {
