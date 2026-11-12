@@ -1,4 +1,6 @@
 import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
 import { readBrowserPreference, writeBrowserPreference } from '../src/utils/browserStorage';
 
 class TestStorage {
@@ -31,4 +33,9 @@ storage.failReads = false;
 storage.failWrites = true;
 assert.equal(writeBrowserPreference('theme', 'light'), false, 'blocked writes must be reported without throwing');
 
-console.log('Browser preference storage resilience: 8 assertions passed');
+const appSource = fs.readFileSync(path.join(process.cwd(), 'src/App.tsx'), 'utf8');
+assert.ok(appSource.includes('readBrowserPreference') && appSource.includes('writeBrowserPreference'),
+  'app theme and sidebar preferences must use the failure-safe storage helpers');
+assert.doesNotMatch(appSource, /localStorage\.(?:getItem|setItem)\(/,
+  'app initialization and preference updates must not access localStorage directly');
+console.log('Browser preference storage resilience: 10 assertions passed');
