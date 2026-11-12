@@ -1,4 +1,4 @@
-/**
+/** 
  * Trust boundary for source sent to an AI code-review provider.
  *
  * Uploaded source is untrusted DATA, never executable instructions. This module
@@ -87,7 +87,7 @@ export function prepareUntrustedSource(
     const path = file.path.normalize('NFC');
     const parts = path.split('/');
     const reservedWindowsName = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\..*)?$/i;
-    const unsafePart = parts.some((part) =>
+    const unsafePart = parts.some((part: string) =>
       !part || part === '.' || part === '..' || part.includes(':') ||
       part.endsWith('.') || part.endsWith(' ') ||
       /[<>:"|?*\x00-\x1f]/.test(part) ||
@@ -116,9 +116,6 @@ export function prepareUntrustedSource(
     }
     pathRegistry.set(key, { spelling: path, kind: 'file' });
 
-    if (totalBytes + file.content.length > policy.maxTotalBytes) {
-      throw new Error('Uploaded project exceeds the total source-size limit.');
-    }
     const size = byteLength(file.content);
     if (size > policy.maxFileBytes) throw new Error('An uploaded source file exceeds the size limit.');
     totalBytes += size;
