@@ -7,10 +7,10 @@ PatchProof is a single-user, local-first source-code review application. The sup
 ## Runtime layout
 
 - **Browser UI:** React + TypeScript, served by Vite during development and from `dist/` in production mode.
-- **Local API:** Express in `server.ts`; validates Host and Origin, applies security headers, rate limits, performs pre-body authorization, and parses bounded JSON.
+- **Local API:** Express in `server.ts`; validates Host and Origin, applies security headers, rate limits, performs pre-body authorization, and parses bounded JSON. Production Content Security Policy excludes `unsafe-eval`; development-only script allowances are gated by the runtime mode.
 - **Analysis engine:** local static/contextual analysis and optional AI hypotheses. Static heuristics are not AST/data-flow proof; AI findings remain unverified review items.
-- **Provider boundary:** local Ollama/custom loopback providers are separate from remote providers. Remote transmission requires explicit server-side consent.
-- **Input boundary:** source files and ZIP archives are read in memory; archive extraction does not write files or execute uploaded code. The API revalidates submitted project paths, file count, per-file size, cumulative size, and text content.
+- **Provider boundary:** local Ollama/custom loopback providers are separate from remote providers. Remote transmission requires explicit server-side consent. Connection tests enforce the same consent and offline-mode rules as analysis; Google SDK calls use bounded timeouts, one attempt, and output-token limits.
+- **Input boundary:** source files and ZIP archives are read in memory; archive extraction does not write files or execute uploaded code. Paths are normalized and cross-platform aliases/collisions are rejected before staging. The API revalidates submitted project paths, file count, per-file size, cumulative size, and text content.
 - **Persistence:** browser history/settings use browser storage; this is not encrypted storage and is accessible to same-origin JavaScript. Privacy mode removes full source from saved history by default.
 
 ## Request flow
