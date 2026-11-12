@@ -1,6 +1,6 @@
 # Source archive import handoff
 
-The source archive is the reviewed 79-file PatchProof source snapshot. It is not a production release.
+The source archive is the reviewed 82-file PatchProof source snapshot. It is not a production release.
 
 ## One-time upload
 
