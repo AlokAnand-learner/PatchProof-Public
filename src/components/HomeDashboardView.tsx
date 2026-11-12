@@ -89,7 +89,7 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
         </div>
 
         {/* Metric 2: Issues Found */}
-        <div className="p-5 rounded-xl bg-white dark:bg-[#161D2D] border border-[#DCE3ED] dark:border-[#232E42] shadow-xs">
+        <div className="pp-interactive-card pp-glass-surface p-5 rounded-xl bg-white dark:bg-[#161D2D] border border-[#DCE3ED] dark:border-[#232E42] shadow-xs">
           <span className="text-xs font-semibold text-[#526078] dark:text-[#A6B4C9] uppercase tracking-wider block">
             Issues Found
           </span>
@@ -102,7 +102,7 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
         </div>
 
         {/* Metric 3: Critical Issues */}
-        <div className="p-5 rounded-xl bg-white dark:bg-[#161D2D] border border-[#DCE3ED] dark:border-[#232E42] shadow-xs">
+        <div className="pp-interactive-card pp-glass-surface p-5 rounded-xl bg-white dark:bg-[#161D2D] border border-[#DCE3ED] dark:border-[#232E42] shadow-xs">
           <span className="text-xs font-semibold text-[#526078] dark:text-[#A6B4C9] uppercase tracking-wider block">
             Critical Risk Issues
           </span>
@@ -115,7 +115,7 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
         </div>
 
         {/* Metric 4: Average Heuristic Risk Score */}
-        <div className="p-5 rounded-xl bg-white dark:bg-[#161D2D] border border-[#DCE3ED] dark:border-[#232E42] shadow-xs">
+        <div className="pp-interactive-card pp-glass-surface p-5 rounded-xl bg-white dark:bg-[#161D2D] border border-[#DCE3ED] dark:border-[#232E42] shadow-xs">
           <span className="text-xs font-semibold text-[#526078] dark:text-[#A6B4C9] uppercase tracking-wider block">
             Average Heuristic Risk
           </span>
