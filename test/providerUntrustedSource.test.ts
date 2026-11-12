@@ -73,7 +73,7 @@ try {
   assert.equal(remotePrepared.needsCloudConsent, true);
   assert.equal(remoteSource.includes(fakeApiKey), false);
   assert.equal(remoteSource.includes(fakeGitHubToken), false);
-  assert.match(remoteSource, /\[REDACTED\]/);
+  assert.equal(remoteSource.includes('[REDACTED]'), true);
   assert.match(remotePrepared.systemInstruction, /Return a JSON object containing findings/);
 
   // Legacy free-form prompts are also treated as untrusted data, never as system instructions.
