@@ -71,7 +71,7 @@ export function validateFix(params: FixValidationParams): FixValidationResult {
   const patchTrimmed = suggestedPatch.trim();
   const contextCombined = `${surroundingContext}\n${fullSourceCode}`;
 
-  // 1. Syntax & Structural AST Correctness Check on Patch
+  // 1. Syntax and structural consistency checks on the proposed patch
   const syntaxCheck = checkSyntax(patchTrimmed, language);
 
   // 2. Full Replacement File Check (if fullSourceCode provided)
@@ -163,7 +163,7 @@ export function validateFix(params: FixValidationParams): FixValidationResult {
   }
 
   const validationChecksRun = [
-    'Static AST & Delimiter Balance Check',
+    'Static Syntax and Delimiter Checks',
     'Full Replacement File Integrity Check',
     'Scope & Required Import Resolution Check',
     'Vulnerability-Specific Neutralization Verification',
@@ -173,7 +173,7 @@ export function validateFix(params: FixValidationParams): FixValidationResult {
 
   const limitations = [
     'Untrusted code is never executed: dynamic runtime interactions, database drivers, and network requests are not executed.',
-    'Verification is performed statically via AST parsing, scope invariant tracing, and pattern analysis.',
+    'Verification uses language-limited syntax parsing where available, delimiter checks, scope heuristics, and security pattern analysis. It is not a full AST or runtime verification.',
     'External packages and third-party type definitions outside standard libraries require manual runtime verification.'
   ];
 
@@ -192,7 +192,7 @@ export function validateFix(params: FixValidationParams): FixValidationResult {
     introducedVulnerabilities,
     insecureFallbacks,
     timestamp: new Date().toISOString(),
-    executionMode: 'STATIC_ISOLATED_AST_ANALYSIS',
+    executionMode: 'STATIC_ISOLATED_CHECKS',
     validationChecksRun,
     limitations,
     fullFileValidationPassed
@@ -254,7 +254,7 @@ export function checkSyntax(patch: string, language: string): FixCheckResult {
           return {
             passed: false,
             status: 'FAIL',
-            name: 'Syntax & AST Parsing',
+            name: 'Syntax and Structural Checks',
             message: `Syntax error: ${err.message}`,
             details: [err.message]
           };
@@ -267,7 +267,7 @@ export function checkSyntax(patch: string, language: string): FixCheckResult {
     passed: true,
     status: 'PASS',
     name: 'Syntax & AST Parsing',
-    message: 'Static AST & delimiter syntax parsing passed with zero errors.'
+    message: 'Configured static syntax and delimiter checks passed. This is not a full compiler or runtime check.'
   };
 }
 
