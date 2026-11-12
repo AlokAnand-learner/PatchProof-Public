@@ -8,7 +8,7 @@ import { ProviderType, ProviderConfig, OllamaModelInfo, SystemStatus } from '../
 import { validateEndpointUrl, sanitizeErrorMessage } from '../utils/ssrfValidator';
 import { normalizeModelName } from '../utils/modelName';
 import { readResponseTextLimited, parseProviderJson } from '../utils/httpResponse';
-import { prepareUntrustedSource, UntrustedSourceFile } from './untrustedSourceBoundary';
+import { prepareUntrustedSource, redactLikelySecrets, UntrustedSourceFile } from './untrustedSourceBoundary';
 
 export interface ProviderState {
   activeProvider: ProviderType;
@@ -545,13 +545,20 @@ export async function generateAnalysisWithActiveProvider(
   // When called by the server review pipeline, prompt is a fixed server-authored task
   // and sourceFiles contains the untrusted upload. Legacy/free-form prompts are treated
   // entirely as untrusted data and never elevated into system instructions.
-  const prepared = sourceFiles && sourceFiles.length > 0
-    ? prepareUntrustedSource(sourceFiles, {}, prompt)
-    : prepareUntrustedSource([{ path: 'user-input.txt', content: prompt }]);
-  const systemInstruction = prepared.systemInstruction;
-  const userPayload = prepared.userPayload;
   const { activeProvider, activeModel, offlineMode, cloudConsentGranted } = state;
   const cfg = state.providers[activeProvider];
+  const needsCloudConsent = requiresCloudConsent(activeProvider, cfg.endpoint);
+  const submittedFiles: readonly UntrustedSourceFile[] = sourceFiles && sourceFiles.length > 0
+    ? sourceFiles
+    : [{ path: 'user-input.txt', content: prompt }];
+  // Apply credential redaction only on remote routes. Local analysis can retain
+  // submitted source in memory; remote providers never receive matched secrets.
+  const outboundFiles = needsCloudConsent ? redactLikelySecrets(submittedFiles) : submittedFiles;
+  const prepared = sourceFiles && sourceFiles.length > 0
+    ? prepareUntrustedSource(outboundFiles, {}, prompt)
+    : prepareUntrustedSource(outboundFiles);
+  const systemInstruction = prepared.systemInstruction;
+  const userPayload = prepared.userPayload;
 
   // 1. STRICT OFFLINE POLICY CHECK
   if (offlineMode) {
@@ -574,7 +581,6 @@ export async function generateAnalysisWithActiveProvider(
   }
 
   // 2. EXPLICIT CLOUD CONSENT CHECK (includes remote custom endpoints)
-  const needsCloudConsent = requiresCloudConsent(activeProvider, cfg.endpoint);
   if (needsCloudConsent && !cloudConsentGranted) {
     throw new Error(
       `Cloud AI transmission requires explicit user consent before uploading source code to ${activeProvider.toUpperCase()}. Run local in-memory analysis or grant cloud AI consent in Settings.`
