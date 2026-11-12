@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { createConcurrencyGate } from '../src/utils/concurrencyGate';
+import { createConcurrencyGate, runWithConcurrencyGate } from '../src/utils/concurrencyGate';
 
 const gate = createConcurrencyGate(2);
 const releaseOne = gate.tryAcquire();
@@ -17,4 +17,21 @@ releaseTwo?.();
 releaseThree?.();
 assert.equal(gate.activeCount(), 0);
 assert.throws(() => createConcurrencyGate(0));
-console.log('Provider concurrency gate: 6 assertions passed.');
+
+const asyncGate = createConcurrencyGate(1);
+let finishTask: (() => void) | undefined;
+const pendingTask = runWithConcurrencyGate(asyncGate, () => new Promise<void>(resolve => {
+  finishTask = resolve;
+}));
+assert.equal(asyncGate.activeCount(), 1, 'async task must hold its slot while pending');
+const rejectedWhileBusy = await runWithConcurrencyGate(asyncGate, () => 'must not run');
+assert.deepEqual(rejectedWhileBusy, { acquired: false }, 'busy gate must reject additional work');
+finishTask?.();
+assert.deepEqual(await pendingTask, { acquired: true, value: undefined });
+assert.equal(asyncGate.activeCount(), 0, 'async task releases its slot only after settling');
+await assert.rejects(runWithConcurrencyGate(asyncGate, async () => {
+  throw new Error('expected task failure');
+}), /expected task failure/);
+assert.equal(asyncGate.activeCount(), 0, 'rejected tasks must also release their slot');
+
+console.log('Provider concurrency gate: 12 assertions passed.');
