@@ -173,16 +173,19 @@ function hasTaintSource(
   // such as `const alias = input` is propagated. This is not whole-program taint.
   const taintedVariables = new Map<string, number>();
 
+  let inMultiLineComment = false;
   for (const line of priorLines) {
-    if (isCommentOrDoc(line.text, false).isComment) continue;
+    const commentState = isCommentOrDoc(line.text, inMultiLineComment);
+    inMultiLineComment = commentState.stillInMultiLine;
+    if (commentState.isComment) continue;
 
-    // This bounded scan has no lexical-scope model. Reset at clear function
-    // boundaries so a request-derived value in one function cannot taint a
-    // same-named local in the next. A bare closing brace is treated
-    // conservatively as a boundary: this may lose an outer-scope hint, but
-    // cannot manufacture cross-function source-to-sink evidence.
+    // This bounded scan has no full lexical-scope model. Reset at recognizable
+    // function boundaries in JavaScript/TypeScript, Python and Ruby. A bare
+    // closing brace is also treated conservatively as a boundary.
     const trimmedLine = line.text.trim();
-    const startsFunction = /^(?:(?:export|default|async)\s+)*(?:function\b|(?:const|let|var)\s+[A-Za-z_$][\w$]*\s*=\s*(?:async\s*)?(?:\([^)]*\)|[A-Za-z_$][\w$]*)\s*=>)/.test(trimmedLine);
+    const startsFunction =
+      /^(?:(?:export|default|async)\s+)*(?:function\b|(?:const|let|var)\s+[A-Za-z_$][\w$]*\s*=\s*(?:async\s*)?(?:\([^)]*\)|[A-Za-z_$][\w$]*)\s*=>)/.test(trimmedLine) ||
+      /^(?:async\s+)?def\s+[A-Za-z_$][\w$]*\s*\(/.test(trimmedLine);
     if (startsFunction || trimmedLine === '}') {
       taintedVariables.clear();
       continue;
