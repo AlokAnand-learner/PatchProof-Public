@@ -78,7 +78,9 @@ try {
   // Remote custom payload preparation requires consent and redacts likely credentials.
   const fakeApiKey = 'example_secret_value_123456';
   const fakeGitHubToken = 'ghp_' + 'B'.repeat(24);
-  const remotePrepared = prepareProviderReviewPayload('custom', 'https://ai.example.com/v1', trustedTask, [{
+  const remotePromptSecret = 'ghp_' + 'C'.repeat(24);
+  const remoteReviewRequest = trustedTask + '\\nconst apiKey = "' + fakeApiKey + '";\\nconst token = "' + remotePromptSecret + '";';
+  const remotePrepared = prepareProviderReviewPayload('custom', 'https://ai.example.com/v1', remoteReviewRequest, [{
     path: 'src/config.ts',
     content: [
       'const apiKey = "' + fakeApiKey + '";',
@@ -99,7 +101,9 @@ try {
   assert.equal(remoteSource.includes('DB_PASSWORD=[REDACTED]'), true, 'dotenv key names must remain visible after redaction');
   assert.equal(remoteSource.includes('[REDACTED]'), true);
   assert.equal(remotePrepared.systemInstruction.includes(trustedTask), false);
-  assert.equal(remotePayload.reviewRequest, trustedTask);
+  assert.equal(remotePayload.reviewRequest.includes(fakeApiKey), false, 'remote review request credentials must be redacted');
+  assert.equal(remotePayload.reviewRequest.includes(remotePromptSecret), false, 'remote review request tokens must be redacted');
+  assert.equal(remotePayload.reviewRequest.includes(trustedTask), true, 'non-secret review instructions remain available as user data');
 
   // Legacy free-form prompts are also treated as untrusted data, never as system instructions.
   await generateAnalysisWithActiveProvider(injectedSource);
