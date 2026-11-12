@@ -202,6 +202,9 @@ export interface EvaluationMetrics {
     passed: boolean;
     actualOutcome: string;
     actualClassification: string;
+    actualCwes: string[];
+    cweMatches: boolean;
+    lineRangesValid: boolean;
     includedInMetrics: boolean;
     reason: string;
   }>;
