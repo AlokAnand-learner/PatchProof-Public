@@ -17,6 +17,22 @@ const second = makeFile('src/second.ts', 'const second = 2;');
 const merged = mergeStagedFileBatches([first], [second]);
 assert.equal(merged.stagedFiles.length, 2);
 assert.equal(merged.stagedFiles[1].size, new Blob([second.content]).size);
+assert.equal(merged.stagedFiles[0].size, new Blob([first.content]).size, 'existing staged byte metadata must also be recomputed');
+assert.equal(merged.stagedFiles[0].lines, first.content.split('\\n').length, 'existing staged line metadata must also be recomputed');
+
+const unsafeExisting = mergeStagedFileBatches(
+  [makeFile('../outside.ts', 'const unsafe = true;'), first],
+  [second],
+);
+assert.equal(unsafeExisting.stagedFiles.length, 2, 'unsafe existing paths must be dropped while safe staged files remain');
+assert.ok(unsafeExisting.skippedFiles.some(item => item.includes('Previously staged entry')));
+
+const duplicateExisting = mergeStagedFileBatches(
+  [first, makeFile('SRC/FIRST.TS', 'const duplicate = true;')],
+  [second],
+);
+assert.equal(duplicateExisting.stagedFiles.length, 2, 'case-colliding existing entries must be normalized to one');
+assert.ok(duplicateExisting.skippedFiles.some(item => item.includes('Duplicate or case-colliding existing path')));
 
 const duplicate = mergeStagedFileBatches([first], [makeFile('SRC/FIRST.TS', 'const duplicate = true;')]);
 assert.equal(duplicate.stagedFiles.length, 1);
@@ -42,4 +58,4 @@ const lineCap = mergeStagedFileBatches(
 assert.equal(lineCap.stagedFiles.length, 4);
 assert.ok(lineCap.skippedFiles.some(item => item.includes('Combined project exceeds source line limit')));
 
-console.log('Cumulative upload batch limits: 5 scenarios passed.');
+console.log('Cumulative upload batch limits and staged-state validation: 7 scenarios passed.');
