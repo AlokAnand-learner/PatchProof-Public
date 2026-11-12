@@ -67,13 +67,13 @@ try {
   const fakeGitHubToken = 'ghp_' + 'B'.repeat(24);
   const remotePrepared = prepareProviderReviewPayload('custom', 'https://ai.example.com/v1', trustedTask, [{
     path: 'src/config.ts',
-    content: ['const apiKey = "' + fakeApiKey + '";', 'const token = "' + fakeGitHubToken + '";'].join('\\n'),
+    content: ['const apiKey = "' + fakeApiKey + '";', 'const token = "' + fakeGitHubToken + '";'].join('\n'),
   }]);
   const remoteSource = JSON.parse(remotePrepared.userPayload).sourceFiles[0].content;
   assert.equal(remotePrepared.needsCloudConsent, true);
   assert.equal(remoteSource.includes(fakeApiKey), false);
   assert.equal(remoteSource.includes(fakeGitHubToken), false);
-  assert.match(remoteSource, /\\[REDACTED\\]/);
+  assert.match(remoteSource, /\[REDACTED\]/);
   assert.match(remotePrepared.systemInstruction, /Return a JSON object containing findings/);
 
   // Legacy free-form prompts are also treated as untrusted data, never as system instructions.
