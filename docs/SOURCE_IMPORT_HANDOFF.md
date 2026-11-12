@@ -2,19 +2,23 @@
 
 The source archive is the reviewed 82-file PatchProof source snapshot. It is not a production release.
 
-## One-time upload
+## Upload status
 
-1. Download the exact archive named `PatchProof-Phase1-Foundation-Hardening-2026-11-12-Continuous-Phases.zip`.
-2. In GitHub, open branch `work/ssrf-special-purpose-ipv4-2026-11-12` in this repository.
-3. Upload the archive at the exact path `import/PatchProof-source.zip` and commit it directly to that branch.
+The archive has been uploaded to the repository root on branch `work/ssrf-special-purpose-ipv4-2026-11-12`:
 
-The GitHub Actions workflow on this branch will then:
+`PatchProof-Phase1-Foundation-Hardening-2026-11-12-Continuous-Phases.zip`
+
+The import workflow accepts this root location as well as the originally planned `import/PatchProof-source.zip` location. A workflow update will trigger validation of the already-uploaded root archive.
+
+## Validation and import
+
+The GitHub Actions workflow will:
 - Verify the exact SHA-256 digest before extraction.
 - Reject unsafe paths, symlinks, oversized entries, non-UTF-8 files, and recognized high-confidence credential patterns.
 - Preserve any existing branch file rather than overwrite it.
 - Import missing source files and remove the temporary ZIP from the branch's current tree.
 
-The importer prints any existing paths whose contents differ from the archive. Those conflicts require review before Phase 1 can be accepted.
+The importer prints any existing paths whose contents differ from the archive. Those conflicts are preserved for review; they are not silently overwritten. A successful archive validation does not by itself mean the application build or all phases are complete.
 
 ## Reviewed archive identity
 
