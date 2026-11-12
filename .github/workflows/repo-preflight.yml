@@ -57,6 +57,8 @@ jobs:
         run: bun pm untrusted
       - name: Install locked dependencies
         run: bun install --frozen-lockfile
+      - name: Report any lifecycle scripts still blocked after installation
+        run: bun pm untrusted
       - name: Type-check application
         run: bun run typecheck
       - name: Build application
