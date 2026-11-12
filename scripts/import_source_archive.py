@@ -122,7 +122,7 @@ def main() -> int:
         if len(all_infos) > MAX_ENTRIES:
             raise SystemExit(f"archive has {len(all_infos)} entries; limit is {MAX_ENTRIES}")
         infos = []
-        directory_paths: set[str] = set()
+        directory_paths: dict[str, str] = {}
         for info in all_infos:
             mode = (info.external_attr >> 16) & 0xFFFF
             if stat.S_ISLNK(mode):
@@ -135,7 +135,7 @@ def main() -> int:
                 directory_key = unicodedata.normalize("NFC", directory_rel).casefold()
                 if directory_key in directory_paths:
                     raise SystemExit(f"duplicate or case-colliding directory path: {directory_rel}")
-                directory_paths.add(directory_key)
+                directory_paths[directory_key] = directory_rel
                 continue
             infos.append(info)
 
@@ -164,13 +164,26 @@ def main() -> int:
             scan_for_realistic_secrets(rel, data)
             planned.append((rel, data))
 
-    planned_paths = {rel for rel, _ in planned}
-    for rel in planned_paths:
+    # Detect case/Unicode aliases across explicit and implicit directories,
+    # files, and file-vs-directory collisions before writing anything.
+    registered_paths: dict[str, tuple[str, str]] = {}
+
+    def register_path(path: str, kind: str) -> None:
+        key = unicodedata.normalize("NFC", path).casefold()
+        previous = registered_paths.get(key)
+        if previous is not None and previous != (path, kind):
+            raise SystemExit(f"case/Unicode or file/directory path collision: {previous[0]} and {path}")
+        registered_paths[key] = (path, kind)
+
+    for directory in directory_paths.values():
+        parts = PurePosixPath(directory).parts
+        for index in range(1, len(parts) + 1):
+            register_path(PurePosixPath(*parts[:index]).as_posix(), "directory")
+    for rel, _ in planned:
         parts = PurePosixPath(rel).parts
         for index in range(1, len(parts)):
-            parent = PurePosixPath(*parts[:index]).as_posix()
-            if parent in planned_paths:
-                raise SystemExit(f"file/directory path collision: {parent} and {rel}")
+            register_path(PurePosixPath(*parts[:index]).as_posix(), "directory")
+        register_path(rel, "file")
 
     if not planned:
         raise SystemExit("archive contains no importable source files")
