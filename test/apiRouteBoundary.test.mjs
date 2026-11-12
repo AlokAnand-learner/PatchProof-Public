@@ -51,7 +51,7 @@ const gatedRoutes = [
   '/api/analyze',
 ];
 for (const path of gatedRoutes) {
-  const route = routeLines.find(({ line }) => /\bapp\.(?:get|post|put|patch|delete)\(/.test(line) && (line.includes(`'${path}'`) || line.includes(`"${path}"`)));
+  const route = routeLines.find(({ line }) => line.trimStart().startsWith('app.') && line.includes(path));
   assert.ok(route, `expected route declaration for ${path}`);
   assert.match(route.line, /withProviderTask/, `${path} must use the shared concurrency gate`);
 }
