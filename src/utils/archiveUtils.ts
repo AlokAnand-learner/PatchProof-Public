@@ -474,7 +474,7 @@ async function countZipEntriesBeforeParsing(
       throw new Error('Invalid ZIP64 end-of-central-directory record.');
     }
     const zip64RecordSize = view.getBigUint64(zip64Offset + 4, true);
-    if (zip64RecordSize < 44n || zip64Offset + 12n + zip64RecordSize > BigInt(locatorOffset)) {
+    if (zip64RecordSize < 44n || BigInt(zip64Offset) + 12n + zip64RecordSize > BigInt(locatorOffset)) {
       throw new Error('Invalid ZIP64 end-of-central-directory record size.');
     }
     const zip64DiskNumber = view.getUint32(zip64Offset + 16, true);
