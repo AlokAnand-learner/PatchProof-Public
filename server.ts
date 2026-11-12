@@ -673,7 +673,8 @@ async function startServer() {
           let fileFindings = staticFindings;
 
           // 2. Run secondary reasoning only when server-side consent or a trusted local route permits it
-          if (fileContent.trim().length > 15 && canUseConfiguredAi && aiReviewAttemptedFiles < MAX_AI_FILES_PER_PROJECT) {
+          const aiEligibleForFile = fileContent.trim().length > 15 && canUseConfiguredAi;
+          if (aiEligibleForFile && aiReviewAttemptedFiles < MAX_AI_FILES_PER_PROJECT) {
             aiReviewAttemptedFiles += 1;
             const aiInputContent = fileContent.slice(0, 35000);
             if (aiInputContent.length < fileContent.length) aiTruncatedFiles += 1;
@@ -754,7 +755,7 @@ CRITICAL RULES:
             }
           }
 
-          if (fileContent.trim().length > 15 && canUseConfiguredAi && aiReviewAttemptedFiles >= MAX_AI_FILES_PER_PROJECT && !fileFindings.some(item => item.verificationType === 'AI_HYPOTHESIS' && item.filePath === filePath)) {
+          } else if (aiEligibleForFile) {
             aiBudgetSkippedFiles += 1;
           }
 
