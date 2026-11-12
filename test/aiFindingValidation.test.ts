@@ -15,6 +15,12 @@ assert.equal(accepted.length, 1);
 assert.equal(accepted[0].startLine, 2);
 assert.equal(accepted[0].endLine, 2);
 assert.equal(accepted[0].snippet, 'db.query(user);', 'snippet must be derived from source, not model output');
+const duplicatePair = validateAIModelFindings([
+  { ...valid, title: 'Possible   injection', severity: 'HIGH' },
+  { ...valid, title: ' possible injection ', severity: 'CRITICAL' },
+], source);
+assert.equal(duplicatePair.length, 1, 'equivalent model findings at the same location must be deduplicated');
+assert.equal(duplicatePair[0].severity, 'HIGH', 'the first source-validated occurrence is retained');
 assert.equal(Object.hasOwn(accepted[0], 'verificationStatus'), false, 'model verification labels are not trusted');
 assert.equal(validateAIModelFindings([{ ...valid, startLine: 0 }], source).length, 0);
 assert.equal(validateAIModelFindings([{ ...valid, startLine: 4, endLine: 4 }], source).length, 0);
@@ -28,4 +34,4 @@ const bounded = validateAIModelFindings([{ ...valid, title: 'x'.repeat(500), sev
 assert.equal(bounded.title.length, 180);
 assert.equal(bounded.severity, 'MEDIUM');
 assert.equal(bounded.confidence, 'LOW');
-console.log('AI finding validation tests: 12 passed');
+console.log('AI finding validation tests: 14 passed');
