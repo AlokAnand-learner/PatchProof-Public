@@ -22,7 +22,8 @@ PatchProof is a single-user, local-first source-code review application. The sup
 3. Upload parsing validates relative paths and file metadata before reading source text. ZIP entry-count metadata is checked before parsing, decompression is streamed under actual-byte budgets, and ZIP files are never extracted to disk. Folder selection counts and actual content sizes are checked independently.
 4. The server repeats path/content/size validation; client validation is only a usability layer.
 5. Local analysis runs first. Optional provider analysis runs only when the selected provider is eligible and required consent is present. Model output is treated as untrusted hypothesis data. Before any provider receives source, the AI source trust-boundary helper is applied. Source is sent as inert JSON data; remote routes redact high-confidence credential patterns. Provider tool access remains disabled. These are defense-in-depth controls and do not make prompt injection or secret detection infallible.
-6. Provider and analysis tasks are bounded by a two-task in-process concurrency gate. Multi-file AI review is capped at 10 files per project; only the first 35,000 characters per file (45,000 for single-file review) are submitted to AI, and the UI/report disclose fallback and truncation.\n7. Results are returned to the local browser; report/history persistence follows the disclosed privacy settings. A history-write failure is surfaced separately from successful analysis.
+6. Provider and analysis tasks are bounded by a two-task in-process concurrency gate. Multi-file AI review is capped at 10 files per project; only the first 35,000 characters per file (45,000 for single-file review) are submitted to AI, and the UI/report disclose fallback and truncation.
+7. Results are returned to the local browser; report/history persistence follows the disclosed privacy settings. A history-write failure is surfaced separately from successful analysis.
 
 ## Trust boundaries
 
@@ -35,6 +36,9 @@ PatchProof is a single-user, local-first source-code review application. The sup
 
 ## Current limitations
 
-- The analysis engine is not yet a complete AST-based, interprocedural taint engine. Taint hints are bounded local context, not whole-program data flow.\n- Fix checks are static heuristics and limited syntax/structural checks; they do not prove runtime safety or provide full compiler/type validation.\n- The heuristic risk indicator is a weighted finding count, not a probability or security certification.\n- Expressive page/card motion respects prefers-reduced-motion; real-device visual and accessibility checks remain pending.
+- The analysis engine is not yet a complete AST-based, interprocedural taint engine. Taint hints are bounded local context, not whole-program data flow.
+- Fix checks are static heuristics and limited syntax/structural checks; they do not prove runtime safety or provide full compiler/type validation.
+- The heuristic risk indicator is a weighted finding count, not a probability or security certification.
+- Expressive page/card motion respects prefers-reduced-motion; real-device visual and accessibility checks remain pending.
 - Full dependency-backed integration tests and production build must pass before calling the application release-ready.
 - Live DNS/TLS integration fixtures for pinned remote connections remain outstanding; source-level transport contracts and regression tests currently pass.
