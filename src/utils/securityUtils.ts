@@ -4,6 +4,7 @@
  */
 
 import { ScanResult, VulnerabilityFinding, HistoryItem } from '../types/security';
+import { redactLikelySecrets } from '../engine/untrustedSourceBoundary';
 
 export function getSeverityColor(severity: string) {
   switch ((severity || '').toUpperCase()) {
@@ -72,14 +73,43 @@ const PRIVACY_FLAG_KEY = 'patchproof_privacy_no_source';
 const REDACTED_SOURCE = '// Redacted for privacy (source storage disabled)';
 
 /**
- * Removes complete source files and full-file patches before a review is persisted.
- * Finding snippets and surrounding evidence are retained so the report remains useful.
+ * Redacts likely credentials from retained evidence, then removes complete source
+ * files and full-file patches before a review is persisted. Evidence remains useful,
+ * but privacy mode must not preserve obvious secret assignments copied into findings.
  */
+function redactHistoryText(value: unknown): unknown {
+  if (typeof value !== 'string' || value.length === 0) return value;
+  return redactLikelySecrets([{ path: 'history-evidence.txt', content: value }])[0]?.content ?? value;
+}
+
 function redactScanSource(scan: ScanResult): ScanResult {
+  const findings = Array.isArray(scan.findings) ? scan.findings.map(finding => ({
+    ...finding,
+    title: redactHistoryText(finding.title) as string,
+    snippet: redactHistoryText(finding.snippet) as string,
+    surroundingContext: redactHistoryText(finding.surroundingContext) as string,
+    evidence: redactHistoryText(finding.evidence) as string,
+    explanation: redactHistoryText(finding.explanation) as string,
+    attackScenario: redactHistoryText(finding.attackScenario) as string,
+    exploitConditions: redactHistoryText(finding.exploitConditions) as string,
+    remediation: redactHistoryText(finding.remediation) as string,
+    suggestedPatch: redactHistoryText(finding.suggestedPatch) as string,
+    classificationReason: redactHistoryText(finding.classificationReason) as string,
+    reasoning: redactHistoryText(finding.reasoning) as string,
+    remainingUncertainty: redactHistoryText(finding.remainingUncertainty) as string
+  })) : [];
+
   return {
     ...scan,
+    projectName: redactHistoryText(scan.projectName) as string,
+    fileName: redactHistoryText(scan.fileName) as string,
     originalCode: REDACTED_SOURCE,
     patchedFullCode: undefined,
+    summary: redactHistoryText(scan.summary) as string,
+    recommendations: Array.isArray(scan.recommendations)
+      ? scan.recommendations.map(item => redactHistoryText(item) as string)
+      : [],
+    findings,
     files: Array.isArray(scan.files) ? scan.files.map(file => ({
       ...file,
       content: REDACTED_SOURCE,
