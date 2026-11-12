@@ -8,6 +8,7 @@ import { ProviderType, ProviderConfig, OllamaModelInfo, SystemStatus } from '../
 import { validateEndpointUrl, sanitizeErrorMessage } from '../utils/ssrfValidator';
 import { normalizeModelName } from '../utils/modelName';
 import { readResponseTextLimited, parseProviderJson } from '../utils/httpResponse';
+import { prepareUntrustedSource, UntrustedSourceFile } from './untrustedSourceBoundary';
 
 export interface ProviderState {
   activeProvider: ProviderType;
@@ -537,7 +538,18 @@ export async function testProviderConnection(params: {
 /**
  * Dispatches code analysis request to the active provider with strict security boundaries.
  */
-export async function generateAnalysisWithActiveProvider(prompt: string): Promise<string> {
+export async function generateAnalysisWithActiveProvider(
+  prompt: string,
+  sourceFiles?: readonly UntrustedSourceFile[],
+): Promise<string> {
+  // When called by the server review pipeline, prompt is a fixed server-authored task
+  // and sourceFiles contains the untrusted upload. Legacy/free-form prompts are treated
+  // entirely as untrusted data and never elevated into system instructions.
+  const prepared = sourceFiles && sourceFiles.length > 0
+    ? prepareUntrustedSource(sourceFiles, {}, prompt)
+    : prepareUntrustedSource([{ path: 'user-input.txt', content: prompt }]);
+  const systemInstruction = prepared.systemInstruction;
+  const userPayload = prepared.userPayload;
   const { activeProvider, activeModel, offlineMode, cloudConsentGranted } = state;
   const cfg = state.providers[activeProvider];
 
@@ -587,7 +599,8 @@ export async function generateAnalysisWithActiveProvider(prompt: string): Promis
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           model: activeModel || 'gemma2:9b',
-          prompt,
+          system: systemInstruction,
+          prompt: userPayload,
           stream: false,
           options: { temperature: 0.1, num_predict: 2048 }
         })
@@ -622,8 +635,8 @@ export async function generateAnalysisWithActiveProvider(prompt: string): Promis
 
     const response = await client.models.generateContent({
       model: activeModel || (activeProvider === 'gemma' ? 'gemma-2-9b-it' : 'gemini-3.8-flash'),
-      contents: prompt,
-      config: { maxOutputTokens: 2048, temperature: 0.1, automaticContinuation: false },
+      contents: userPayload,
+      config: { systemInstruction, maxOutputTokens: 2048, temperature: 0.1, automaticContinuation: false },
     });
 
     return response.text || '';
@@ -654,7 +667,10 @@ export async function generateAnalysisWithActiveProvider(prompt: string): Promis
         headers,
         body: JSON.stringify({
           model: activeModel,
-          messages: [{ role: 'user', content: prompt }],
+          messages: [
+            { role: 'system', content: systemInstruction },
+            { role: 'user', content: userPayload },
+          ],
           temperature: 0.1,
           max_tokens: 2048
         })
@@ -683,7 +699,8 @@ export async function generateAnalysisWithActiveProvider(prompt: string): Promis
         body: JSON.stringify({
           model: activeModel || 'claude-3-5-sonnet-20241022',
           max_tokens: 2048,
-          messages: [{ role: 'user', content: prompt }]
+          system: systemInstruction,
+          messages: [{ role: 'user', content: userPayload }]
         })
       }, 18000, 2 * 1024 * 1024
     );
