@@ -8,6 +8,7 @@ from pathlib import Path, PurePosixPath
 import re
 import stat
 import sys
+import unicodedata
 import zipfile
 
 MAX_ENTRIES = 100
@@ -85,10 +86,11 @@ def main() -> int:
             raise SystemExit(f"archive has {len(infos)} files; limit is {MAX_ENTRIES}")
         for info in infos:
             rel = safe_relative_path(info.filename)
-            if rel in seen or rel.casefold() in seen_casefolded:
+            normalized_key = unicodedata.normalize('NFC', rel).casefold()
+            if rel in seen or normalized_key in seen_casefolded:
                 raise SystemExit(f"duplicate or case-colliding normalized path: {rel}")
             seen.add(rel)
-            seen_casefolded.add(rel.casefold())
+            seen_casefolded.add(normalized_key)
             mode = (info.external_attr >> 16) & 0xFFFF
             if stat.S_ISLNK(mode):
                 raise SystemExit(f"symlink entries are not allowed: {info.filename}")
