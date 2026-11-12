@@ -13,6 +13,8 @@ const blocked = [
   'https://[::ffff:127.0.0.1]/api',
   'https://[::ffff:8.8.8.8]/api',
   'https://[2001:0:1::1]/api',
+  'https://[2001:1::1]/api',
+  'https://[2001:5::1]/api',
   'https://[2001:2::1]/api',
   'https://[2001:10::1]/api',
   'https://[3fff::1]/api',
@@ -31,6 +33,7 @@ for (const endpoint of blocked) {
 const publicEndpoints = [
   'https://[2606:4700:4700::1111]/api',
   'https://[2001:4860:4860::8888]/api',
+  'https://[2001:200::1]/api',
 ];
 
 for (const endpoint of publicEndpoints) {
