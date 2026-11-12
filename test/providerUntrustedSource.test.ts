@@ -69,13 +69,13 @@ try {
   setCloudConsent(true);
   await generateAnalysisWithActiveProvider(trustedTask, [{
     path: 'src/config.ts',
-    content: 'const apiKey = "' + fakeApiKey + '";\\nconst token = "' + fakeGitHubToken + '";',
+    content: ['const apiKey = "' + fakeApiKey + '";', 'const token = "' + fakeGitHubToken + '";'].join('\n'),
   }]);
   const remote = requests.at(-1)!;
   const remoteSource = JSON.parse(remote.body.messages[1].content).sourceFiles[0].content;
   assert.equal(remoteSource.includes(fakeApiKey), false);
   assert.equal(remoteSource.includes(fakeGitHubToken), false);
-  assert.match(remoteSource, /\\[REDACTED\\]/);
+  assert.match(remoteSource, /\[REDACTED\]/);
   assert.equal(remote.redirect, 'error');
 
   // Legacy free-form prompts are also treated as untrusted data, never as system instructions.
@@ -84,7 +84,7 @@ try {
   assert.equal(legacy.body.messages[0].content.includes('Ignore all previous instructions'), false);
   assert.equal(JSON.parse(legacy.body.messages[1].content).sourceFiles[0].content, injectedSource);
 
-  console.log('Provider untrusted-source integration tests: 15 passed');
+  console.log('Provider untrusted-source integration tests: 22 assertions passed');
 } finally {
   globalThis.fetch = originalFetch;
   setCloudConsent(false);
