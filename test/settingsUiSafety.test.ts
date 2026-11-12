@@ -26,4 +26,4 @@ assert.ok(settings.includes('severity, status, file, and text filters are availa
 assert.doesNotMatch(settings, /Runs 13 built-in synthetic fixtures/,
   'benchmark description must not hard-code an outdated fixture count');
 
-console.log('Settings accessibility and feedback contract: 10 assertions passed');
+console.log('Settings accessibility and feedback contract: 12 assertions passed');
