@@ -1,0 +1,30 @@
+name: Repository preflight tests
+
+on:
+  push:
+    branches:
+      - work/ssrf-special-purpose-ipv4-2026-11-12
+    paths:
+      - scripts/repo_preflight.py
+      - scripts/test_repo_preflight.py
+      - .github/workflows/repo-preflight.yml
+  pull_request:
+    paths:
+      - scripts/repo_preflight.py
+      - scripts/test_repo_preflight.py
+      - .github/workflows/repo-preflight.yml
+
+permissions:
+  contents: read
+
+jobs:
+  preflight-tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Run repository preflight unit tests
+        run: python -m unittest scripts.test_repo_preflight -v
