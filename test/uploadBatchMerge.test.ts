@@ -55,7 +55,9 @@ const lineCap = mergeStagedFileBatches(
   [lineHeavy(1), lineHeavy(2), lineHeavy(3), lineHeavy(4)],
   [makeFile('src/extra.ts', 'const extra = true;')]
 );
-assert.equal(lineCap.stagedFiles.length, 4);
-assert.ok(lineCap.skippedFiles.some(item => item.includes('Combined project exceeds source line limit')));
+assert.equal(lineCap.stagedFiles.length, 4, 'the invalid existing entry is dropped and the new safe file can be staged');
+assert.equal(lineCap.stagedFiles.some(file => file.relativePath === 'src/part-4.ts'), false, 'existing staged entries beyond the project line cap must be dropped');
+assert.equal(lineCap.stagedFiles.some(file => file.relativePath === 'src/extra.ts'), true);
+assert.ok(lineCap.skippedFiles.some(item => item.includes('Existing staged content exceeds configured source line limits')));
 
 console.log('Cumulative upload batch limits and staged-state validation: 7 scenarios passed.');
