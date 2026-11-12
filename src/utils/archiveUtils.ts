@@ -648,8 +648,9 @@ export async function processFiles(
 
   // Derive the project name only from a validated relative path. Browser-provided
   // webkitRelativePath is still treated as untrusted input.
+  const fileArray = Array.from(files);
   let projectName = 'Project Review';
-  const firstWithRel = Array.from(files).find(f => typeof (f as any).webkitRelativePath === 'string' && (f as any).webkitRelativePath.length > 0);
+  const firstWithRel = fileArray.find(f => typeof (f as any).webkitRelativePath === 'string' && (f as any).webkitRelativePath.length > 0);
   if (firstWithRel) {
     const firstPath = sanitizeRelativePath((firstWithRel as any).webkitRelativePath);
     const rootDir = firstPath?.split('/')[0];
@@ -661,7 +662,7 @@ export async function processFiles(
   let totalExtractedSize = 0;
   const seenPaths = new Set<string>();
 
-  for (const file of Array.from(files)) {
+  for (const file of fileArray) {
     const relativePath = (file as any).webkitRelativePath;
     const rawPath = typeof relativePath === 'string' && relativePath.length > 0 ? relativePath : file.name;
     const cleanPath = sanitizeRelativePath(rawPath);
