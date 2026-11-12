@@ -692,14 +692,13 @@ CRITICAL RULES:
 - Output strictly a JSON object with: { "findings": [{ "title": string, "cwe": string, "owaspCategory": string, "severity": "CRITICAL"|"HIGH"|"MEDIUM"|"LOW"|"INFO", "confidence": "HIGH"|"MEDIUM"|"LOW", "verificationStatus": "LIKELY"|"NEEDS_REVIEW"|"FALSE_POSITIVE", "startLine": number, "endLine": number, "snippet": string, "explanation": string, "attackScenario": string, "exploitConditions": string, "remediation": string, "suggestedPatch": string }] }
 `;
 
-              const timeoutPromise = new Promise<never>((_, reject) =>
-                setTimeout(() => reject(new Error('Timeout')), 10000)
+              // Await the provider's own abortable hard deadline. Racing a timer here
+              // would return early while leaving the outbound request running and
+              // releasing the concurrency slot before the work actually stops.
+              const responseText = await generateAnalysisWithActiveProvider(
+                prompt,
+                [{ path: filePath, content: aiInputContent }]
               );
-
-              const responseText = await Promise.race([
-                generateAnalysisWithActiveProvider(prompt, [{ path: filePath, content: aiInputContent }]),
-                timeoutPromise
-              ]);
 
               const parsed = extractJsonFromModelResponse(responseText);
               if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || !Array.isArray(parsed.findings)) throw new Error('Invalid AI response structure');
@@ -955,14 +954,12 @@ CRITICAL RULES:
 - Output strictly a JSON object with: { "summary": string, "recommendations": string[], "patchedFullCode": string, "findings": [{ "title": string, "cwe": string, "owaspCategory": string, "severity": "CRITICAL"|"HIGH"|"MEDIUM"|"LOW"|"INFO", "confidence": "HIGH"|"MEDIUM"|"LOW", "verificationStatus": "CONFIRMED"|"LIKELY"|"NEEDS_REVIEW"|"FALSE_POSITIVE", "startLine": number, "endLine": number, "snippet": string, "explanation": string, "attackScenario": string, "exploitConditions": string, "remediation": string, "suggestedPatch": string }] }
 `;
 
-          const timeoutPromise = new Promise<never>((_, reject) =>
-            setTimeout(() => reject(new Error('AI review timeout after 12s')), 12000)
+          // Provider transports enforce their own bounded, aborting deadlines.
+          // Do not race a detached timer that could leave network work running.
+          const responseText = await generateAnalysisWithActiveProvider(
+            prompt,
+            [{ path: safeFileName, content: aiInputContent }]
           );
-
-          const responseText = await Promise.race([
-            generateAnalysisWithActiveProvider(prompt, [{ path: safeFileName, content: aiInputContent }]),
-            timeoutPromise
-          ]);
 
           const parsed = extractJsonFromModelResponse(responseText);
           if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || !Array.isArray(parsed.findings)) throw new Error('Invalid AI response structure');
