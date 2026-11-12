@@ -89,6 +89,7 @@ The findings above describe the repository snapshot inspected at the time of the
 - Folder uploads reject excessive selections before copying the selection and compare actual UTF-8 content bytes with file metadata.
 - Single-file and multi-file server analysis reject excessive line counts before allocating large line arrays: 100,000 lines per file and 300,000 lines per project.
 - Report downloads sanitize filenames, defer object-URL revocation to avoid racing mobile downloads, and the Markdown copy control now reports success only after the clipboard write resolves.
+- Privacy-mode history now also heuristically redacts likely credentials copied into retained finding snippets, surrounding evidence, explanations, and suggested patches while preserving review context.
 
 ### Remaining verification and engineering work
 
