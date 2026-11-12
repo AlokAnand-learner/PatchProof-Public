@@ -38,4 +38,4 @@ for (const endpoint of publicEndpoints) {
   assert.equal(result.isValid, true, `globally routable IPv6 endpoint should remain eligible: ${endpoint}`);
 }
 
-console.log('Special-purpose IPv6 SSRF regression checks: 11 passed');
+console.log(`Special-purpose IPv6 SSRF regression checks: ${blocked.length + publicEndpoints.length} passed`);
