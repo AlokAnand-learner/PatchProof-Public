@@ -95,12 +95,12 @@ function makeScan(id: string): ScanResult {
       verificationType: 'STATIC_RULE_MATCH',
       startLine: 1,
       endLine: 1,
-      snippet: 'const apiKey = userInput;',
-      surroundingContext: 'const apiKey = userInput;',
+      snippet: 'const apiKey = "FINDING_EVIDENCE_SECRET_999";',
+      surroundingContext: 'const apiKey = "FINDING_EVIDENCE_SECRET_999";',
       explanation: 'Test finding',
       attackScenario: 'Test scenario',
       remediation: 'Use a secret manager',
-      suggestedPatch: '',
+      suggestedPatch: 'const apiKey = "FINDING_PATCH_SECRET_888";',
       status: 'OPEN'
     }],
     summary: 'Privacy fixture',
@@ -161,7 +161,8 @@ async function run(): Promise<void> {
   assert('New history does not persist full-file patches in privacy mode', !rawAfterEnable.includes('FULL_PATCH_SECRET_456'));
   assert('New history does not persist project file source in privacy mode', !rawAfterEnable.includes('FILE_SOURCE_SECRET_789'));
   assert('New history does not persist per-file patched source in privacy mode', !rawAfterEnable.includes('FILE_PATCH_SECRET_012'));
-  assert('Finding evidence snippets remain available in privacy mode', rawAfterEnable.includes('const apiKey = userInput;'));
+  assert('Finding evidence remains available but likely secrets are redacted', rawAfterEnable.includes('const apiKey = [REDACTED];') && !rawAfterEnable.includes('FINDING_EVIDENCE_SECRET_999'));
+  assert('Suggested patches in saved findings do not retain likely secrets', !rawAfterEnable.includes('FINDING_PATCH_SECRET_888'));
   assert('History update events are dispatched for privacy changes and saves', historyEvents >= 4);
 
   assert('Users can explicitly opt back into full-source history storage', setPrivacyMode(false));
