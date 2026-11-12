@@ -938,14 +938,10 @@ CRITICAL RULES:
       if (!safeFileName) {
         return res.status(400).json({ error: 'Unsupported or invalid source filename. Use a supported plain-text source file extension.' });
       }
-      const allowedLanguages = new Set([
-        'javascript', 'typescript', 'python', 'go', 'java', 'php', 'cpp', 'rust',
-        'csharp', 'ruby', 'sql', 'shell', 'json', 'yaml', 'html', 'css', 'plaintext'
-      ]);
+      // Derive language from the validated filename/content. A client-supplied
+      // language label is presentation metadata, not trusted analysis input.
       const detectedLanguage = detectLanguage(safeFileName, code);
-      const safeLanguage = typeof language === 'string' && allowedLanguages.has(language)
-        ? language
-        : detectedLanguage;
+      const safeLanguage = detectedLanguage;
       const lineCount = countSourceLinesWithinLimit(code, MAX_SOURCE_LINES_PER_FILE);
       if (lineCount === null) {
         return res.status(400).json({ error: `Source file exceeds the ${MAX_SOURCE_LINES_PER_FILE}-line analysis limit.` });
