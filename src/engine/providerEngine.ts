@@ -151,10 +151,12 @@ async function requestGoogleGenerateContent(
   systemInstruction: string | undefined,
   timeoutMs: number,
   maxResponseBytes: number,
+  maxOutputTokens = 2048,
+  temperature = 0.1,
 ): Promise<any> {
   const requestBody: Record<string, unknown> = {
     contents: [{ role: 'user', parts: [{ text: contents }] }],
-    generationConfig: { maxOutputTokens: 2048, temperature: 0.1 },
+    generationConfig: { maxOutputTokens, temperature },
   };
   if (systemInstruction) {
     requestBody.systemInstruction = { parts: [{ text: systemInstruction }] };
@@ -488,6 +490,8 @@ export async function testProviderConnection(params: {
         undefined,
         6000,
         64 * 1024,
+        10,
+        0,
       );
 
       const reply = extractGoogleResponseText(testRes);
