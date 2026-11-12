@@ -57,8 +57,9 @@ Do not mark Phase 1 as 100% while any unchecked verification item remains. Sourc
 ## Patch application safeguards
 
 - Only fixes with the configured VALIDATED static-check status may be applied; NEEDS_REVIEW, PARTIALLY_VALIDATED, and INVALID fixes remain blocked in the handler.
-- Snippet application validates one-based inclusive source line ranges and requires the current source text to exactly match the finding's source-derived evidence snippet, preventing stale or mismatched line-target edits.
-- Full-file AI output remains preview-only. These checks constrain the UI edit operation; they do not establish semantic correctness or replace review and rescanning.
+- Snippet application delegates to a pure, runtime-tested helper that validates one-based inclusive line ranges, caps the target span, and requires the current source text to exactly match the finding's source-derived evidence snippet, preventing stale or mismatched line-target edits.
+- Only VALIDATED static-check results are eligible; NEEDS_REVIEW, PARTIALLY_VALIDATED, and INVALID are blocked. The user must still explicitly approve the preview, and full-file AI output remains preview-only.
+- These checks constrain the UI edit operation; they do not establish semantic correctness or replace review and rescanning.
 
 ## Fix validation API resource controls
 
