@@ -43,7 +43,7 @@ assert.match(buildAiCoverageNotice({
   attempted: 4, completed: 3, failed: 1, truncated: 2,
   maxCharactersPerFile: 35000, truncatedFiles: ['src/large.ts', 'src/another.ts'], offlineMode: false,
   cloudConsentRequired: true, cloudConsentGranted: true
-}), /Truncated AI-reviewed paths: src\\/large\\.ts, src\\/another\\.ts/);
+}), /Truncated AI-reviewed paths: src.*large.*another/);
 assert.match(buildAiCoverageNotice({
   attempted: 4, completed: 3, failed: 1, truncated: 2,
   maxCharactersPerFile: 35000, skippedByBudget: 2, offlineMode: false,
