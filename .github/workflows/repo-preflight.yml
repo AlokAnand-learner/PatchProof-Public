@@ -39,7 +39,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Run repository preflight unit tests
-        run: python -m unittest scripts.test_repo_preflight scripts.test_import_source_archive scripts.test_import_source_archive_flow -v
+        run: python -m unittest scripts.test_repo_preflight scripts.test_import_source_archive scripts.test_import_source_archive_flow scripts.test_audit_source_archive_conflicts -v
 
   app-validation:
     runs-on: ubuntu-latest
