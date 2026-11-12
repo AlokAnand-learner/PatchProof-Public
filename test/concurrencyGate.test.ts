@@ -1,0 +1,20 @@
+import assert from 'node:assert/strict';
+import { createConcurrencyGate } from '../src/utils/concurrencyGate';
+
+const gate = createConcurrencyGate(2);
+const releaseOne = gate.tryAcquire();
+const releaseTwo = gate.tryAcquire();
+assert.equal(typeof releaseOne, 'function');
+assert.equal(typeof releaseTwo, 'function');
+assert.equal(gate.activeCount(), 2);
+assert.equal(gate.tryAcquire(), null, 'third concurrent task must be rejected');
+releaseOne?.();
+releaseOne?.();
+assert.equal(gate.activeCount(), 1, 'release must be idempotent');
+const releaseThree = gate.tryAcquire();
+assert.equal(typeof releaseThree, 'function');
+releaseTwo?.();
+releaseThree?.();
+assert.equal(gate.activeCount(), 0);
+assert.throws(() => createConcurrencyGate(0));
+console.log('Provider concurrency gate: 6 assertions passed.');
