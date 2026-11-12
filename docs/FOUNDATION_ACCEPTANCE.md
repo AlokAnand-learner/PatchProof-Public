@@ -39,4 +39,4 @@ Do not mark Phase 1 as 100% while any unchecked verification item remains. Sourc
 ## Cross-platform developer workflow
 - [x] Development and production startup explicitly select their runtime modes without shell-specific environment syntax.
 - [x] Clean script uses Node.js filesystem APIs and is cross-platform.
-- [ ] A single package manager and matching committed lockfile are selected and verified.
+- [x] Bun is the single selected package manager; the committed `bun.lock` was verified with a frozen installation in GitHub Actions.
