@@ -42,17 +42,26 @@ export const PatchDiffViewer: React.FC<PatchDiffViewerProps> = ({
   const [viewMode, setViewMode] = useState<'snippet' | 'full'>('snippet');
   const [showValidationDetails, setShowValidationDetails] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [copyFailed, setCopyFailed] = useState(false);
   const [applied, setApplied] = useState(false);
   const [showInvalidApplyWarning, setShowInvalidApplyWarning] = useState(false);
 
   const validation: FixValidationResult | undefined = finding.fixValidation;
   const status: FixValidationStatus = validation?.status || 'NEEDS_REVIEW';
 
-  const handleCopy = () => {
-    const textToCopy = viewMode === 'snippet' ? finding.suggestedPatch : (patchedFullCode || originalCode);
-    navigator.clipboard.writeText(textToCopy);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+  const handleCopy = async () => {
+    try {
+      if (!navigator.clipboard?.writeText) throw new Error('Clipboard unavailable');
+      const textToCopy = viewMode === 'snippet' ? finding.suggestedPatch : (patchedFullCode || originalCode);
+      await navigator.clipboard.writeText(textToCopy);
+      setCopyFailed(false);
+      setCopied(true);
+      window.setTimeout(() => setCopied(false), 2000);
+    } catch {
+      setCopied(false);
+      setCopyFailed(true);
+      window.setTimeout(() => setCopyFailed(false), 3500);
+    }
   };
 
   const executeApply = () => {
@@ -177,10 +186,10 @@ export const PatchDiffViewer: React.FC<PatchDiffViewerProps> = ({
           <button
             onClick={handleCopy}
             className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white dark:bg-[#1B2638] hover:bg-slate-50 dark:hover:bg-[#243247] text-[#17243B] dark:text-[#F1F5FC] text-xs font-medium border border-[#DCE3ED] dark:border-[#35445A] transition cursor-pointer"
-            title="Copy fix to clipboard"
+            title={copyFailed ? 'Clipboard unavailable or permission denied' : 'Copy fix to clipboard'}
           >
             {copied ? <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> : <Copy className="w-3.5 h-3.5 text-[#68758A] dark:text-[#9BAAC0]" />}
-            <span className="hidden sm:inline">{copied ? 'Copied' : 'Copy'}</span>
+            <span className="hidden sm:inline">{copied ? 'Copied' : copyFailed ? 'Copy failed' : 'Copy'}</span>
           </button>
 
           <button
