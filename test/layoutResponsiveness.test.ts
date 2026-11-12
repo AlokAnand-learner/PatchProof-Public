@@ -96,6 +96,15 @@ if (indexCss.includes('clamp(') && indexCss.includes('pb-safe') && indexCss.incl
   fail('index.css tokens', 'Missing clamp or safe area definitions');
 }
 
+// Respect system accessibility preferences for reduced motion.
+if (indexCss.includes('@media (prefers-reduced-motion: reduce)') &&
+    indexCss.includes('animation-duration: 0.01ms !important') &&
+    indexCss.includes('transition-duration: 0.01ms !important')) {
+  pass('Global reduced-motion preference limits non-essential animation and transitions');
+} else {
+  fail('Reduced motion support', 'Missing prefers-reduced-motion override');
+}
+
 console.log('===========================================================');
 console.log(`Results: ${testsPassed} passed, ${testsFailed} failed.`);
 if (testsFailed === 0) {
