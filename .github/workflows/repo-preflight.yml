@@ -7,6 +7,10 @@ on:
     paths:
       - scripts/repo_preflight.py
       - scripts/test_repo_preflight.py
+      - scripts/import_source_archive.py
+      - scripts/test_import_source_archive.py
+      - scripts/import_source_archive.py
+      - scripts/test_import_source_archive.py
       - src/utils/apiClient.ts
       - test/apiClientOrigin.test.ts
       - package.json
@@ -33,7 +37,7 @@ jobs:
         with:
           python-version: "3.12"
       - name: Run repository preflight unit tests
-        run: python -m unittest scripts.test_repo_preflight -v
+        run: python -m unittest scripts.test_repo_preflight scripts.test_import_source_archive -v
 
   api-origin-tests:
     runs-on: ubuntu-latest
