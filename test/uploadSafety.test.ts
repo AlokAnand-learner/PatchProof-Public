@@ -196,6 +196,13 @@ async function runUploadSafetyTests() {
     assert('Reject unsafe folder-upload relative path instead of falling back to basename', mixedUpload.stagedFiles.length === 1 && mixedUpload.stagedFiles[0].relativePath === 'project/src/safe.ts');
     assert('Record unsafe folder-upload path rejection', mixedUpload.skippedFiles.some(item => item.includes('unsafe or invalid relative path')));
 
+    const forgedMetadataFile = Object.assign(
+      makeMockFile('forged.ts', 'project/src/forged.ts', 'const forged = true;'),
+      { size: 1 }
+    );
+    const forgedMetadataUpload = await processFiles([forgedMetadataFile], { excludeDirs: false });
+    assert('Reject folder upload when declared File.size differs from actual UTF-8 content bytes', forgedMetadataUpload.stagedFiles.length === 0 && forgedMetadataUpload.skippedFiles.some(item => item.includes('metadata does not match actual content')));
+
     const duplicateUpload = await processFiles([
       makeMockFile('App.ts', 'project/src/App.ts', 'const app = 1;'),
       makeMockFile('app.ts', 'project/src/app.ts', 'const other = 2;')
