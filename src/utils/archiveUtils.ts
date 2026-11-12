@@ -22,7 +22,23 @@ export function mergeStagedFileBatches(
 ): { stagedFiles: StagedFile[]; skippedFiles: string[] } {
   const stagedFiles: StagedFile[] = [];
   const skippedFiles: string[] = [];
-  const seenPaths = new Set<string>();
+  const pathRegistry = new Map<string, { spelling: string; kind: 'file' | 'directory' }>();
+  const registerStagedPath = (relativePath: string): boolean => {
+    const parts = relativePath.split('/');
+    for (let index = 1; index < parts.length; index += 1) {
+      const directory = parts.slice(0, index).join('/');
+      const key = directory.normalize('NFC').toLocaleLowerCase('en-US');
+      const existingEntry = pathRegistry.get(key);
+      if (existingEntry && (existingEntry.kind !== 'directory' || existingEntry.spelling !== directory)) {
+        return false;
+      }
+      if (!existingEntry) pathRegistry.set(key, { spelling: directory, kind: 'directory' });
+    }
+    const key = relativePath.normalize('NFC').toLocaleLowerCase('en-US');
+    if (pathRegistry.has(key)) return false;
+    pathRegistry.set(key, { spelling: relativePath, kind: 'file' });
+    return true;
+  };
   let totalBytes = 0;
   let totalLines = 0;
 
@@ -35,9 +51,8 @@ export function mergeStagedFileBatches(
       skippedFiles.push('Previously staged entry (Invalid path or source content rejected)');
       continue;
     }
-    const pathKey = safePath.normalize('NFC').toLocaleLowerCase('en-US');
-    if (seenPaths.has(pathKey)) {
-      skippedFiles.push(`${safePath} (Duplicate or case-colliding existing path rejected)`);
+    if (!registerStagedPath(safePath)) {
+      skippedFiles.push(`${safePath} (Duplicate, case-colliding, or file/directory-conflicting existing path rejected)`);
       continue;
     }
     if (stagedFiles.length >= limits.maxFileCount) {
@@ -56,7 +71,6 @@ export function mergeStagedFileBatches(
       continue;
     }
 
-    seenPaths.add(pathKey);
     totalBytes += actualBytes;
     totalLines += lineCount;
     stagedFiles.push({ ...existingFile, relativePath: safePath, size: actualBytes, lines: lineCount });
@@ -68,9 +82,8 @@ export function mergeStagedFileBatches(
       skippedFiles.push('Selected entry (Invalid path or source content rejected)');
       continue;
     }
-    const pathKey = safePath.normalize('NFC').toLowerCase();
-    if (seenPaths.has(pathKey)) {
-      skippedFiles.push(`${safePath} (Duplicate or case-colliding path rejected)`);
+    if (!registerStagedPath(safePath)) {
+      skippedFiles.push(`${safePath} (Duplicate, case-colliding, or file/directory-conflicting path rejected)`);
       continue;
     }
     if (stagedFiles.length >= limits.maxFileCount) {
@@ -96,7 +109,6 @@ export function mergeStagedFileBatches(
       continue;
     }
 
-    seenPaths.add(pathKey);
     totalBytes += actualBytes;
     totalLines += lineCount;
     stagedFiles.push({ ...file, relativePath: safePath, size: actualBytes, lines: lineCount });
