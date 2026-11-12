@@ -61,6 +61,12 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
   const [activeFilePath, setActiveFilePath] = useState<string>(
     scan.files && scan.files.length > 0 ? scan.files[0].filePath : scan.fileName
   );
+  const [undoSnapshot, setUndoSnapshot] = useState<{
+    scanId: string;
+    filePath: string;
+    originalCode: string;
+    appliedCode: string;
+  } | null>(null);
 
   useEffect(() => {
     setFindingsState(scan.findings);
@@ -71,6 +77,10 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
       }
     }
   }, [scan]);
+
+  useEffect(() => {
+    if (undoSnapshot && undoSnapshot.scanId !== scan.id) setUndoSnapshot(null);
+  }, [scan.id, undoSnapshot]);
 
   const toggleDiff = (id: string) => {
     setExpandedDiffs(prev => ({ ...prev, [id]: !prev[id] }));
@@ -135,6 +145,29 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
   };
 
   const fileOptions = scan.files || [];
+  const undoCurrentCode = undoSnapshot
+    ? (scan.files?.find(file => file.filePath === undoSnapshot.filePath)?.content ??
+      (!scan.isMultiFile && scan.fileName === undoSnapshot.filePath ? scan.originalCode : undefined))
+    : undefined;
+  const canUndoLastPatch = Boolean(
+    undoSnapshot && undoSnapshot.scanId === scan.id && undoCurrentCode === undoSnapshot.appliedCode
+  );
+
+  const applyPatchWithUndo = (newCode: string, originalCode: string, targetFilePath: string) => {
+    setUndoSnapshot({
+      scanId: scan.id,
+      filePath: targetFilePath,
+      originalCode,
+      appliedCode: newCode,
+    });
+    onApplyPatchToSource(newCode, targetFilePath);
+  };
+
+  const handleUndoLastPatch = () => {
+    if (!undoSnapshot || !canUndoLastPatch) return;
+    onApplyPatchToSource(undoSnapshot.originalCode, undoSnapshot.filePath);
+    setUndoSnapshot(null);
+  };
 
   const getVerificationStatusBadge = (status: VerificationStatus) => {
     switch (status) {
@@ -212,6 +245,18 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
             <RotateCcw className="w-3.5 h-3.5" />
             <span>Re-run</span>
           </button>
+
+          {canUndoLastPatch && undoSnapshot && (
+            <button
+              onClick={handleUndoLastPatch}
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white dark:bg-[#243247] hover:bg-[#F4F6FA] dark:hover:bg-[#2D3E58] text-[#17243B] dark:text-[#F1F5FC] text-xs font-medium border border-[#DCE3ED] dark:border-[#35445A] transition shadow-sm"
+              aria-label={`Undo the last patch to ${undoSnapshot.filePath}`}
+              title="Restore the exact source content from immediately before the last patch"
+            >
+              <RotateCcw className="w-3.5 h-3.5" />
+              <span>Undo Last Patch</span>
+            </button>
+          )}
 
           <button
             onClick={onNewReview}
@@ -562,7 +607,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
                         patchedFullCode={activeFileRecord.patchedContent}
                         fileName={displayFilePath}
                         language={activeFileRecord.language}
-                        onApplyPatch={(newCode) => onApplyPatchToSource(newCode, displayFilePath)}
+                        onApplyPatch={(newCode) => applyPatchWithUndo(newCode, activeFileRecord.content, displayFilePath)}
                       />
                     </div>
                   )}
@@ -625,7 +670,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
                 patchedFullCode={activeFileRecord.patchedContent}
                 fileName={selectedFinding.filePath || scan.fileName}
                 language={activeFileRecord.language}
-                onApplyPatch={(newCode) => onApplyPatchToSource(newCode, selectedFinding.filePath || scan.fileName)}
+                onApplyPatch={(newCode) => applyPatchWithUndo(newCode, activeFileRecord.content, selectedFinding.filePath || scan.fileName)}
               />
             </div>
           )}
