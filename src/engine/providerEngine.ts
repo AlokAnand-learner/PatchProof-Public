@@ -501,9 +501,11 @@ export async function testProviderConnection(params: {
       }
 
       const requestUrl = `${cleanEndpoint}/models`;
-      const request = provider === 'custom' && !isCustomLocal
-        ? fetchPinnedHttpsResponseText(requestUrl, { method: 'GET', headers, redirect: 'error' }, 6000, 64 * 1024)
-        : fetchResponseText(requestUrl, { method: 'GET', headers }, 6000, 64 * 1024);
+      // Every remote HTTPS endpoint is DNS-pinned, including configurable OpenAI URLs.
+      // Only explicitly trusted custom loopback endpoints may use ordinary fetch.
+      const request = provider === 'custom' && isCustomLocal
+        ? fetchResponseText(requestUrl, { method: 'GET', headers }, 6000, 64 * 1024)
+        : fetchPinnedHttpsResponseText(requestUrl, { method: 'GET', headers, redirect: 'error' }, 6000, 64 * 1024);
       const { response: res, bodyText } = await request;
 
       if (!res.ok) {
@@ -705,9 +707,11 @@ export async function generateAnalysisWithActiveProvider(
       }),
       redirect: 'error',
     };
-    const request = activeProvider === 'custom' && !isCustomLocal
-      ? fetchPinnedHttpsResponseText(requestUrl, requestInit, 18000, 2 * 1024 * 1024)
-      : fetchResponseText(requestUrl, requestInit, 18000, 2 * 1024 * 1024);
+    // Remote OpenAI and custom HTTPS endpoints must use DNS-pinned transport.
+    // Ordinary fetch is reserved for explicitly trusted custom loopback endpoints.
+    const request = activeProvider === 'custom' && isCustomLocal
+      ? fetchResponseText(requestUrl, requestInit, 18000, 2 * 1024 * 1024)
+      : fetchPinnedHttpsResponseText(requestUrl, requestInit, 18000, 2 * 1024 * 1024);
     const { response: res, bodyText } = await request;
 
     if (!res.ok) {
