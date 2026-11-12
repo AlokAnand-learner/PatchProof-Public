@@ -363,7 +363,7 @@ export function generateMarkdownReport(scan: ScanResult): string {
       }
 
       if (f.suggestedPatch) {
-        const valStatus = f.fixValidation?.status || (f.verificationStatus === 'FALSE_POSITIVE' ? 'NOT_APPLICABLE' : 'NEEDS_REVIEW');
+        const valStatus = f.fixValidation?.status ? formatFixValidationStatus(f.fixValidation.status) : (f.verificationStatus === 'FALSE_POSITIVE' ? 'NOT_APPLICABLE' : 'NEEDS_REVIEW');
         const valScore = f.fixValidation && typeof f.fixValidation.overallScore === 'number' && Number.isFinite(f.fixValidation.overallScore)
           ? safeReportNumber(f.fixValidation.overallScore, 0, 0, 100)
           : null;
@@ -418,6 +418,16 @@ export function safeValidationStatus(status: string): string {
   return ALLOWED_VALIDATION_STATUSES.has(status) ? status : 'NEEDS_REVIEW';
 }
 
+
+function formatFixValidationStatus(status: string): string {
+  switch (safeValidationStatus(status)) {
+    case 'VALIDATED': return 'STATIC_CHECKS_PASSED';
+    case 'PARTIALLY_VALIDATED': return 'STATIC_CHECKS_PARTIAL';
+    case 'INVALID': return 'STATIC_CHECKS_FAILED';
+    default: return 'NEEDS_REVIEW';
+  }
+}
+
 export function generateHtmlReport(scan: ScanResult): string {
   const dateStr = new Date(scan.timestamp).toLocaleString();
   const metrics = scan.metrics && typeof scan.metrics === 'object' ? scan.metrics : {} as ScanResult['metrics'];
@@ -436,7 +446,7 @@ export function generateHtmlReport(scan: ScanResult): string {
       const sevClass = safeSeverityClass(f.severity);
       const hasFixValidation = Boolean(f.fixValidation && typeof f.fixValidation === 'object');
       const valStatus = hasFixValidation
-        ? safeValidationStatus(f.fixValidation?.status || 'NEEDS_REVIEW')
+        ? formatFixValidationStatus(f.fixValidation?.status || 'NEEDS_REVIEW')
         : f.verificationStatus === 'FALSE_POSITIVE' ? 'NOT APPLICABLE' : 'NOT RUN';
       const valScore = hasFixValidation && typeof f.fixValidation?.overallScore === 'number' && Number.isFinite(f.fixValidation.overallScore)
         ? safeReportNumber(f.fixValidation.overallScore, 0, 0, 100)
@@ -480,7 +490,7 @@ export function generateHtmlReport(scan: ScanResult): string {
             <div class="code-block patch">
               <div class="code-title" style="display:flex; justify-content:space-between; align-items:center;">
                 <span>Recommended Patch</span>
-                <span style="font-size:10px; font-weight:bold; padding:2px 8px; border-radius:12px; background:${valStatus === 'VALIDATED' ? 'rgba(16,185,129,0.2)' : valStatus === 'PARTIALLY_VALIDATED' ? 'rgba(245,158,11,0.2)' : valStatus === 'NOT APPLICABLE' ? 'rgba(100,116,139,0.2)' : 'rgba(239,68,68,0.2)'}; color:${valStatus === 'VALIDATED' ? '#34d399' : valStatus === 'PARTIALLY_VALIDATED' ? '#fbbf24' : valStatus === 'NOT APPLICABLE' ? '#cbd5e1' : '#f87171'};">
+                <span style="font-size:10px; font-weight:bold; padding:2px 8px; border-radius:12px; background:${valStatus === 'STATIC_CHECKS_PASSED' ? 'rgba(16,185,129,0.2)' : valStatus === 'STATIC_CHECKS_PARTIAL' ? 'rgba(245,158,11,0.2)' : valStatus === 'NOT APPLICABLE' ? 'rgba(100,116,139,0.2)' : 'rgba(239,68,68,0.2)'}; color:${valStatus === 'VALIDATED' ? '#34d399' : valStatus === 'PARTIALLY_VALIDATED' ? '#fbbf24' : valStatus === 'NOT APPLICABLE' ? '#cbd5e1' : '#f87171'};">
                   ${escapeHtml(valStatus)}${valScore === null ? ' (not executed)' : ` (Static check score: ${valScore}/100)`}
                 </span>
               </div>
