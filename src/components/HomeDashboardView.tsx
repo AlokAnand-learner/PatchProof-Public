@@ -76,7 +76,7 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
       {/* 2. Review Statistics (4 Metric Cards with WCAG AA Contrast) */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
         {/* Metric 1: Total Reviews */}
-        <div className="p-5 rounded-xl bg-white dark:bg-[#161D2D] border border-[#DCE3ED] dark:border-[#232E42] shadow-xs">
+        <div className="pp-interactive-card pp-glass-surface p-5 rounded-xl bg-white dark:bg-[#161D2D] border border-[#DCE3ED] dark:border-[#232E42] shadow-xs">
           <span className="text-xs font-semibold text-[#526078] dark:text-[#A6B4C9] uppercase tracking-wider block">
             Total Reviews
           </span>
@@ -97,7 +97,7 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
             {totalIssuesFound}
           </div>
           <span className="text-xs text-[#68758A] dark:text-[#7E8D9F] mt-1 block">
-            Security weaknesses identified
+            Potential security patterns flagged
           </span>
         </div>
 
@@ -110,14 +110,14 @@ export const HomeDashboardView: React.FC<HomeDashboardViewProps> = ({
             {totalCriticalIssues}
           </div>
           <span className="text-xs text-[#68758A] dark:text-[#7E8D9F] mt-1 block">
-            {totalCriticalIssues > 0 ? 'Requires immediate patch' : 'No critical patterns detected in analyzed files'}
+            {totalCriticalIssues > 0 ? 'Critical patterns need priority review' : 'No critical patterns detected in analyzed files'}
           </span>
         </div>
 
         {/* Metric 4: Average Heuristic Risk Score */}
         <div className="p-5 rounded-xl bg-white dark:bg-[#161D2D] border border-[#DCE3ED] dark:border-[#232E42] shadow-xs">
           <span className="text-xs font-semibold text-[#526078] dark:text-[#A6B4C9] uppercase tracking-wider block">
-            Average Health
+            Average Heuristic Risk
           </span>
           <div className="text-3xl font-bold text-[#17243B] dark:text-[#F1F4FA] mt-2 font-mono tabular-nums">
             {totalReviews > 0 ? `${avgHealthScore}/100` : '—'}
