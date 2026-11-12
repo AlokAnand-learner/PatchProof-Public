@@ -31,7 +31,7 @@ assert.deepEqual(counts, { aiHypothesesCount: 2, deterministicCount: 1 });
 
 assert.match(buildAiCoverageNotice({
   attempted: 4, completed: 3, failed: 1, truncated: 2,
-  maxCharactersPerFile: 35000, skippedByBudget: 2, offlineMode: false,
+  maxCharactersPerFile: 35000, skippedByBudget: 2, truncatedFiles: ['src/large.ts', 'src/another.ts'], offlineMode: false,
   cloudConsentRequired: true, cloudConsentGranted: true
 }), /3 of 4 attempted files/);
 assert.match(buildAiCoverageNotice({
@@ -39,6 +39,11 @@ assert.match(buildAiCoverageNotice({
   maxCharactersPerFile: 35000, offlineMode: false,
   cloudConsentRequired: true, cloudConsentGranted: true
 }), /2 file\(s\) were truncated/);
+assert.match(buildAiCoverageNotice({
+  attempted: 4, completed: 3, failed: 1, truncated: 2,
+  maxCharactersPerFile: 35000, truncatedFiles: ['src/large.ts', 'src/another.ts'], offlineMode: false,
+  cloudConsentRequired: true, cloudConsentGranted: true
+}), /Truncated AI-reviewed paths: src\\/large\\.ts, src\\/another\\.ts/);
 assert.match(buildAiCoverageNotice({
   attempted: 4, completed: 3, failed: 1, truncated: 2,
   maxCharactersPerFile: 35000, skippedByBudget: 2, offlineMode: false,
