@@ -26,6 +26,7 @@ interface ReportModalProps {
 
 export const ReportModal: React.FC<ReportModalProps> = ({ scan, onClose }) => {
   const [copiedMd, setCopiedMd] = React.useState(false);
+  const [copyFailed, setCopyFailed] = React.useState(false);
 
   const handlePrint = () => {
     window.print();
@@ -49,11 +50,21 @@ export const ReportModal: React.FC<ReportModalProps> = ({ scan, onClose }) => {
     downloadTextFile(filename, html, 'text/html');
   };
 
-  const handleCopyMarkdown = () => {
-    const md = generateMarkdownReport(scan);
-    navigator.clipboard.writeText(md);
-    setCopiedMd(true);
-    setTimeout(() => setCopiedMd(false), 2000);
+  const handleCopyMarkdown = async () => {
+    try {
+      if (!navigator.clipboard?.writeText) {
+        throw new Error('Clipboard access is unavailable in this browser context.');
+      }
+      const md = generateMarkdownReport(scan);
+      await navigator.clipboard.writeText(md);
+      setCopyFailed(false);
+      setCopiedMd(true);
+      window.setTimeout(() => setCopiedMd(false), 2000);
+    } catch {
+      setCopiedMd(false);
+      setCopyFailed(true);
+      window.setTimeout(() => setCopyFailed(false), 3500);
+    }
   };
 
   const dateStr = new Date(scan.timestamp).toLocaleString();
@@ -110,10 +121,10 @@ export const ReportModal: React.FC<ReportModalProps> = ({ scan, onClose }) => {
             <button
               onClick={handleCopyMarkdown}
               className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white dark:bg-[#1B2638] hover:bg-slate-50 dark:hover:bg-[#243247] text-[#17243B] dark:text-[#F1F5FC] text-xs font-medium border border-[#DCE3ED] dark:border-[#35445A] transition cursor-pointer"
-              title="Copy Markdown"
+              title={copyFailed ? "Clipboard unavailable or permission denied" : "Copy Markdown"}
             >
               {copiedMd ? <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" /> : <Copy className="w-3.5 h-3.5" />}
-              <span className="hidden sm:inline">{copiedMd ? 'Copied' : 'Copy'}</span>
+              <span className="hidden sm:inline">{copiedMd ? 'Copied' : copyFailed ? 'Copy failed' : 'Copy'}</span>
             </button>
 
             <button
