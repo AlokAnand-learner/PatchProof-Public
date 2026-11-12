@@ -577,7 +577,11 @@ async function startServer() {
         const allFindings: VulnerabilityFinding[] = [];
         let totalLines = 0;
         let cumulativeSize = 0;
-        let modelUsed = 'Context-Aware Static AST (Local In-Memory)';
+        let modelUsed = 'Context-Aware Static Checks (Local)';
+        let aiReviewAttemptedFiles = 0;
+        let aiReviewCompletedFiles = 0;
+        let aiReviewFailedFiles = 0;
+        let aiTruncatedFiles = 0;
         const fileRecords: any[] = [];
         const skippedFiles: string[] = [];
         const seenProjectPaths = new Set<string>();
@@ -648,6 +652,9 @@ async function startServer() {
 
           // 2. Run secondary reasoning only when server-side consent or a trusted local route permits it
           if (fileContent.trim().length > 15 && canUseConfiguredAi) {
+            aiReviewAttemptedFiles += 1;
+            const aiInputContent = fileContent.slice(0, 35000);
+            if (aiInputContent.length < fileContent.length) aiTruncatedFiles += 1;
             try {
               const prompt = `Conduct an in-depth defensive code security review of "${filePath}" (${fileLang}).
 CRITICAL RULES:
@@ -663,11 +670,14 @@ CRITICAL RULES:
               );
 
               const responseText = await Promise.race([
-                generateAnalysisWithActiveProvider(prompt, [{ path: filePath, content: fileContent.slice(0, 35000) }]),
+                generateAnalysisWithActiveProvider(prompt, [{ path: filePath, content: aiInputContent }]),
                 timeoutPromise
               ]);
 
               const parsed = extractJsonFromModelResponse(responseText);
+              if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('Invalid AI response structure');
+              aiReviewCompletedFiles += 1;
+              modelUsed = `${provState.activeProvider}:${provState.activeModel} (Hybrid Analysis)`;
               const safeModelFindings = validateAIModelFindings(parsed?.findings, fileContent);
               if (safeModelFindings.length > 0) {
                 const aiFindings: VulnerabilityFinding[] = safeModelFindings.map((finding, fIdx) => {
@@ -715,10 +725,10 @@ CRITICAL RULES:
                     fileFindings.push(af);
                   }
                 }
-                modelUsed = `${provState.activeProvider}:${provState.activeModel} (Hybrid Analysis)`;
               }
             } catch (e) {
-              // Fallback gracefully to context-aware static pipeline
+              aiReviewFailedFiles += 1;
+              // Keep the deterministic local result and disclose the AI fallback in the response.
             }
           }
 
@@ -782,15 +792,15 @@ CRITICAL RULES:
           likelyCount: likely,
           needsReviewCount: needsReview,
           falsePositiveCount: fp,
-          aiHypothesesCount: 0,
-          deterministicCount: activeFindings.length,
+          aiHypothesesCount: activeFindings.filter(f => f.verificationType === 'AI_HYPOTHESIS').length,
+          deterministicCount: activeFindings.filter(f => f.verificationType !== 'AI_HYPOTHESIS').length,
           linesAnalyzed: totalLines
         };
 
         const executionTimeMs = Date.now() - startTime;
         const summary = activeFindings.length > 0
           ? `Identified ${activeFindings.length} security issues (${confirmed} confirmed, ${likely} likely, ${needsReview} needs review) across ${fileRecords.length} files (${totalLines} lines) in ${safeProjectName}.`
-          : `No security vulnerabilities were detected across ${fileRecords.length} files (${totalLines} lines) in ${safeProjectName}.`;
+           : `No matching vulnerability patterns were identified across ${fileRecords.length} files (${totalLines} lines) in ${safeProjectName}; this does not prove the project is vulnerability-free.`;
 
         const validatedAllFindings = allFindings.map(f => {
           if (f.suggestedPatch) {
@@ -822,7 +832,7 @@ CRITICAL RULES:
           modelUsed,
           executionTimeMs,
           originalCode: fileRecords[0]?.content || '',
-          patchedFullCode: fileRecords[0]?.content || '',
+          patchedFullCode: undefined,
           metrics,
           findings: validatedAllFindings,
           summary,
@@ -836,7 +846,16 @@ CRITICAL RULES:
           skippedFiles: skippedFiles.slice(0, 60),
           skippedCount: skippedFiles.length,
           transmissionMode: canUseCloudAi ? 'CLOUD_AI_TRANSMITTED' : 'LOCAL_ONLY',
-          cloudDisclosed: canUseCloudAi
+          cloudDisclosed: canUseCloudAi,
+          analysisNotice: aiReviewCompletedFiles > 0
+            ? `AI review completed for ${aiReviewCompletedFiles} of ${aiReviewAttemptedFiles} attempted files. At most the first 35,000 characters per file were sent to AI${aiTruncatedFiles > 0 ? `; ${aiTruncatedFiles} file(s) were truncated for AI review while local static checks covered the full accepted files` : ''}. AI findings remain hypotheses until independently reviewed.${aiReviewFailedFiles > 0 ? ` AI review also failed for ${aiReviewFailedFiles} file(s); local checks were retained.` : ''}`
+            : aiReviewAttemptedFiles > 0
+              ? `AI review did not complete for the attempted files${aiReviewFailedFiles > 0 ? ` (${aiReviewFailedFiles} failure(s))` : ''}. Local static checks completed; no AI coverage is claimed.`
+              : requiresCloudConsent(provState.activeProvider, activeEndpoint) && !provState.cloudConsentGranted
+                ? 'Cloud AI was not used because explicit cloud consent is not enabled. Local static checks ran.'
+                : provState.offlineMode
+                  ? 'Offline mode is active. Only local static checks ran.'
+                  : 'Only local static checks ran for this review.'
         };
 
         return res.json(scanResult);
@@ -881,13 +900,20 @@ CRITICAL RULES:
       // 1. Run in-memory Context-Aware Analysis
       const { findings: staticFindings, metrics: staticMetrics } = analyzeSourceCodeContextAware(code, safeFileName);
       let findings = staticFindings;
-      let modelUsed = 'Context-Aware Static AST (Local In-Memory)';
+      let modelUsed = 'Context-Aware Static Checks (Local)';
       let summary = '';
       let recommendations: string[] = [];
-      let patchedFullCode = code;
+      let patchedFullCode: string | undefined; 
+      let aiReviewAttempted = false;
+      let aiReviewCompleted = false;
+      let aiReviewFailed = false;
+      let aiTruncated = false;
 
       // 2. Run secondary reasoning only when server-side consent or a trusted local route permits it
       if (code.trim().length > 15 && canUseConfiguredAi) {
+        aiReviewAttempted = true;
+        const aiInputContent = code.slice(0, 45000);
+        aiTruncated = aiInputContent.length < code.length;
         try {
           const prompt = `Conduct a comprehensive code security review of "${safeFileName}" (${safeLanguage}).
 CRITICAL RULES:
@@ -903,11 +929,14 @@ CRITICAL RULES:
           );
 
           const responseText = await Promise.race([
-            generateAnalysisWithActiveProvider(prompt, [{ path: safeFileName, content: code.slice(0, 45000) }]),
+            generateAnalysisWithActiveProvider(prompt, [{ path: safeFileName, content: aiInputContent }]),
             timeoutPromise
           ]);
 
           const parsed = extractJsonFromModelResponse(responseText);
+          if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('Invalid AI response structure');
+          aiReviewCompleted = true;
+          modelUsed = `${provState.activeProvider}:${provState.activeModel} (Hybrid Analysis)`;
           if (typeof parsed?.summary === 'string') summary = parsed.summary.slice(0, 4000);
           if (Array.isArray(parsed?.recommendations)) {
             recommendations = parsed.recommendations.filter((item: unknown): item is string => typeof item === 'string').slice(0, 30).map((item: string) => item.slice(0, 1000));
@@ -962,9 +991,9 @@ CRITICAL RULES:
                 findings.push(af);
               }
             }
-            modelUsed = `${provState.activeProvider}:${provState.activeModel} (Hybrid Analysis)`;
           }
         } catch (aiErr) {
+          aiReviewFailed = true;
           console.warn('AI reasoning skipped or timed out, using in-memory context-aware engine.');
         }
       }
@@ -1009,15 +1038,15 @@ CRITICAL RULES:
         likelyCount: likely,
         needsReviewCount: needsReview,
         falsePositiveCount: fp,
-        aiHypothesesCount: 0,
-        deterministicCount: activeFindings.length,
+        aiHypothesesCount: activeFindings.filter(f => f.verificationType === 'AI_HYPOTHESIS').length,
+        deterministicCount: activeFindings.filter(f => f.verificationType !== 'AI_HYPOTHESIS').length,
         linesAnalyzed: lineCount
       };
 
       if (!summary) {
         summary = activeFindings.length > 0
           ? `Identified ${activeFindings.length} security findings across ${lineCount} lines in ${safeFileName}.`
-          : `No security vulnerabilities were detected across ${lineCount} lines in ${safeFileName}.`;
+           : `No matching vulnerability patterns were identified across ${lineCount} lines in ${safeFileName}; this does not prove the file is vulnerability-free.`;
       }
 
       if (recommendations.length === 0) {
@@ -1031,7 +1060,7 @@ CRITICAL RULES:
       const executionTimeMs = Date.now() - startTime;
 
       const validatedFindings = findings.map(f => {
-        if (f.suggestedPatch) {
+        if (f.suggestedPatch && f.verificationStatus !== 'FALSE_POSITIVE') {
           const val = validateFix({
             originalSnippet: f.snippet,
             suggestedPatch: f.suggestedPatch,
@@ -1059,7 +1088,7 @@ CRITICAL RULES:
         modelUsed,
         executionTimeMs,
         originalCode: code,
-        patchedFullCode: patchedFullCode || code,
+        patchedFullCode,
         metrics,
         findings: validatedFindings,
         summary,
@@ -1069,13 +1098,22 @@ CRITICAL RULES:
           filePath: safeFileName,
           language: safeLanguage,
           content: code,
-          patchedContent: patchedFullCode || code,
+          patchedContent: patchedFullCode,
           lines: lineCount,
           size: codeByteSize,
           findingsCount: activeFindings.length
         }],
         transmissionMode: canUseCloudAi ? 'CLOUD_AI_TRANSMITTED' : 'LOCAL_ONLY',
-        cloudDisclosed: canUseCloudAi
+        cloudDisclosed: canUseCloudAi,
+        analysisNotice: aiReviewCompleted
+          ? `AI review completed for the first ${Math.min(code.length, 45000).toLocaleString()} of ${code.length.toLocaleString()} characters${aiTruncated ? '; the remaining source was not reviewed by AI, although local static checks covered the full file' : ''}. AI findings remain hypotheses until independently reviewed.`
+          : aiReviewAttempted
+            ? `AI review did not complete${aiReviewFailed ? ' because the provider failed or timed out' : ''}. Local static checks completed; no AI coverage is claimed.`
+            : requiresCloudConsent(provState.activeProvider, activeEndpoint) && !provState.cloudConsentGranted
+              ? 'Cloud AI was not used because explicit cloud consent is not enabled. Local static checks ran.'
+              : provState.offlineMode
+                ? 'Offline mode is active. Only local static checks ran.'
+                : 'Only local static checks ran for this review.'
       };
 
       return res.json(scanResult);
