@@ -3,12 +3,32 @@
  * Validates vulnerability detection without self-scanning false positives.
  */
 import { runEvaluationSuite } from '../src/data/evaluationSuite';
+import { EvaluationTestCase } from '../src/types/security';
 
 console.log('===========================================================');
 console.log('   PATCHPROOF CODE SECURITY ENGINE - EVALUATION SUITE      ');
 console.log('===========================================================');
 
 const results = runEvaluationSuite();
+
+const noPositiveCases: EvaluationTestCase[] = [{
+  id: 'metrics-empty-positive-class',
+  title: 'Safe code with no predicted vulnerabilities',
+  category: 'Precision edge case',
+  description: 'A secure fixture verifies zero-denominator metric handling.',
+  fileName: 'safe_metrics.ts',
+  language: 'typescript',
+  expectedOutcome: 'SECURE',
+  expectedClassification: 'FALSE_POSITIVE',
+  rationale: 'No vulnerable sink or untrusted input is present.',
+  code: 'const answer = 42;',
+}];
+const noPositiveMetrics = runEvaluationSuite(noPositiveCases);
+if (noPositiveMetrics.precision !== 0 || noPositiveMetrics.recall !== 0 ||
+    noPositiveMetrics.f1Score !== 0 || noPositiveMetrics.accuracy !== 100) {
+  throw new Error('Empty positive-class metrics must be conservative (0 precision/recall/F1, 100 accuracy).');
+}
+console.log('Empty positive-class metric edge case: 4 assertions passed.');
 
 if (results.excludedCases !== 4 || results.evaluatedCases !== 9) {
   throw new Error(`Expected 9 scored cases and 4 review-only cases; got ${results.evaluatedCases} scored and ${results.excludedCases} excluded.`);
