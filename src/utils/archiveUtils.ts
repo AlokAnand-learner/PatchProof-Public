@@ -22,11 +22,22 @@ export function mergeStagedFileBatches(
 ): { stagedFiles: StagedFile[]; skippedFiles: string[] } {
   const stagedFiles = [...existing];
   const skippedFiles: string[] = [];
-  const seenPaths = new Set(stagedFiles.map(file => file.relativePath.normalize('NFC').toLocaleLowerCase('en-US')));
+  const seenPaths = new Set(stagedFiles
+    .filter(file => typeof file.relativePath === 'string')
+    .map(file => file.relativePath.normalize('NFC').toLowerCase()));
   let totalBytes = stagedFiles.reduce((total, file) =>
     total + (typeof file.content === 'string' ? new Blob([file.content]).size : 0), 0);
-  let totalLines = stagedFiles.reduce((total, file) =>
-    total + (typeof file.content === 'string' ? countSourceLinesWithinLimit(file.content, MAX_SOURCE_LINES_PER_FILE) || 0 : 0), 0);
+  let totalLines = 0;
+  for (const existingFile of stagedFiles) {
+    const existingLineCount = typeof existingFile.content === 'string'
+      ? countSourceLinesWithinLimit(existingFile.content, MAX_SOURCE_LINES_PER_FILE)
+      : null;
+    if (existingLineCount === null) {
+      totalLines = MAX_SOURCE_LINES_PER_PROJECT;
+      break;
+    }
+    totalLines += existingLineCount;
+  }
 
   for (const file of incoming) {
     const safePath = sanitizeRelativePath(file?.relativePath);
@@ -34,7 +45,7 @@ export function mergeStagedFileBatches(
       skippedFiles.push('Selected entry (Invalid path or source content rejected)');
       continue;
     }
-    const pathKey = safePath.normalize('NFC').toLocaleLowerCase('en-US');
+    const pathKey = safePath.normalize('NFC').toLowerCase();
     if (seenPaths.has(pathKey)) {
       skippedFiles.push(`${safePath} (Duplicate or case-colliding path rejected)`);
       continue;
