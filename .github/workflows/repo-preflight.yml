@@ -17,8 +17,29 @@ on:
       - test/apiClientOrigin.test.ts
       - src/engine/untrustedSourceBoundary.ts
       - test/untrustedSourceBoundary.test.ts
+name: Repository preflight and focused security tests
+
+on:
+  push:
+    branches:
+      - work/ssrf-special-purpose-ipv4-2026-11-12
+    paths:
+      - scripts/repo_preflight.py
+      - scripts/test_repo_preflight.py
+      - scripts/import_source_archive.py
+      - scripts/test_import_source_archive.py
+      - scripts/test_import_source_archive_flow.py
+      - scripts/import_source_archive.py
+      - scripts/test_import_source_archive.py
+      - scripts/test_import_source_archive_flow.py
+      - src/utils/apiClient.ts
+      - test/apiClientOrigin.test.ts
+      - src/engine/untrustedSourceBoundary.ts
+      - test/untrustedSourceBoundary.test.ts
       - src/engine/aiFindingValidation.ts
       - test/aiFindingValidation.test.ts
+      - src/utils/ssrfValidator.ts
+      - test/ssrf-ipv6-special-purpose.test.ts
       - package.json
       - .github/workflows/repo-preflight.yml
   pull_request:
@@ -31,6 +52,8 @@ on:
       - test/untrustedSourceBoundary.test.ts
       - src/engine/aiFindingValidation.ts
       - test/aiFindingValidation.test.ts
+      - src/utils/ssrfValidator.ts
+      - test/ssrf-ipv6-special-purpose.test.ts
       - package.json
       - .github/workflows/repo-preflight.yml
 
@@ -62,3 +85,4 @@ jobs:
           npx --yes tsx@4.21.0 test/apiClientOrigin.test.ts
           npx --yes tsx@4.21.0 test/untrustedSourceBoundary.test.ts
           npx --yes tsx@4.21.0 test/aiFindingValidation.test.ts
+          npx --yes tsx@4.21.0 test/ssrf-ipv6-special-purpose.test.ts
