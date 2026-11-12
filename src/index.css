@@ -194,3 +194,56 @@
     transition-duration: 0.01ms !important;
   }
 }
+
+
+/* Expressive but restrained page motion and liquid-glass interaction surfaces. */
+@keyframes pp-view-enter {
+  from { opacity: 0; transform: translate3d(0, 14px, 0) scale(0.995); filter: blur(3px); }
+  to { opacity: 1; transform: translate3d(0, 0, 0) scale(1); filter: blur(0); }
+}
+.pp-view-enter {
+  animation: pp-view-enter 420ms cubic-bezier(0.2, 0.75, 0.25, 1) both;
+}
+.pp-interactive-card {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  transition: transform 240ms cubic-bezier(0.2, 0.75, 0.25, 1),
+              box-shadow 240ms ease, border-color 240ms ease;
+}
+.pp-interactive-card::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  pointer-events: none;
+  opacity: 0;
+  background:
+    radial-gradient(420px circle at var(--pp-pointer-x, 50%) var(--pp-pointer-y, 0%),
+      rgba(74, 144, 226, 0.12), transparent 58%),
+    linear-gradient(115deg, rgba(255,255,255,0.05), transparent 45%, rgba(130,110,255,0.045));
+  transition: opacity 220ms ease;
+}
+.pp-interactive-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 16px 38px rgba(15, 30, 58, 0.10);
+}
+.pp-interactive-card:hover::after { opacity: 1; }
+.dark .pp-interactive-card:hover {
+  box-shadow: 0 18px 42px rgba(0, 0, 0, 0.26);
+}
+.pp-glass-surface {
+  background: color-mix(in srgb, var(--bg-surface) 88%, transparent);
+  border-color: color-mix(in srgb, var(--border-color) 82%, transparent);
+  backdrop-filter: blur(18px) saturate(135%);
+  -webkit-backdrop-filter: blur(18px) saturate(135%);
+}
+.pp-focus-ring:focus-visible {
+  outline: 2px solid #62a5ff;
+  outline-offset: 3px;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pp-view-enter { animation: none; }
+  .pp-interactive-card { transition: none; }
+  .pp-interactive-card:hover { transform: none; }
+}
