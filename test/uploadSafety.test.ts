@@ -200,8 +200,11 @@ async function runUploadSafetyTests() {
       makeMockFile('forged.ts', 'project/src/forged.ts', 'const forged = true;'),
       { size: 1 }
     );
-    const forgedMetadataUpload = await processFiles([forgedMetadataFile], { excludeDirs: false });
-    assert('Reject folder upload when declared File.size differs from actual UTF-8 content bytes', forgedMetadataUpload.stagedFiles.length === 0 && forgedMetadataUpload.skippedFiles.some(item => item.includes('metadata does not match actual content')));
+    const forgedMetadataUpload = await processFiles([
+      forgedMetadataFile,
+      makeMockFile('safe.ts', 'project/src/safe.ts', 'const safe = true;')
+    ], { excludeDirs: false });
+    assert('Reject folder upload when declared File.size differs from actual UTF-8 content bytes', forgedMetadataUpload.stagedFiles.length === 1 && forgedMetadataUpload.stagedFiles[0].relativePath === 'project/src/safe.ts' && forgedMetadataUpload.skippedFiles.some(item => item.includes('metadata does not match actual content')));
 
     const duplicateUpload = await processFiles([
       makeMockFile('App.ts', 'project/src/App.ts', 'const app = 1;'),
