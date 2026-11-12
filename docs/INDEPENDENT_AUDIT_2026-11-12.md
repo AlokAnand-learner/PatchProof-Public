@@ -198,3 +198,12 @@ CI success does not establish that PatchProof is vulnerability-free or release-r
 - The UI delegates to the helper and applies the returned string only after an explicit user click; the helper itself does not persist files or execute code.
 - CI passed both jobs for the trust-boundary and patch-application changes in [run 43291933282](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43291933282), [run 43292209546](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43292209546), and [run 43292747982](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43292747982).
 - These are guardrails, not a claim that model output is reliable or that static validation proves runtime security.
+
+
+### Follow-up engineering — concurrency slot lifetime
+
+- The previous concurrency middleware released slots on the HTTP response `close` event. A disconnected client could therefore free capacity while an awaited provider request or analysis task continued in the background.
+- Replaced response-lifecycle release with a promise-scoped helper. The slot is held until the handler's returned Promise settles, including rejection; disconnecting the client does not release it early.
+- Provider, model-query, analysis, fix-validation, and benchmark routes now use the completion-bound wrapper. The two-task limit remains enforced.
+- Added runtime tests proving pending tasks retain their slots, busy gates reject extra work, and both success and failure release exactly once. Source-contract tests verify routes use the wrapper and no longer release on response close.
+- Both CI jobs passed after the final concurrency lifecycle changes in [run 43293738702](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43293738702).
