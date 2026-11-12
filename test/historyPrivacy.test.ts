@@ -220,15 +220,35 @@ async function run(): Promise<void> {
     id: 'malformed-history-item',
     scanResult: { ...validRawHistory[0].scanResult, findings: [null] }
   };
+  const malformedNestedFinding = {
+    ...validRawHistory[0],
+    id: 'malformed-nested-finding',
+    scanResult: {
+      ...validRawHistory[0].scanResult,
+      findings: [{ ...validRawHistory[0].scanResult.findings[0], title: { unexpected: true } }]
+    }
+  };
+  const malformedMetrics = {
+    ...validRawHistory[0],
+    id: 'malformed-metrics',
+    scanResult: {
+      ...validRawHistory[0].scanResult,
+      metrics: { ...validRawHistory[0].scanResult.metrics, score: 'not-a-number' }
+    }
+  };
   const oversizedHistory = [
     ...validRawHistory,
     null,
     malformedHistoryItem,
+    malformedNestedFinding,
+    malformedMetrics,
     ...Array.from({ length: 45 }, (_, index) => ({ ...validRawHistory[0], id: 'history-overflow-' + index }))
   ];
   storage.setItem(historyKey, JSON.stringify(oversizedHistory));
   const validatedHistory = getScanHistory();
-  assert('Ignore malformed browser-history records before rendering', validatedHistory.every(item => item.id !== 'malformed-history-item'));
+  assert('Ignore malformed browser-history records before rendering', validatedHistory.every(item =>
+    !['malformed-history-item', 'malformed-nested-finding', 'malformed-metrics'].includes(item.id)
+  ));
   assert('Cap loaded browser history to the same 40-record retention limit', validatedHistory.length === 40);
   assert('Persist the bounded, validated history representation', JSON.parse(storage.getItem(historyKey) || '[]').length === 40);
   setPrivacyMode(true);
