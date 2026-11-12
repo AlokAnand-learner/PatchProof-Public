@@ -159,14 +159,14 @@ async function runUploadSafetyTests() {
   assert('Enforce actual streamed ZIP output when local and central size metadata are forged low', localHeader >= 0 && centralHeader >= 0 && forgedSizeCaught);
 
   const denseZip = new JSZip();
-  denseZip.file('project/src/dense.ts', 'x\\n'.repeat(100001));
+  denseZip.file('project/src/dense.ts', 'x\n'.repeat(100001));
   denseZip.file('project/src/safe.ts', 'const safe = true;');
   const denseZipResult = await safeExtractZip(await denseZip.generateAsync({ type: 'arraybuffer' }), { excludeDirs: false });
   assert('Reject newline-dense ZIP entries before allocating line arrays', denseZipResult.stagedFiles.length === 1 && denseZipResult.skippedFiles.some(item => item.includes('per-file source line limit')));
 
   const projectLineZip = new JSZip();
   for (let index = 0; index < 4; index += 1) {
-    projectLineZip.file(`project/src/part-${index}.ts`, 'x\\n'.repeat(75000));
+    projectLineZip.file(`project/src/part-${index}.ts`, 'x\n'.repeat(75000));
   }
   const projectLineZipResult = await safeExtractZip(await projectLineZip.generateAsync({ type: 'arraybuffer' }), { excludeDirs: false });
   assert('Enforce cumulative source-line budget for ZIP uploads', projectLineZipResult.stagedFiles.length === 3 && projectLineZipResult.skippedFiles.some(item => item.includes('Project source line limit')));
@@ -219,7 +219,7 @@ async function runUploadSafetyTests() {
     ], { excludeDirs: false });
     assert('Reject folder upload when declared File.size differs from actual UTF-8 content bytes', forgedMetadataUpload.stagedFiles.length === 1 && forgedMetadataUpload.stagedFiles[0].relativePath === 'project/src/safe.ts' && forgedMetadataUpload.skippedFiles.some(item => item.includes('metadata does not match actual content')));
 
-    const denseContent = 'x\\n'.repeat(100001);
+    const denseContent = 'x\n'.repeat(100001);
     const denseFolderUpload = await processFiles([
       makeMockFile('dense.ts', 'project/src/dense.ts', denseContent),
       makeMockFile('safe.ts', 'project/src/safe.ts', 'const safe = true;')
@@ -227,7 +227,7 @@ async function runUploadSafetyTests() {
     assert('Reject newline-dense folder files before allocating line arrays', denseFolderUpload.stagedFiles.length === 1 && denseFolderUpload.skippedFiles.some(item => item.includes('per-file source line limit')));
 
     const projectLineFiles = Array.from({ length: 4 }, (_, index) =>
-      makeMockFile(`part-${index}.ts`, `project/src/part-${index}.ts`, 'x\\n'.repeat(75000))
+      makeMockFile(`part-${index}.ts`, `project/src/part-${index}.ts`, 'x\n'.repeat(75000))
     );
     const projectLineUpload = await processFiles(projectLineFiles, { excludeDirs: false });
     assert('Enforce cumulative source-line budget for folder uploads', projectLineUpload.stagedFiles.length === 3 && projectLineUpload.skippedFiles.some(item => item.includes('Project source line limit')));
