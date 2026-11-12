@@ -401,7 +401,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
                               ? 'bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/30'
                               : 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30'
                           }`}>
-                            Fix: {fixStatus === 'NOT_APPLICABLE' ? 'Not applicable' : fixStatus}
+                            Fix: {fixStatus === 'NOT_APPLICABLE' ? 'Not applicable' : fixStatus === 'VALIDATED' ? 'Static checks passed' : fixStatus === 'PARTIALLY_VALIDATED' ? 'Static checks partial' : fixStatus === 'INVALID' ? 'Static checks failed' : 'Needs review'}
                           </span>
                         )}
 
