@@ -11,6 +11,34 @@ import { readResponseTextLimited, parseProviderJson } from '../utils/httpRespons
 import { prepareUntrustedSource, redactLikelySecrets, UntrustedSourceFile } from './untrustedSourceBoundary';
 import { fetchPinnedHttpsResponseText } from '../utils/pinnedHttps';
 
+export interface PreparedProviderReviewPayload {
+  systemInstruction: string;
+  userPayload: string;
+  needsCloudConsent: boolean;
+}
+
+/** Build a provider payload while keeping client/file text outside trusted instructions. */
+export function prepareProviderReviewPayload(
+  provider: ProviderType,
+  endpoint: string | undefined,
+  prompt: string,
+  sourceFiles?: readonly UntrustedSourceFile[],
+): PreparedProviderReviewPayload {
+  const needsCloudConsent = requiresCloudConsent(provider, endpoint);
+  const submittedFiles: readonly UntrustedSourceFile[] = sourceFiles && sourceFiles.length > 0
+    ? sourceFiles
+    : [{ path: 'user-input.txt', content: prompt }];
+  const outboundFiles = needsCloudConsent ? redactLikelySecrets(submittedFiles) : submittedFiles;
+  const prepared = sourceFiles && sourceFiles.length > 0
+    ? prepareUntrustedSource(outboundFiles, {}, prompt)
+    : prepareUntrustedSource(outboundFiles);
+  return {
+    systemInstruction: prepared.systemInstruction,
+    userPayload: prepared.userPayload,
+    needsCloudConsent,
+  };
+}
+
 export interface ProviderState {
   activeProvider: ProviderType;
   activeModel: string;
@@ -550,16 +578,8 @@ export async function generateAnalysisWithActiveProvider(
   // entirely as untrusted data and never elevated into system instructions.
   const { activeProvider, activeModel, offlineMode, cloudConsentGranted } = state;
   const cfg = state.providers[activeProvider];
-  const needsCloudConsent = requiresCloudConsent(activeProvider, cfg.endpoint);
-  const submittedFiles: readonly UntrustedSourceFile[] = sourceFiles && sourceFiles.length > 0
-    ? sourceFiles
-    : [{ path: 'user-input.txt', content: prompt }];
-  // Apply credential redaction only on remote routes. Local analysis can retain
-  // submitted source in memory; remote providers never receive matched secrets.
-  const outboundFiles = needsCloudConsent ? redactLikelySecrets(submittedFiles) : submittedFiles;
-  const prepared = sourceFiles && sourceFiles.length > 0
-    ? prepareUntrustedSource(outboundFiles, {}, prompt)
-    : prepareUntrustedSource(outboundFiles);
+  const prepared = prepareProviderReviewPayload(activeProvider, cfg.endpoint, prompt, sourceFiles);
+  const needsCloudConsent = prepared.needsCloudConsent;
   const systemInstruction = prepared.systemInstruction;
   const userPayload = prepared.userPayload;
 
