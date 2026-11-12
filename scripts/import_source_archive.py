@@ -23,6 +23,10 @@ PRIVATE_KEY = re.compile(rb"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----")
 AWS_KEY = re.compile(rb"AKIA[0-9A-Z]{16}")
 GITHUB_TOKEN = re.compile(rb"gh[pousr]_[A-Za-z0-9]{20,}")
 GOOGLE_KEY = re.compile(rb"AIza[0-9A-Za-z_-]{30,}")
+STRIPE_SECRET = re.compile(rb"sk_live_[0-9A-Za-z]{24,}")
+SLACK_TOKEN = re.compile(rb"xox[baprs]-[0-9A-Za-z-]{10,}")
+GITLAB_TOKEN = re.compile(rb"glpat-[0-9A-Za-z_-]{20,}")
+NPM_TOKEN = re.compile(rb"npm_[0-9A-Za-z]{36}")
 
 # Exact synthetic strings used by redaction tests; not credentials.
 SYNTHETIC_FIXTURES = {
@@ -68,7 +72,9 @@ def safe_relative_path(name: str) -> str:
 
 def scan_for_realistic_secrets(rel: str, content: bytes) -> None:
     patterns = (("private key", PRIVATE_KEY), ("AWS access key", AWS_KEY),
-                ("GitHub token", GITHUB_TOKEN), ("Google API key", GOOGLE_KEY))
+                ("GitHub token", GITHUB_TOKEN), ("Google API key", GOOGLE_KEY),
+                ("Stripe secret", STRIPE_SECRET), ("Slack token", SLACK_TOKEN),
+                ("GitLab token", GITLAB_TOKEN), ("npm token", NPM_TOKEN))
     allowed = SYNTHETIC_FIXTURES.get(rel, set())
     for label, pattern in patterns:
         for match in pattern.finditer(content):
