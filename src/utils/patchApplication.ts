@@ -27,7 +27,7 @@ export function applyValidatedSnippetPatch(
     return { ok: false, reason: 'empty-patch' };
   }
 
-  const lines = originalCode.split('\\n');
+  const lines = originalCode.split('\n');
   const { startLine, endLine } = finding;
   if (
     !Number.isSafeInteger(startLine) || !Number.isSafeInteger(endLine) ||
@@ -39,11 +39,11 @@ export function applyValidatedSnippetPatch(
 
   const startIndex = startLine - 1;
   const endIndex = endLine;
-  const currentSnippet = lines.slice(startIndex, endIndex).join('\\n');
+  const currentSnippet = lines.slice(startIndex, endIndex).join('\n');
   if (typeof finding.snippet !== 'string' || finding.snippet.length === 0 || currentSnippet !== finding.snippet) {
     return { ok: false, reason: 'stale-source' };
   }
 
-  lines.splice(startIndex, endIndex - startIndex, ...finding.suggestedPatch.split('\\n'));
-  return { ok: true, code: lines.join('\\n') };
+  lines.splice(startIndex, endIndex - startIndex, ...finding.suggestedPatch.split('\n'));
+  return { ok: true, code: lines.join('\n') };
 }
