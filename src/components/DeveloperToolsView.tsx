@@ -105,7 +105,8 @@ export const DeveloperToolsView: React.FC<DeveloperToolsViewProps> = ({
 
   const fetchProviders = async () => {
     try {
-      const res = await fetch('/api/providers');
+      const res = await authenticatedFetch('/api/providers');
+      if (!res.ok) throw new Error('Provider configuration could not be loaded.');
       const data = await res.json();
       setProviders(data.providers || []);
       setOfflineMode(!!data.offlineMode);
@@ -143,7 +144,11 @@ export const DeveloperToolsView: React.FC<DeveloperToolsViewProps> = ({
         }),
       });
       const data = await res.json();
-      setTestResult(data);
+      setTestResult(res.ok ? data : {
+        success: false,
+        latencyMs: 0,
+        message: data.error || `Connection test failed (HTTP ${res.status}).`
+      });
     } catch (err: any) {
       setTestResult({
         success: false,
@@ -213,6 +218,11 @@ export const DeveloperToolsView: React.FC<DeveloperToolsViewProps> = ({
     try {
       const res = await authenticatedFetch(`/api/provider/config/${selectedProviderId}`, { method: 'DELETE' });
       const data = await res.json();
+      if (!res.ok) {
+        setSaveNotice(data.error || `Credentials could not be removed (HTTP ${res.status}).`);
+        setTimeout(() => setSaveNotice(null), 3500);
+        return;
+      }
       setProviders(data.providers || []);
       setApiKeyInput('');
       setShowRemoveKeyConfirm(false);
@@ -227,7 +237,7 @@ export const DeveloperToolsView: React.FC<DeveloperToolsViewProps> = ({
   const handleRunFixSuite = async () => {
     setFixSuiteRunning(true);
     try {
-      const res = await fetch('/api/fix/benchmark');
+      const res = await authenticatedFetch('/api/fix/benchmark');
       if (res.ok) {
         const data = await res.json();
         setFixSuiteReport(data);
@@ -253,6 +263,7 @@ export const DeveloperToolsView: React.FC<DeveloperToolsViewProps> = ({
         body: JSON.stringify({ enabled: target }),
       });
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `Offline mode could not be changed (HTTP ${res.status}).`);
       setOfflineMode(data.offlineMode);
       fetchProviders();
       onRefreshStatus();
@@ -275,10 +286,12 @@ export const DeveloperToolsView: React.FC<DeveloperToolsViewProps> = ({
     try {
       const res = await authenticatedFetch(`/api/ollama/models?endpoint=${encodeURIComponent(ollamaEndpoint)}`);
       const data = await res.json();
+      if (!res.ok) throw new Error(data.error || `Ollama endpoint check failed (HTTP ${res.status}).`);
       setOllamaData(data);
       onRefreshStatus();
-    } catch (err) {
-      console.error('Ollama scan failed:', err);
+    } catch (err: any) {
+      setSaveNotice(err.message || 'Ollama scan failed.');
+      setTimeout(() => setSaveNotice(null), 3500);
     } finally {
       setOllamaScanning(false);
     }
@@ -287,7 +300,8 @@ export const DeveloperToolsView: React.FC<DeveloperToolsViewProps> = ({
   const handleRunBenchmark = async () => {
     setEvaluating(true);
     try {
-      const res = await fetch('/api/evaluate');
+      const res = await authenticatedFetch('/api/evaluate');
+      if (!res.ok) throw new Error(`Benchmark request failed (HTTP ${res.status}).`);
       const data = await res.json();
       setEvalResult(data);
     } catch (err) {
