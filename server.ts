@@ -38,6 +38,7 @@ import { isAllowedLocalHostHeader, isAllowedLocalOrigin } from './src/utils/loca
 import { loadRuntimeConfig } from './src/utils/runtimeConfig.ts';
 import { getContentSecurityPolicy } from './src/utils/securityHeaders.ts';
 import { countSourceLinesWithinLimit, MAX_SOURCE_LINES_PER_FILE, MAX_SOURCE_LINES_PER_PROJECT } from './src/utils/sourceLimits.ts';
+import { buildAiCoverageNotice, countFindingOrigins } from './src/engine/analysisCoverage.ts';
 
 dotenv.config();
 
@@ -792,8 +793,7 @@ CRITICAL RULES:
           likelyCount: likely,
           needsReviewCount: needsReview,
           falsePositiveCount: fp,
-          aiHypothesesCount: activeFindings.filter(f => f.verificationType === 'AI_HYPOTHESIS').length,
-          deterministicCount: activeFindings.filter(f => f.verificationType !== 'AI_HYPOTHESIS').length,
+          ...countFindingOrigins(activeFindings),
           linesAnalyzed: totalLines
         };
 
@@ -847,15 +847,16 @@ CRITICAL RULES:
           skippedCount: skippedFiles.length,
           transmissionMode: canUseCloudAi ? 'CLOUD_AI_TRANSMITTED' : 'LOCAL_ONLY',
           cloudDisclosed: canUseCloudAi,
-          analysisNotice: aiReviewCompletedFiles > 0
-            ? `AI review completed for ${aiReviewCompletedFiles} of ${aiReviewAttemptedFiles} attempted files. At most the first 35,000 characters per file were sent to AI${aiTruncatedFiles > 0 ? `; ${aiTruncatedFiles} file(s) were truncated for AI review while local static checks covered the full accepted files` : ''}. AI findings remain hypotheses until independently reviewed.${aiReviewFailedFiles > 0 ? ` AI review also failed for ${aiReviewFailedFiles} file(s); local checks were retained.` : ''}`
-            : aiReviewAttemptedFiles > 0
-              ? `AI review did not complete for the attempted files${aiReviewFailedFiles > 0 ? ` (${aiReviewFailedFiles} failure(s))` : ''}. Local static checks completed; no AI coverage is claimed.`
-              : requiresCloudConsent(provState.activeProvider, activeEndpoint) && !provState.cloudConsentGranted
-                ? 'Cloud AI was not used because explicit cloud consent is not enabled. Local static checks ran.'
-                : provState.offlineMode
-                  ? 'Offline mode is active. Only local static checks ran.'
-                  : 'Only local static checks ran for this review.'
+          analysisNotice: buildAiCoverageNotice({
+            attempted: aiReviewAttemptedFiles,
+            completed: aiReviewCompletedFiles,
+            failed: aiReviewFailedFiles,
+            truncated: aiTruncatedFiles,
+            maxCharactersPerFile: 35000,
+            offlineMode: provState.offlineMode,
+            cloudConsentRequired: requiresCloudConsent(provState.activeProvider, activeEndpoint),
+            cloudConsentGranted: provState.cloudConsentGranted
+          })
         };
 
         return res.json(scanResult);
@@ -1038,8 +1039,7 @@ CRITICAL RULES:
         likelyCount: likely,
         needsReviewCount: needsReview,
         falsePositiveCount: fp,
-        aiHypothesesCount: activeFindings.filter(f => f.verificationType === 'AI_HYPOTHESIS').length,
-        deterministicCount: activeFindings.filter(f => f.verificationType !== 'AI_HYPOTHESIS').length,
+        ...countFindingOrigins(activeFindings),
         linesAnalyzed: lineCount
       };
 
@@ -1105,15 +1105,16 @@ CRITICAL RULES:
         }],
         transmissionMode: canUseCloudAi ? 'CLOUD_AI_TRANSMITTED' : 'LOCAL_ONLY',
         cloudDisclosed: canUseCloudAi,
-        analysisNotice: aiReviewCompleted
-          ? `AI review completed for the first ${Math.min(code.length, 45000).toLocaleString()} of ${code.length.toLocaleString()} characters${aiTruncated ? '; the remaining source was not reviewed by AI, although local static checks covered the full file' : ''}. AI findings remain hypotheses until independently reviewed.`
-          : aiReviewAttempted
-            ? `AI review did not complete${aiReviewFailed ? ' because the provider failed or timed out' : ''}. Local static checks completed; no AI coverage is claimed.`
-            : requiresCloudConsent(provState.activeProvider, activeEndpoint) && !provState.cloudConsentGranted
-              ? 'Cloud AI was not used because explicit cloud consent is not enabled. Local static checks ran.'
-              : provState.offlineMode
-                ? 'Offline mode is active. Only local static checks ran.'
-                : 'Only local static checks ran for this review.'
+        analysisNotice: buildAiCoverageNotice({
+          attempted: aiReviewAttempted ? 1 : 0,
+          completed: aiReviewCompleted ? 1 : 0,
+          failed: aiReviewFailed ? 1 : 0,
+          truncated: aiTruncated ? 1 : 0,
+          maxCharactersPerFile: 45000,
+          offlineMode: provState.offlineMode,
+          cloudConsentRequired: requiresCloudConsent(provState.activeProvider, activeEndpoint),
+          cloudConsentGranted: provState.cloudConsentGranted
+        })
       };
 
       return res.json(scanResult);
