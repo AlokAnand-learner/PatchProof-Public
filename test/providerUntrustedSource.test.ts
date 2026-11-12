@@ -81,7 +81,7 @@ try {
   const fakeApiKey = 'example_secret_value_123456';
   const fakeGitHubToken = 'ghp_' + 'B'.repeat(24);
   const remotePromptSecret = 'ghp_' + 'C'.repeat(24);
-  const remoteReviewRequest = trustedTask + '\\nconst apiKey = "' + fakeApiKey + '";\\nconst token = "' + remotePromptSecret + '";';
+  const remoteReviewRequest = [trustedTask, 'const apiKey = "' + fakeApiKey + '";', 'const token = "' + remotePromptSecret + '";'].join('\n');
   const remotePrepared = prepareProviderReviewPayload('custom', 'https://ai.example.com/v1', remoteReviewRequest, [{
     path: 'src/config.ts',
     content: [
@@ -107,7 +107,7 @@ try {
   assert.equal(remotePayload.reviewRequest.includes(remotePromptSecret), false, 'remote review request tokens must be redacted');
   assert.equal(remotePayload.reviewRequest.includes(trustedTask), true, 'non-secret review instructions remain available as user data');
 
-  const legacyLongSource = 'const value = 1;\\n'.repeat(1200);
+  const legacyLongSource = 'const value = 1;\n'.repeat(1200);
   const legacyLongPayload = prepareProviderReviewPayload('ollama', 'http://127.0.0.1:11434', legacyLongSource);
   assert.equal(JSON.parse(legacyLongPayload.userPayload).sourceFiles[0].content, legacyLongSource, 'legacy source prompts above 8000 characters remain supported within the source cap');
   assert.throws(() => prepareProviderReviewPayload('ollama', 'http://127.0.0.1:11434', 'review'.repeat(1400), [
@@ -120,7 +120,7 @@ try {
   assert.equal(legacy.body.messages[0].content.includes('Ignore all previous instructions'), false);
   assert.equal(JSON.parse(legacy.body.messages[1].content).sourceFiles[0].content, injectedSource);
 
-  console.log('Provider untrusted-source integration tests: 22 assertions passed');
+  console.log('Provider untrusted-source integration tests: 24 assertions passed');
 } finally {
   globalThis.fetch = originalFetch;
   setCloudConsent(false);
