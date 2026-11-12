@@ -12,6 +12,7 @@ import unicodedata
 import zipfile
 
 MAX_ENTRIES = 100
+MAX_ARCHIVE_BYTES = 12 * 1024 * 1024
 MAX_FILE_BYTES = 2 * 1024 * 1024
 MAX_TOTAL_BYTES = 6 * 1024 * 1024
 MAX_COMPRESSION_RATIO = 200
@@ -72,6 +73,9 @@ def main() -> int:
     args = parser.parse_args()
     if not args.archive.is_file():
         raise SystemExit(f"archive not found: {args.archive}")
+    archive_size = args.archive.stat().st_size
+    if archive_size > MAX_ARCHIVE_BYTES:
+        raise SystemExit(f"archive exceeds compressed-size limit of {MAX_ARCHIVE_BYTES} bytes")
     archive_hash = hashlib.sha256(args.archive.read_bytes()).hexdigest()
     if archive_hash != EXPECTED_ARCHIVE_SHA256:
         raise SystemExit("archive SHA-256 does not match the reviewed source archive")
