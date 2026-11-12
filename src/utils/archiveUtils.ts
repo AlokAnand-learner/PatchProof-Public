@@ -727,6 +727,21 @@ export async function processFiles(
     // Read content safely
     try {
       const content = await readFileText(file);
+      // Browser File.size should match the bytes read, but treat metadata as
+      // untrusted at this boundary (e.g. synthetic File-like objects in tests).
+      const actualByteSize = new TextEncoder().encode(content).byteLength;
+      if (actualByteSize !== file.size) {
+        skippedFiles.push(`${cleanPath} (File size metadata does not match actual content)`);
+        continue;
+      }
+      if (actualByteSize > limits.maxSingleFileSize) {
+        skippedFiles.push(`${cleanPath} (Actual file content exceeds the single-file size limit)`);
+        continue;
+      }
+      if (actualByteSize > limits.maxTotalExtractedSize - totalExtractedSize) {
+        skippedFiles.push(`${cleanPath} (Actual project content exceeds the total size limit)`);
+        break;
+      }
       if (!content || content.trim().length === 0) {
         skippedFiles.push(`${cleanPath} (Empty file: 0 bytes)`);
         continue;
@@ -736,7 +751,7 @@ export async function processFiles(
         continue;
       }
 
-      totalExtractedSize += file.size;
+      totalExtractedSize += actualByteSize;
       const lines = content.split('\n').length;
       const lang = detectLanguage(cleanPath, content);
       const fileNameOnly = cleanPath.split('/').pop() || cleanPath;
