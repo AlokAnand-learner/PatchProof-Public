@@ -1033,7 +1033,7 @@ export const DeveloperToolsView: React.FC<DeveloperToolsViewProps> = ({
                 <span>Security Engine Evaluation Suite</span>
               </h2>
               <p className="text-xs text-[#526078] dark:text-slate-400 mt-1">
-                Runs 13 built-in synthetic fixtures. Review-only cases are excluded from binary precision/recall scoring; results are not a real-world accuracy guarantee.
+                Runs 21 built-in synthetic fixtures. Review-only cases are excluded from binary precision/recall scoring; results are not a real-world accuracy guarantee.
               </p>
             </div>
 
