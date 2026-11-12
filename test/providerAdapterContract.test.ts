@@ -22,4 +22,4 @@ for (const [name, startMarker, endMarker, required] of sections as [string, stri
 }
 assert.ok(source.includes('fetchPinnedHttpsResponseText(requestUrl'), 'remote custom provider must use DNS-pinned HTTPS transport');
 assert.ok(source.includes("redirect: 'error'"), 'custom provider requests must reject redirects');
-console.log('Provider adapter source contract tests: 18 assertions passed');
+console.log('Provider adapter source contract tests: 16 assertions passed');
