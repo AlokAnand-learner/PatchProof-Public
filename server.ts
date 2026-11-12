@@ -645,18 +645,14 @@ CRITICAL RULES:
 - Do NOT flag detection patterns, comments, regexes, or sanitized queries as vulnerabilities.
 - Provide exact 1-indexed lines, explanation, attack scenario, exploit conditions, and safe suggestedPatch.
 - Output strictly a JSON object with: { "findings": [{ "title": string, "cwe": string, "owaspCategory": string, "severity": "CRITICAL"|"HIGH"|"MEDIUM"|"LOW"|"INFO", "confidence": "HIGH"|"MEDIUM"|"LOW", "verificationStatus": "CONFIRMED"|"LIKELY"|"NEEDS_REVIEW"|"FALSE_POSITIVE", "startLine": number, "endLine": number, "snippet": string, "explanation": string, "attackScenario": string, "exploitConditions": string, "remediation": string, "suggestedPatch": string }] }
-
-CODE:
-\`\`\`${fileLang}
-${fileContent.slice(0, 35000)}
-\`\`\``;
+`;
 
               const timeoutPromise = new Promise<never>((_, reject) =>
                 setTimeout(() => reject(new Error('Timeout')), 10000)
               );
 
               const responseText = await Promise.race([
-                generateAnalysisWithActiveProvider(prompt),
+                generateAnalysisWithActiveProvider(prompt, [{ path: filePath, content: fileContent.slice(0, 35000) }]),
                 timeoutPromise
               ]);
 
@@ -886,18 +882,14 @@ CRITICAL RULES:
 - Distinguish CONFIRMED vulnerabilities from LIKELY or NEEDS_REVIEW.
 - Provide safe suggested patches for every identified issue.
 - Output strictly a JSON object with: { "summary": string, "recommendations": string[], "patchedFullCode": string, "findings": [{ "title": string, "cwe": string, "owaspCategory": string, "severity": "CRITICAL"|"HIGH"|"MEDIUM"|"LOW"|"INFO", "confidence": "HIGH"|"MEDIUM"|"LOW", "verificationStatus": "CONFIRMED"|"LIKELY"|"NEEDS_REVIEW"|"FALSE_POSITIVE", "startLine": number, "endLine": number, "snippet": string, "explanation": string, "attackScenario": string, "exploitConditions": string, "remediation": string, "suggestedPatch": string }] }
-
-CODE:
-\`\`\`${safeLanguage}
-${code.slice(0, 45000)}
-\`\`\``;
+`;
 
           const timeoutPromise = new Promise<never>((_, reject) =>
             setTimeout(() => reject(new Error('AI review timeout after 12s')), 12000)
           );
 
           const responseText = await Promise.race([
-            generateAnalysisWithActiveProvider(prompt),
+            generateAnalysisWithActiveProvider(prompt, [{ path: safeFileName, content: code.slice(0, 45000) }]),
             timeoutPromise
           ]);
 
