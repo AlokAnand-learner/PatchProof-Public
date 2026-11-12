@@ -696,6 +696,72 @@ async function runAuthBoundaryTests() {
     });
     assert('Multi-file analysis returns HTTP 400 when every submitted file is rejected', rejectedOnlyUpload.statusCode === 400);
 
+    // Upload-to-analysis integration: keep the hosted provider selected but revoke consent,
+    // so this test exercises the real server upload and static analyzer without remote transmission.
+    const selectGeminiForStaticUpload = await sendRawHttpRequest({
+      method: 'POST',
+      path: '/api/set-active-provider',
+      headers: {
+        'Host': '127.0.0.1:3000',
+        'Content-Type': 'application/json',
+        'X-PatchProof-Auth': validToken
+      },
+      body: JSON.stringify({ provider: 'gemini' })
+    });
+    assert('Hosted provider can be selected for static upload integration', selectGeminiForStaticUpload.statusCode === 200);
+
+    const revokeConsentForStaticUpload = await sendRawHttpRequest({
+      method: 'POST',
+      path: '/api/status/cloud-consent',
+      headers: {
+        'Host': '127.0.0.1:3000',
+        'Content-Type': 'application/json',
+        'X-PatchProof-Auth': validToken
+      },
+      body: JSON.stringify({ granted: false })
+    });
+    assert('Cloud consent remains revoked for static upload integration', revokeConsentForStaticUpload.statusCode === 200);
+
+    const uploadToAnalysis = await sendRawHttpRequest({
+      method: 'POST',
+      path: '/api/analyze',
+      headers: {
+        'Host': '127.0.0.1:3000',
+        'Content-Type': 'application/json',
+        'X-PatchProof-Auth': validToken
+      },
+      body: JSON.stringify({
+        projectName: 'Local upload integration',
+        files: [{
+          filePath: 'src/userStore.ts',
+          content: [
+            'function load(req) {',
+            '  const original = req.query.name;',
+            '  const alias = original;',
+            '  db.query("SELECT * FROM users WHERE name=\'" + alias + "\'");',
+            '}',
+          ].join('\\n'),
+        }]
+      })
+    });
+    const uploadAnalysisData = JSON.parse(uploadToAnalysis.body || '{}');
+    assert('Uploaded source is analyzed by the running server (HTTP 200)', uploadToAnalysis.statusCode === 200);
+    assert('Upload analysis returns the validated relative file path', uploadAnalysisData.files?.[0]?.filePath === 'src/userStore.ts');
+    assert('Static analysis returns source-grounded SQL review evidence', uploadAnalysisData.findings?.some((finding: any) => finding.cwe?.startsWith('CWE-89')));
+    assert('No cloud transmission occurs without consent during upload analysis', uploadAnalysisData.transmissionMode === 'LOCAL_ONLY' && uploadAnalysisData.cloudDisclosed === false);
+
+    const restoreLocalAfterUpload = await sendRawHttpRequest({
+      method: 'POST',
+      path: '/api/set-active-provider',
+      headers: {
+        'Host': '127.0.0.1:3000',
+        'Content-Type': 'application/json',
+        'X-PatchProof-Auth': validToken
+      },
+      body: JSON.stringify({ provider: 'ollama' })
+    });
+    assert('Local provider is restored after upload integration', restoreLocalAfterUpload.statusCode === 200);
+
     // 38. Mutating Route Protection: Unauthenticated POST /api/fix/validate
     const unauthFixVal = await sendRawHttpRequest({
       method: 'POST',
