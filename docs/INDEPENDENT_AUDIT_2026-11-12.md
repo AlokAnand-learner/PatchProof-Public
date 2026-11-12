@@ -262,3 +262,10 @@ CI success does not establish that PatchProof is vulnerability-free or release-r
 - The privacy preference is now held in React state and synchronized when another browser tab changes the persisted preference. This fixes a visual-state issue where a successful localStorage update could leave the switch looking unchanged.
 - Benchmark failures now produce a visible alert. The false-positive target label reflects the actual measured count, the suite description no longer hard-codes an outdated fixture count, and the Settings description accurately lists the Results filters already available.
 - Regression tests cover the Settings accessibility and feedback contract. Both CI jobs passed for the state and status handling in [run 43298155437](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43298155437); the follow-up test assertion adjustment also passed in the subsequent branch run.
+
+### Follow-up engineering — browser preference storage resilience
+
+- App theme and sidebar preferences previously accessed `localStorage` directly during React state initialization and updates. Restricted browser storage could throw and interrupt app startup or preference changes.
+- Added bounded, failure-safe preference read/write helpers and routed App theme/sidebar preferences through them. Storage failures now leave the app usable; persistence may simply be unavailable.
+- Added regression tests for missing storage values, invalid/overlong preference fields, blocked reads/writes, and the App's use of the helper boundary.
+- Both CI jobs passed for the helper, app integration, and full-suite test inclusion in [run 43298382658](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43298382658).
