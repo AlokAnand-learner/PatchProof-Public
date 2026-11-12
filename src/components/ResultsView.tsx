@@ -223,6 +223,13 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
         </div>
       </div>
 
+      {scan.analysisNotice && (
+        <div role="status" aria-live="polite" className="pp-glass-surface rounded-xl border border-[#DCE3ED] dark:border-[#35445A] px-4 py-3 flex items-start gap-2.5 text-xs text-[#526078] dark:text-[#C2CDDC]">
+          <Info className="w-4 h-4 text-[#2458D3] dark:text-[#719CFF] shrink-0 mt-0.5" />
+          <p className="leading-relaxed">{scan.analysisNotice}</p>
+        </div>
+      )}
+
       {/* Summary Scorecard Strip */}
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <div className="p-3.5 rounded-xl bg-white dark:bg-[#1B2638] border border-[#DCE3ED] dark:border-[#35445A] flex items-center justify-between col-span-2 sm:col-span-1 shadow-sm">
