@@ -283,7 +283,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ scan, onClose }) => {
                                 ? 'bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/30'
                                 : 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30'
                             }`}>
-                              Fix: {fixStatus === 'NOT_APPLICABLE' ? 'Not applicable' : fixStatus}
+                              Fix: {fixStatus === 'NOT_APPLICABLE' ? 'Not applicable' : fixStatus === 'VALIDATED' ? 'Static checks passed' : fixStatus === 'PARTIALLY_VALIDATED' ? 'Static checks partial' : fixStatus === 'INVALID' ? 'Static checks failed' : 'Needs review'}
                             </span>
                           </div>
                           <pre className="font-mono text-xs bg-slate-950 p-3 rounded-lg border border-slate-800 text-emerald-400 overflow-x-auto whitespace-pre-wrap">
