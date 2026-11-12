@@ -10,6 +10,7 @@ import stat
 import sys
 import unicodedata
 import zipfile
+import zlib
 
 MAX_ENTRIES = 256
 MAX_ARCHIVE_BYTES = 12 * 1024 * 1024
@@ -171,6 +172,9 @@ def main() -> int:
             if parent in planned_paths:
                 raise SystemExit(f"file/directory path collision: {parent} and {rel}")
 
+    if not planned:
+        raise SystemExit("archive contains no importable source files")
+
     root = args.destination.resolve()
     added = identical = 0
     conflicts: list[str] = []
@@ -207,6 +211,6 @@ def main() -> int:
 if __name__ == "__main__":
     try:
         raise SystemExit(main())
-    except (ValueError, RuntimeError, NotImplementedError, zipfile.BadZipFile, UnicodeDecodeError, EOFError) as exc:
+    except (ValueError, RuntimeError, NotImplementedError, zipfile.BadZipFile, UnicodeDecodeError, EOFError, zlib.error) as exc:
         print(f"Import refused: {exc}", file=sys.stderr)
         raise SystemExit(2)
