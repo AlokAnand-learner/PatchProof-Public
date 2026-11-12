@@ -107,6 +107,18 @@ export function isRestrictedOrPrivateIp(ip: string): boolean {
     // fc00::/7 (Unique Local Address - private)
     if (/^f[cd]/i.test(normalized)) return true;
 
+    // fec0::/10 (deprecated site-local unicast).
+    if (/^fec[0-9a-f]:/i.test(normalized)) return true;
+
+    // 2001:db8::/32 (documentation-only prefix).
+    if (normalized.startsWith('2001:db8:')) return true;
+
+    // 2001::/32 (Teredo) and 2002::/16 (6to4) embed IPv4 routing information.
+    if (normalized.startsWith('2001::') || normalized.startsWith('2002:')) return true;
+
+    // NAT64 translation prefixes can encode IPv4 destinations; reject them at this boundary.
+    if (normalized.startsWith('64:ff9b::') || normalized.startsWith('64:ff9b:1:')) return true;
+
     // ff00::/8 (Multicast)
     if (normalized.startsWith('ff')) return true;
 
