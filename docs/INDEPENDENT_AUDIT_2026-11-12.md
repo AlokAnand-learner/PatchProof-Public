@@ -248,3 +248,10 @@ CI success does not establish that PatchProof is vulnerability-free or release-r
 - Regression cases now cover additional special-purpose, reserved, mapped-public, and boundary addresses while retaining tests for legitimate globally routable IPv6 endpoints.
 - The classification follows the IANA IPv6 Special-Purpose Address Registry: https://www.iana.org/assignments/iana-ipv6-special-registry. This remains a conservative endpoint allow/deny policy, not a substitute for live DNS/TLS integration testing.
 - Both CI jobs passed for the validator implementation in [run 43297331221](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43297331221) and for the expanded regression suite in [run 43297371981](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43297371981).
+
+### Follow-up engineering — server-derived single-file language
+
+- Single-file analysis previously accepted any allowlisted client language label, even when it conflicted with the validated filename and source content. That could send misleading language context to the analyzer and optional AI provider.
+- The server now derives the language from the sanitized filename and uploaded content, matching the multi-file path; the client label no longer overrides analysis classification.
+- Added a regression contract to ensure the server does not use the client-supplied language field for analysis.
+- Both CI jobs passed for the server-derived language change in [run 43297578006](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43297578006) and for the regression contract in [run 43297618997](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43297618997).
