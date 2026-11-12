@@ -26,4 +26,19 @@ assert.ok(source.includes("activeProvider === 'custom' && isCustomLocal"), 'ordi
 assert.ok(source.includes('Every remote HTTPS endpoint is DNS-pinned'), 'OpenAI and remote custom connection tests must share pinned transport');
 assert.ok(source.includes('Remote OpenAI and custom HTTPS endpoints must use DNS-pinned transport'), 'OpenAI and remote custom analysis must share pinned transport');
 assert.ok(source.includes("redirect: 'error'"), 'provider requests must reject redirects');
+const anthropicStart = source.indexOf('// 4. ANTHROPIC');
+const anthropicEnd = source.indexOf('\\n}\\n\\nexport function extractJsonFromModelResponse', anthropicStart);
+assert.ok(anthropicStart >= 0 && anthropicEnd > anthropicStart, 'Anthropic adapter must be discoverable');
+const anthropicSection = source.slice(anthropicStart, anthropicEnd);
+assert.equal(
+  (anthropicSection.match(/fetchPinnedHttpsResponseText\\(/g) || []).length,
+  2,
+  'Anthropic connection tests and analysis must both use DNS-pinned HTTPS transport',
+);
+assert.equal(
+  /fetchResponseText\\(/.test(anthropicSection),
+  false,
+  'Anthropic cloud requests must never use the ordinary fetch transport',
+);
+
 console.log('Provider adapter source contract tests: 20 assertions passed');
