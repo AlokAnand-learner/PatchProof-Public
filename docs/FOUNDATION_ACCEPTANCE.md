@@ -30,7 +30,7 @@ Phase 1 is complete only when all items below are implemented and verified.
 - [ ] End-to-end upload-to-analysis smoke test passes in a running local application.
 - [x] AI source-boundary helper keeps uploaded source as JSON data separate from a fixed defensive system instruction, applies file/path/size limits, and flags common prompt-injection indicators without mutating the source.
 - [x] Ollama, Gemini, OpenAI-compatible, and Anthropic request branches use the source boundary; no tool declarations are sent and uploaded source is not executed by PatchProof.
-- [ ] Provider-specific request contract tests cover each provider branch, including hosted Gemini and Anthropic.
+- [x] Provider adapter source-contract tests cover the request shape for Ollama, Gemini/Gemma, OpenAI-compatible, and Anthropic branches; live hosted credentials are not required for these contract tests.
 - [x] Local Ollama, local OpenAI-compatible, and mocked remote custom provider integration tests confirm prompt-injection-like source remains separate from system instructions and cannot add tool declarations.
 - [ ] Hosted Gemini and Anthropic request contracts have not yet been exercised with provider-specific mocks or live credentials.
 - [x] High-confidence credential patterns are redacted before any remote provider receives source; this is defense-in-depth, not a complete secret scanner.
