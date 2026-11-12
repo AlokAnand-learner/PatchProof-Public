@@ -71,6 +71,15 @@ class SourceArchiveImportFlowTests(unittest.TestCase):
         with self.assertRaises(SystemExit):
             self.run_import()
 
+    def test_oversized_compressed_archive_is_rejected_before_hashing(self) -> None:
+        self.archive_path.write_bytes(b"x")
+        with self.archive_path.open("r+b") as archive:
+            archive.truncate(import_source_archive.MAX_ARCHIVE_BYTES + 1)
+        args = ["import_source_archive.py", str(self.archive_path), "--destination", str(self.destination)]
+        with patch.object(sys, "argv", args):
+            with self.assertRaises(SystemExit):
+                import_source_archive.main()
+
     def test_path_traversal_archive_entry_is_rejected(self) -> None:
         self.write_zip([("source/../outside.txt", b"not safe", False)])
         with self.assertRaises(ValueError):
