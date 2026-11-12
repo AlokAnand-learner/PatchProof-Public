@@ -163,7 +163,7 @@ class SourceArchiveImportFlowTests(unittest.TestCase):
     def test_unicode_normalization_collisions_are_rejected(self) -> None:
         self.write_zip([
             ("source/src/café.ts", b"one", False),
-            ("source/src/cafe\\u0301.ts", b"two", False),
+            ("source/src/café.ts", b"two", False),
         ])
         with self.assertRaises(SystemExit):
             self.run_import()
