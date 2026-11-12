@@ -14,7 +14,7 @@ These percentages are engineering estimates, not test coverage or acceptance per
 |---|---:|---|
 | 1. Safe source import | 49% | 40/82 archive paths represented; remaining source files await guarded import |
 | 2. Reproducible setup | 45% | Bun lockfile is committed and frozen installation passed on GitHub Actions; full typecheck/build and lifecycle-script review remain open |
-| 3. Detection precision | 40% | Bounded alias taint and review-only fixture classification added; benchmark remains small and synthetic |
+| 3. Detection precision | 42% | Bounded alias taint, review-only fixture classification, source-derived evidence, duplicate suppression, and safe model-label normalization added; benchmark remains small and synthetic |
 | 4. Upload/archive safety | 60% | Path normalization and collision checks added; dependency-backed ZIP suite still pending |
 | 5. Privacy/local boundary | 60% | Local-only host/origin policy, SSRF controls, cloud consent, and privacy-default history are implemented |
 | 6. UX/release readiness | 40% | Inert controls removed, history-clear result surfaced, benchmark disclosures improved; full app smoke test pending |
@@ -62,7 +62,7 @@ Completed:
 - Expanded the local context lookback to five preceding lines while keeping analysis bounded.
 - Test, sample, and documentation findings with source-to-sink indicators remain visible as informational `NEEDS_REVIEW` items rather than likely production vulnerabilities; they do not reduce the production score.
 - Reworked benchmark accounting so review-only cases are excluded from binary precision/recall calculations.
-- AI-generated findings are deduplicated by normalized title, CWE, and exact source line range; snippets continue to be derived from source rather than accepted from model output.
+- AI-generated findings are deduplicated by normalized title, CWE, and exact source line range; snippets continue to be derived from source rather than accepted from model output.\n- Untrusted model-supplied labels and prose have non-printing control and bidirectional formatting characters removed; CWE identifiers are constrained to a recognized `CWE-<number>` or `CWE-Other` form.
 - The built-in suite has 13 synthetic fixtures: 9 binary-scored cases and 4 review-only cases. The latest focused run produced 3 TP, 6 TN, 0 FP, and 0 FN for the 9 scored fixtures.
 
 Limitations:
@@ -123,9 +123,9 @@ Still required:
 
 ## Verification performed in this work session
 
-- Latest focused GitHub Actions run passed 40 Python repository/archive tests, 10 same-origin API tests, 13 untrusted-source boundary checks, 14 AI-finding validation checks (including duplicate suppression), 10 special-purpose IPv4 SSRF checks, and 8 special-purpose IPv6 SSRF checks. The Node security suite now installs from the committed Bun lockfile before running.
+- Latest focused GitHub Actions run passed 40 Python repository/archive tests, 10 same-origin API tests, 13 untrusted-source boundary checks, 18 AI-finding validation checks (including duplicate suppression and hostile Unicode label normalization), 10 special-purpose IPv4 SSRF checks, and 8 special-purpose IPv6 SSRF checks. The Node security suite now installs from the committed Bun lockfile before running.
 - Earlier foundation audit: 21 of the 23 scripted test files were executed successfully in focused mode.
-- 311 focused assertions/cases passed across the executed test files.
+- The latest focused workflow passed 40 Python repository/archive tests, 10 same-origin API tests, 13 untrusted-source boundary checks, 18 AI-finding validation checks, 10 special-purpose IPv4 checks, and 8 special-purpose IPv6 checks (99 reported checks across the focused groups).
 - The two not completed were the JSZip-backed upload suite (dependency unavailable) and the server-backed authentication boundary suite (server/dependencies not running).
 - TypeScript/TSX syntax transpilation completed for 62 files with zero syntax diagnostics.
 - Full `tsc --noEmit` has not yet been re-run after the lockfile-backed dependency installation; the earlier attempt was blocked because `vite/client` was unavailable.
