@@ -151,3 +151,11 @@ CI success does not establish that PatchProof is vulnerability-free or release-r
 - Enabling privacy mode now filters malformed records before redacting retained history.
 - Regression tests cover malformed records, oversized history lists, storage write failures, and failed single/bulk deletion.
 - Both CI jobs passed at code commit `f90089aa5c162659ca518087266fdf9535f56ef7` in [run 43287475452](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43287475452). The following branch change updates architecture documentation only.
+
+
+### Follow-up engineering — provider timeout and concurrency integrity
+
+- Removed detached Promise.race timers from all three server-side provider-analysis entry points. Previously, the HTTP route could return on its own timer while the underlying provider request continued running, releasing the concurrency slot too early.
+- Routes now await provider completion. Ordinary provider fetches retain their AbortController-backed deadline; DNS-pinned HTTPS requests enforce a hard wall-clock deadline and destroy the underlying request on timeout or response overflow.
+- Added a CI contract test covering all three awaited provider routes and both transport deadline mechanisms.
+- Both CI jobs passed at code commit 669239b5e21a2e2718e76d23789ee547c8cc62bd in [run 43288091975](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43288091975). A following branch commit updates architecture documentation only.
