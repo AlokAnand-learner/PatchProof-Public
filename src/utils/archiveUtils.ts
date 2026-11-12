@@ -489,6 +489,17 @@ async function countZipEntriesBeforeParsing(
  * Safely extracts a ZIP archive in-memory with strict Zip Slip, Symlink, Zip Bomb, and file filtering guards.
  * Never writes to disk and never executes code.
  */
+/** Recognize ZIP symlink modes regardless of JSZip's number/string representation. */
+export function hasZipSymlinkPermissions(unixPerms: unknown): boolean {
+  const unixMode = typeof unixPerms === 'number'
+    ? unixPerms
+    : typeof unixPerms === 'string' && /^[0-7]{3,6}$/.test(unixPerms)
+      ? Number.parseInt(unixPerms, 8)
+      : null;
+  const symbolicMode = typeof unixPerms === 'string' && unixPerms.trim().startsWith('l');
+  return (unixMode !== null && (unixMode & 0o170000) === 0o120000) || symbolicMode;
+}
+
 export async function safeExtractZip(
   zipInput: File | Blob | ArrayBuffer | Uint8Array,
   options?: {
@@ -568,15 +579,7 @@ export async function safeExtractZip(
 
     // Check for symlinks (POSIX symlink attribute 0o120000)
     const unixPerms = (entry as any).unixPermissions;
-    // JSZip accepts numeric or octal-string permission metadata. Handle both:
-    // checking only numbers can miss a symlink encoded as a string.
-    const unixMode = typeof unixPerms === 'number'
-      ? unixPerms
-      : typeof unixPerms === 'string' && /^[0-7]{3,6}$/.test(unixPerms)
-        ? Number.parseInt(unixPerms, 8)
-        : null;
-    const symbolicMode = typeof unixPerms === 'string' && unixPerms.trim().startsWith('l');
-    if ((unixMode !== null && (unixMode & 0o170000) === 0o120000) || symbolicMode) {
+    if (hasZipSymlinkPermissions(unixPerms)) {
       skippedFiles.push(`${rawPath} (Security: symbolic links are rejected)`);
       continue;
     }
