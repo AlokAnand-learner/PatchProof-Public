@@ -255,3 +255,10 @@ CI success does not establish that PatchProof is vulnerability-free or release-r
 - The server now derives the language from the sanitized filename and uploaded content, matching the multi-file path; the client label no longer overrides analysis classification.
 - Added a regression contract to ensure the server does not use the client-supplied language field for analysis.
 - Both CI jobs passed for the server-derived language change in [run 43297578006](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43297578006) and for the regression contract in [run 43297618997](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43297618997).
+
+### Follow-up engineering — settings accessibility and truthful benchmark feedback
+
+- Privacy and cloud-transmission controls now expose accessible switch roles, names, and checked state. Cloud consent remains disabled until the local status endpoint confirms an operational server, preventing interaction against an unknown initial state.
+- The privacy preference is now held in React state and synchronized when another browser tab changes the persisted preference. This fixes a visual-state issue where a successful localStorage update could leave the switch looking unchanged.
+- Benchmark failures now produce a visible alert. The false-positive target label reflects the actual measured count, the suite description no longer hard-codes an outdated fixture count, and the Settings description accurately lists the Results filters already available.
+- Regression tests cover the Settings accessibility and feedback contract. Both CI jobs passed for the state and status handling in [run 43298155437](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43298155437); the follow-up test assertion adjustment also passed in the subsequent branch run.
