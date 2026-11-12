@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import { applyValidatedSnippetPatch } from '../src/utils/patchApplication';
 
-const original = ['const before = true;', 'runUntrusted(input);', 'const after = true;'].join('\\n');
+const original = ['const before = true;', 'runUntrusted(input);', 'const after = true;'].join('\n');
 const finding = {
   startLine: 2,
   endLine: 2,
@@ -12,7 +12,7 @@ const finding = {
 const valid = applyValidatedSnippetPatch(original, finding, 'VALIDATED');
 assert.deepEqual(valid, {
   ok: true,
-  code: ['const before = true;', 'runSafely(input);', 'const after = true;'].join('\\n'),
+  code: ['const before = true;', 'runSafely(input);', 'const after = true;'].join('\n'),
 }, 'a validated patch must replace only the exact reviewed source snippet');
 
 for (const status of ['NEEDS_REVIEW', 'PARTIALLY_VALIDATED', 'INVALID', 'UNKNOWN']) {
@@ -31,7 +31,7 @@ assert.deepEqual(
   'missing source evidence must fail closed',
 );
 assert.deepEqual(
-  applyValidatedSnippetPatch(original, { ...finding, suggestedPatch: '  \\n ' }, 'VALIDATED'),
+  applyValidatedSnippetPatch(original, { ...finding, suggestedPatch: '   ' }, 'VALIDATED'),
   { ok: false, reason: 'empty-patch' },
 );
 for (const [startLine, endLine] of [[0, 1], [-1, 1], [3, 2], [4, 4], [1.5, 2], [1, 1.5], [1, 202]]) {
