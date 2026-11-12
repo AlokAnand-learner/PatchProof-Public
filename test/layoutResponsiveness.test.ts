@@ -103,6 +103,12 @@ if (navbarSource.includes('pb-safe') && navbarSource.includes('md:hidden fixed b
   fail('Mobile bottom nav', 'Missing pb-safe or mobile bottom fixed layout');
 }
 
+if (navbarSource.includes('min-h-11 min-w-11')) {
+  pass('Mobile bottom navigation controls meet minimum 44px touch target dimensions');
+} else {
+  fail('Mobile bottom nav touch targets', 'Missing minimum 44px touch target sizing');
+}
+
 // 3. Viewport Breakpoints & Fluid CSS in index.css
 const indexCss = fs.readFileSync(path.join(process.cwd(), 'src/index.css'), 'utf-8');
 
