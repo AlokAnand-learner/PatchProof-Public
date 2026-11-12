@@ -187,8 +187,8 @@ class SourceArchiveImportFlowTests(unittest.TestCase):
     def test_encrypted_member_is_rejected(self) -> None:
         self.write_zip([("source/src/app.ts", b"secret", False)])
         raw = bytearray(self.archive_path.read_bytes())
-        local = raw.find(b"PK\\x03\\x04")
-        central = raw.find(b"PK\\x01\\x02")
+        local = raw.find(bytes((0x50, 0x4B, 0x03, 0x04)))
+        central = raw.find(bytes((0x50, 0x4B, 0x01, 0x02)))
         self.assertGreaterEqual(local, 0)
         self.assertGreaterEqual(central, 0)
         struct.pack_into("<H", raw, local + 6, struct.unpack_from("<H", raw, local + 6)[0] | 1)
