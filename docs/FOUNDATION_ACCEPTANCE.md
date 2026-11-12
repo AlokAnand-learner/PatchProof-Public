@@ -15,6 +15,8 @@ Phase 1 is complete only when all items below are implemented and verified.
 - [x] Host and port are validated before listening; only loopback hosts are accepted.
 - [x] Proxy trust is disabled and Express identifies itself as little as practical.
 - [x] Production Content Security Policy excludes `unsafe-eval`; development-only allowances are gated by runtime mode.
+- [x] Production CSP limits browser connections to same-origin, restricts form submission to same-origin, and blocks framing; Vite loopback WebSockets are development-only.
+- [x] AI-generated report summaries and recommendations are bounded and stripped of control/bidirectional formatting characters before display.
 - [x] Dependencies installed from the declared manifest with the committed Bun lockfile.
 - [x] Full TypeScript typecheck passes in GitHub Actions.
 - [x] Production build passes in GitHub Actions.
