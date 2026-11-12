@@ -21,7 +21,7 @@ See [the architecture](docs/ARCHITECTURE.md), [foundation acceptance checklist](
 ## Runtime requirements
 
 - Node.js 20.19 or later; development is pinned to 22.16.0 in `.nvmrc`.
-- Bun with support for the committed `bun.lock` lockfile.
+- Bun (the package manager selected for this project). The committed lockfile is not yet present on this branch; frozen installation remains blocked until the reviewed source import and lockfile reconciliation are complete.
 
 ## Run locally
 
@@ -40,7 +40,7 @@ bun run typecheck
 bun run build
 ```
 
-Bun is the selected package manager. Use the committed lockfile with `bun install --frozen-lockfile`; do not use `npm install` as the canonical workflow because npm does not consume `bun.lock`.
+Bun is the selected package manager. Do not use `--frozen-lockfile` until the matching lockfile has been committed and verified. The canonical frozen-install command will be `bun install --frozen-lockfile` after that gate is satisfied.
 
 ## Verification gate
 
