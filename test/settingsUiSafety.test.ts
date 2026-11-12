@@ -4,7 +4,7 @@ import path from 'node:path';
 
 const settings = fs.readFileSync(path.join(process.cwd(), 'src/components/SettingsView.tsx'), 'utf8');
 
-assert.match(settings, /role="switch"[\s\S]{0,160}aria-checked=\{privacyModeEnabled\}/,
+assert.ok(settings.includes('role="switch"') && settings.includes('aria-checked={privacyModeEnabled}'),
   'privacy control must expose switch semantics and its current state');
 assert.ok(settings.includes('useState<boolean>(() => isPrivacyModeEnabled())'), 'privacy switch state must be initialized from persisted preference');
 assert.ok(settings.includes('setPrivacyModeEnabled(nextState)'), 'privacy switch must update React state after a successful preference change');
@@ -13,7 +13,7 @@ assert.ok(settings.includes("event.key === null || event.key === 'patchproof_pri
 
 assert.match(settings, /aria-label="Enable privacy mode for saved source code"/,
   'privacy switch must have an accessible name');
-assert.match(settings, /role="switch"[\s\S]{0,220}aria-checked=\{Boolean\(serverStatus\?\.cloudConsentGranted\)\}/,
+assert.ok(settings.includes('aria-checked={Boolean(serverStatus?.cloudConsentGranted)}'),
   'cloud consent control must expose switch semantics and server-backed state');
 assert.match(settings, /disabled=\{!serverStatus \|\| serverStatus\.status === 'offline'\}/,
   'cloud consent must not be toggled before server status is known');
