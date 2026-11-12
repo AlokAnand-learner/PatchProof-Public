@@ -240,3 +240,11 @@ CI success does not establish that PatchProof is vulnerability-free or release-r
 - Regression tests cover Unicode/control-character handling, bounded report text, production CSP restrictions, and development-only WebSocket allowances.
 - CI verification for the AI text sanitizer passed in [run 43296659766](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43296659766). The production CSP change and corrected test expectation passed both jobs in [run 43296873993](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43296873993).
 - These controls reduce unsafe display artifacts and browser-side local-network exposure; they do not eliminate XSS, prompt injection, or every browser attack surface.
+
+### Follow-up engineering — IPv6 special-purpose destination filtering
+
+- The IPv6 SSRF check previously used several textual prefix checks and did not consistently classify compressed IPv6 CIDRs or all non-global destination ranges.
+- Added a small IPv6-to-128-bit parser and CIDR matcher. Remote IPv6 destinations must be in global-unicast `2000::/3`; IPv4-mapped and IPv4-compatible IPv6 destinations are rejected, as are explicit Teredo, benchmarking, deprecated ORCHID, documentation, 6to4, and other non-global ranges.
+- Regression cases now cover additional special-purpose, reserved, mapped-public, and boundary addresses while retaining tests for legitimate globally routable IPv6 endpoints.
+- The classification follows the IANA IPv6 Special-Purpose Address Registry: https://www.iana.org/assignments/iana-ipv6-special-registry. This remains a conservative endpoint allow/deny policy, not a substitute for live DNS/TLS integration testing.
+- Both CI jobs passed for the validator implementation in [run 43297331221](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43297331221) and for the expanded regression suite in [run 43297371981](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43297371981).
