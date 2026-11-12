@@ -701,7 +701,7 @@ CRITICAL RULES:
               if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || !Array.isArray(parsed.findings)) throw new Error('Invalid AI response structure');
               aiReviewCompletedFiles += 1;
               modelUsed = `${provState.activeProvider}:${provState.activeModel} (Hybrid Analysis)`;
-              const safeModelFindings = validateAIModelFindings(parsed?.findings, fileContent);
+              const safeModelFindings = validateAIModelFindings(parsed?.findings, aiInputContent);
               if (safeModelFindings.length > 0) {
                 const aiFindings: VulnerabilityFinding[] = safeModelFindings.map((finding, fIdx) => {
                   const sLine = finding.startLine;
@@ -970,7 +970,7 @@ CRITICAL RULES:
           // A model-proposed full-file rewrite is not applied as authoritative output.
           // Keep the original source until a separate patch-validation workflow approves a patch.
 
-          const safeModelFindings = validateAIModelFindings(parsed?.findings, code);
+          const safeModelFindings = validateAIModelFindings(parsed?.findings, aiInputContent);
           if (safeModelFindings.length > 0) {
             const aiFindings: VulnerabilityFinding[] = safeModelFindings.map((f, idx) => {
               const sLine = f.startLine;
