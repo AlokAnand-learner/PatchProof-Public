@@ -146,6 +146,32 @@ async function runUploadSafetyTests() {
     forgedCountCaught = err.message.includes('too many entries');
   }
   assert('Reject forged ZIP entry-count metadata before full archive parsing', eocdOffset >= 0 && forgedCountCaught);
+  const falseEocdZip = new JSZip();
+  falseEocdZip.file('src/one.ts', 'const one = 1;');
+  const falseEocdBase = new Uint8Array(await falseEocdZip.generateAsync({ type: 'arraybuffer' }));
+  let realEocdOffset = -1;
+  for (let i = falseEocdBase.length - 22; i >= Math.max(0, falseEocdBase.length - 22 - 0xffff); i -= 1) {
+    if (falseEocdBase[i] === 0x50 && falseEocdBase[i + 1] === 0x4b &&
+        falseEocdBase[i + 2] === 0x05 && falseEocdBase[i + 3] === 0x06) {
+      realEocdOffset = i;
+      break;
+    }
+  }
+  const falseEocdBytes = new Uint8Array(falseEocdBase.length + 22);
+  falseEocdBytes.set(falseEocdBase);
+  if (realEocdOffset >= 0) {
+    const falseEocdView = new DataView(falseEocdBytes.buffer);
+    falseEocdView.setUint16(realEocdOffset + 20, 22, true);
+    falseEocdView.setUint32(falseEocdBase.length, 0x06054b50, true);
+  }
+  let falseEocdCaught = false;
+  try {
+    await safeExtractZip(falseEocdBytes, { excludeDirs: false });
+  } catch (err: any) {
+    falseEocdCaught = err.message.includes('Invalid ZIP central-directory bounds');
+  }
+  assert('Reject a false EOCD signature embedded in the ZIP comment', realEocdOffset >= 0 && falseEocdCaught);
+
 
   // 6c. Forge both ZIP size declarations below the real decompressed output.
   // The streaming guard must enforce the actual inflated byte count, not metadata.
