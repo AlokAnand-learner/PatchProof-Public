@@ -232,3 +232,11 @@ CI success does not establish that PatchProof is vulnerability-free or release-r
 - The immutable provider system instruction now explicitly identifies the `reviewRequest` field as untrusted user input. It may prioritize a defensive review but cannot override the system policy, request hidden data, or authorize tools, network access, or code execution.
 - Provider tests assert this policy is present for local Ollama and OpenAI-compatible request construction, and that malicious review text remains only in the user-data payload.
 - Both CI jobs passed after the final prompt-policy and fixture updates in [run 43295479384](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43295479384).
+
+### Follow-up engineering — AI report text hygiene and production browser policy
+
+- AI-generated summary and recommendation strings now pass through a shared bounded-text sanitizer before they are returned to the UI. It removes control characters and bidirectional formatting controls and enforces field length limits. React text rendering remains required; this sanitizer is not HTML sanitization or semantic validation.
+- Production CSP now restricts browser connections to same-origin. Vite loopback WebSocket allowances are development-only, form submissions are same-origin, and framing is disabled with `frame-ancestors 'none'`.
+- Regression tests cover Unicode/control-character handling, bounded report text, production CSP restrictions, and development-only WebSocket allowances.
+- CI verification for the AI text sanitizer passed in [run 43296659766](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43296659766). The production CSP change and corrected test expectation passed both jobs in [run 43296873993](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43296873993).
+- These controls reduce unsafe display artifacts and browser-side local-network exposure; they do not eliminate XSS, prompt injection, or every browser attack surface.
