@@ -662,7 +662,7 @@ CRITICAL RULES:
 - Distinguish verified flaws from hypothetical or test matches.
 - Do NOT flag detection patterns, comments, regexes, or sanitized queries as vulnerabilities.
 - Provide exact 1-indexed lines, explanation, attack scenario, exploit conditions, and safe suggestedPatch.
-- Output strictly a JSON object with: { "findings": [{ "title": string, "cwe": string, "owaspCategory": string, "severity": "CRITICAL"|"HIGH"|"MEDIUM"|"LOW"|"INFO", "confidence": "HIGH"|"MEDIUM"|"LOW", "verificationStatus": "CONFIRMED"|"LIKELY"|"NEEDS_REVIEW"|"FALSE_POSITIVE", "startLine": number, "endLine": number, "snippet": string, "explanation": string, "attackScenario": string, "exploitConditions": string, "remediation": string, "suggestedPatch": string }] }
+- Output strictly a JSON object with: { "findings": [{ "title": string, "cwe": string, "owaspCategory": string, "severity": "CRITICAL"|"HIGH"|"MEDIUM"|"LOW"|"INFO", "confidence": "HIGH"|"MEDIUM"|"LOW", "verificationStatus": "LIKELY"|"NEEDS_REVIEW"|"FALSE_POSITIVE", "startLine": number, "endLine": number, "snippet": string, "explanation": string, "attackScenario": string, "exploitConditions": string, "remediation": string, "suggestedPatch": string }] }
 `;
 
               const timeoutPromise = new Promise<never>((_, reject) =>
@@ -803,7 +803,7 @@ CRITICAL RULES:
            : `No matching vulnerability patterns were identified across ${fileRecords.length} files (${totalLines} lines) in ${safeProjectName}; this does not prove the project is vulnerability-free.`;
 
         const validatedAllFindings = allFindings.map(f => {
-          if (f.suggestedPatch) {
+          if (f.suggestedPatch && f.verificationStatus !== 'FALSE_POSITIVE') {
             const matchedFile = fileRecords.find(fr => fr.filePath === f.filePath);
             const val = validateFix({
               originalSnippet: f.snippet,
