@@ -35,7 +35,7 @@ Completed:
 - Added an automated read-only conflict audit that downloads the exact SHA-pinned archive from its upload commit and compares hashes without overwriting files.
 
 Still required:
-- Review the 25 preserved differences against the source archive and keep the more secure branch versions where appropriate; do not blindly replace them with the older archive copy.
+- Complete a line-by-line review of the 25 preserved differences against the reviewed source archive; the current reconciliation is path/hash-level and records affected files, not a full semantic diff review. Keep more secure branch versions where appropriate; do not blindly replace them with older archive copies.
 - Complete an end-to-end upload-to-analysis smoke test in a real browser and review any remaining conflicts.
 
 ## Phase 2 — Reproducible project setup
@@ -48,8 +48,8 @@ Completed:
 - A dedicated workflow regenerates and verifies the lockfile when the package manifest changes.
 
 Still required:
-- Review the dependency lifecycle script reported as blocked by Bun; do not approve install scripts without checking why they are needed.
-- Bun identifies the blocked lifecycle script as `protobufjs@7.6.6` (`node scripts/postinstall`). It remains blocked; `bun pm untrusted` lists it after installation. Typecheck, build, and tests pass without running it, so do not add it to trusted dependencies unless its necessity is established.
+- Keep the `protobufjs@7.6.6` (`node scripts/postinstall`) lifecycle script blocked until its purpose and necessity are independently established. Do not approve it merely to silence a warning.
+- Verify a clean checkout, frozen install, and local runtime startup on a developer machine. CI does not replace a clean local-machine check.
 - Verify a clean checkout and local runtime startup on a developer machine.
 
 ## Phase 3 — Detection precision
@@ -60,9 +60,9 @@ Completed:
 - Test, sample, and documentation findings with source-to-sink indicators remain visible as informational `NEEDS_REVIEW` items rather than likely production vulnerabilities; they do not reduce the production score.
 - Reworked benchmark accounting so review-only cases are excluded from binary precision/recall calculations.
 - Added alias propagation and reassignment regression cases for SQL, command-execution, and URL-fetch sinks.
-- Empty precision/recall denominators now return conservative zero values rather than an artificial perfect score; a dedicated edge-case test covers this.
+- Empty precision/recall denominators and entirely empty evaluation suites now return conservative zero metrics rather than artificial perfect scores; dedicated edge-case tests cover both.
 - AI-generated findings are deduplicated by normalized title, CWE, and exact source line range; snippets continue to be derived from source rather than accepted from model output.\n- Untrusted model-supplied labels and prose have non-printing control and bidirectional formatting characters removed; CWE identifiers are constrained to a recognized `CWE-<number>` or `CWE-Other` form.
-- The built-in suite has 13 synthetic fixtures: 9 binary-scored cases and 4 review-only cases. The latest focused run produced 3 TP, 6 TN, 0 FP, and 0 FN for the 9 scored fixtures.
+- The built-in suite has 13 synthetic fixtures: 9 binary-scored cases and 4 review-only cases. The latest successful focused run produced 3 TP, 6 TN, 0 FP, and 0 FN for the 9 scored fixtures; a new empty-suite metric regression is awaiting CI.
 
 Limitations:
 - These percentages describe a small synthetic suite, not real-world accuracy. They are not evidence of zero false positives or complete detection.
@@ -83,10 +83,10 @@ Completed:
 - A separate untrusted-source AI boundary helper serializes source as JSON data, provides a fixed defensive system instruction, applies path/file/total limits, and flags common prompt-injection indicators. It deliberately preserves source text and does not claim heuristic detection is complete.
 
 Still required:
-- The fixed system instruction and separate JSON source payload are now wired into Ollama, Gemini, OpenAI-compatible, and Anthropic request branches. No tool declarations are sent by these review requests.
+- The fixed system instruction and separate JSON source payload are wired into Ollama, Gemini/Gemma, OpenAI-compatible, and Anthropic request branches. No tool declarations are sent by these review requests.
 - JSZip-backed ZIP/folder tests pass in the complete suite; malformed archives, duplicate entries, path collisions, and decompression limits have regression coverage.
 - Local Ollama/custom and remote custom payload-preparation tests verify the source boundary, absence of tool declarations, redirect rejection, and credential redaction. Provider adapter source-contract tests cover all four provider request shapes. Hosted Gemini/Anthropic requests have not been exercised against live credentials.
-- Complete a real-browser upload-to-analysis smoke test and inspect memory use under configured limits.
+- Remaining: real-browser upload-to-analysis smoke test, memory-use inspection under configured limits, and hosted-provider mock/live integration where credentials and explicit consent are available.
 
 ## Phase 5 — Privacy and local boundary
 
@@ -95,11 +95,11 @@ Completed:
 - SSRF validation blocks private, loopback, link-local, metadata, special-purpose IPv4, and restricted IPv6 destinations; special-purpose IPv6 coverage now explicitly rejects deprecated site-local, documentation, Teredo, 6to4, and NAT64 translation prefixes. Trusted local providers are restricted to loopback and allowed ports.
 - Remote provider transmission requires explicit server-side consent; local Ollama/custom loopback use does not require cloud consent. Provider connection tests enforce the same consent and offline-mode gates.
 - Privacy mode is enabled by default and removes full source and full-file patches from browser history.
-- History clear now reports success or failure rather than silently claiming success. Production CSP no longer permits `unsafe-eval`. Production CSP no longer permits `unsafe-eval`.
+- History clear now reports success or failure rather than silently claiming success. Production CSP no longer permits `unsafe-eval`.
 
 Still required:
-- Run live network integration checks for DNS-pinned custom endpoints and confirm certificate/hostname validation across supported operating systems.
-- Verify all provider adapters enforce equivalent timeouts, response bounds, redirect policy, and credential redaction. Remote custom HTTPS requests now pin validated DNS answers and reject restricted address sets; redirects are not followed.
+- Verify DNS-pinned custom HTTPS transport against controlled integration endpoints and confirm certificate/hostname validation across supported operating systems. Source-level tests cover address validation and pinned lookup behavior, but do not prove live TLS/DNS behavior on every supported OS.
+- Remote custom HTTPS requests pin validated DNS answers, reject restricted address sets, and do not follow redirects; audit equivalent timeout, response-bound, redirect, and redaction behavior across all providers.
 - Review all logs, reports, browser persistence, and error paths after full application import.
 
 ## Phase 6 — UX and release readiness
@@ -127,13 +127,14 @@ Still required:
 - The latest focused workflow passed 40 Python repository/archive tests, 10 same-origin API tests, 13 untrusted-source boundary checks, 18 AI-finding validation checks, 10 special-purpose IPv4 checks, and 8 special-purpose IPv6 checks (102 reported checks across the focused groups).
 - The complete suite now includes JSZip-backed upload safety and server-backed authentication boundary tests; both pass in CI.
 - TypeScript type-check and production build pass after the reviewed source import.
-- A single postinstall warning remains under investigation; the explicit `bun pm untrusted` audit reports zero untrusted dependencies.
-- A real-device browser smoke test remains unverified because the app is not running on the user's local device.
+- The `protobufjs@7.6.6` lifecycle script remains blocked pending a necessity review; do not approve it without evidence that the app requires it.
+- The full CI suite does not verify the user's local runtime, real file picker, Android touch behavior, or assistive-technology behavior.
 
 ## Manual verification still required
 
-- Open the app on the user's Android device and verify the real file/folder picker, upload, navigation, orientation changes, and small-screen layout. GitHub-hosted CI cannot inspect the user's device or local browser.
-- Live Gemini/Anthropic provider calls require the user's own approved credentials and explicit cloud consent; request-shape tests pass without sending source to hosted services.
+- Open the app on the user's Windows PC and verify local startup, real file/folder picker, upload-to-analysis, reports, history, provider selection, and error recovery. The PC test is a manual acceptance gate.
+- Android viewport and orientation checks can be prepared with browser emulation, but real Android touch, picker, and assistive-technology behavior still needs device verification.
+- Live Gemini/Anthropic provider calls require approved credentials and explicit cloud consent; they are optional to the local-first release and must not block local-only acceptance.
 
 ## Acceptance rule
 
