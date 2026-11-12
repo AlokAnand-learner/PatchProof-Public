@@ -34,9 +34,12 @@ export function prepareProviderReviewPayload(
   const prepared = prepareUntrustedSource(outboundFiles);
   // The review request can originate from the client. Keep it in the user-data
   // channel even when uploaded files are present; never promote it to a system instruction.
+  const outboundReviewRequest = needsCloudConsent
+    ? redactLikelySecrets([{ path: 'review-request.txt', content: prompt }])[0].content
+    : prompt;
   const userPayload = sourceFiles && sourceFiles.length > 0
     ? JSON.stringify({
-        reviewRequest: prompt,
+        reviewRequest: outboundReviewRequest,
         sourcePayload: JSON.parse(prepared.userPayload),
       })
     : prepared.userPayload;
