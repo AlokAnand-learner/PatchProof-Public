@@ -61,7 +61,8 @@ Completed:
 - Added alias propagation and reassignment regression cases for SQL, command-execution, and URL-fetch sinks.
 - Empty precision/recall denominators and entirely empty evaluation suites now return conservative zero metrics rather than artificial perfect scores; dedicated edge-case tests cover both.
 - The bounded source-to-sink heuristic resets at obvious function boundaries to avoid carrying request-derived taint into a different function. Alias copies retain their taint when the original variable is later reassigned; dedicated regression cases cover both behaviors.
-- AI-generated findings are deduplicated by normalized title, CWE, and exact source line range; snippets continue to be derived from source rather than accepted from model output.\n- Untrusted model-supplied labels and prose have non-printing control and bidirectional formatting characters removed; CWE identifiers are constrained to a recognized `CWE-<number>` or `CWE-Other` form.
+- AI-generated findings are deduplicated by normalized title, CWE, and exact source line range; snippets continue to be derived from source rather than accepted from model output.
+- Untrusted model-supplied labels and prose have non-printing control and bidirectional formatting characters removed; CWE identifiers are constrained to a recognized `CWE-<number>` or `CWE-Other` form.
 - The built-in suite has 13 synthetic fixtures: 9 binary-scored cases and 4 review-only cases. The latest successful focused run produced 3 TP, 6 TN, 0 FP, and 0 FN for the 9 scored fixtures; the empty-suite metric regression passes CI. The later function-scope taint and alias-copy tests plus hard HTTPS deadline change are queued for the latest CI validation.
 
 Limitations:
