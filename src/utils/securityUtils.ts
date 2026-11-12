@@ -118,29 +118,87 @@ function redactScanSource(scan: ScanResult): ScanResult {
   };
 }
 
-function isHistoryItemRecord(value: unknown): value is HistoryItem {
-  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
-  const item = value as Record<string, unknown>;
-  const scan = item.scanResult;
-  if (!scan || typeof scan !== 'object' || Array.isArray(scan)) return false;
-  const scanRecord = scan as Record<string, unknown>;
-  const metrics = scanRecord.metrics;
-  if (!metrics || typeof metrics !== 'object' || Array.isArray(metrics)) return false;
-  const findings = scanRecord.findings;
-  if (!Array.isArray(findings) || !findings.every(finding =>
-    !!finding && typeof finding === 'object' && !Array.isArray(finding)
-  )) return false;
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
 
-  return typeof item.id === 'string' && item.id.length > 0 && item.id.length <= 200 &&
-    typeof item.projectName === 'string' && item.projectName.length <= 500 &&
-    typeof item.fileName === 'string' && item.fileName.length <= 500 &&
-    typeof item.language === 'string' && item.language.length <= 80 &&
-    typeof item.timestamp === 'string' && item.timestamp.length <= 80 &&
-    typeof item.score === 'number' && Number.isFinite(item.score) &&
+function hasBoundedString(record: Record<string, unknown>, key: string, maxLength: number): boolean {
+  return typeof record[key] === 'string' && (record[key] as string).length <= maxLength;
+}
+
+function hasFiniteNumber(record: Record<string, unknown>, key: string): boolean {
+  return typeof record[key] === 'number' && Number.isFinite(record[key]);
+}
+
+function isHistoryFindingRecord(value: unknown): boolean {
+  if (!isRecord(value)) return false;
+  const finding = value;
+  const requiredStrings: Array<[string, number]> = [
+    ['id', 200], ['title', 500], ['cwe', 100], ['owaspCategory', 200],
+    ['severity', 40], ['confidence', 40], ['verificationStatus', 80],
+    ['verificationType', 80], ['snippet', 8000], ['explanation', 4000],
+    ['attackScenario', 4000], ['remediation', 4000], ['suggestedPatch', 8000],
+    ['status', 80],
+  ];
+  if (!requiredStrings.every(([key, max]) => hasBoundedString(finding, key, max))) return false;
+  if (!Number.isSafeInteger(finding.startLine) || !Number.isSafeInteger(finding.endLine) ||
+      (finding.startLine as number) < 1 || (finding.endLine as number) < (finding.startLine as number)) return false;
+  if (finding.filePath !== undefined && !hasBoundedString(finding, 'filePath', 1024)) return false;
+  if (finding.fixValidation !== undefined) {
+    if (!isRecord(finding.fixValidation) ||
+        !['VALIDATED', 'PARTIALLY_VALIDATED', 'NEEDS_REVIEW', 'INVALID'].includes(String(finding.fixValidation.status)) ||
+        !hasFiniteNumber(finding.fixValidation, 'overallScore') ||
+        !isRecord(finding.fixValidation.syntaxCheck)) return false;
+  }
+  return true;
+}
+
+function isHistoryItemRecord(value: unknown): value is HistoryItem {
+  if (!isRecord(value)) return false;
+  const item = value;
+  const scan = item.scanResult;
+  if (!isRecord(scan)) return false;
+  const metrics = scan.metrics;
+  if (!isRecord(metrics)) return false;
+
+  const metricNumbers = [
+    'score', 'criticalCount', 'highCount', 'mediumCount', 'lowCount',
+    'infoCount', 'totalFindings', 'confirmedCount', 'likelyCount',
+    'needsReviewCount', 'falsePositiveCount', 'linesAnalyzed',
+  ];
+  if (!metricNumbers.every(key => hasFiniteNumber(metrics, key)) ||
+      !['A+', 'A', 'B', 'C', 'D', 'F'].includes(String(metrics.grade))) return false;
+
+  const findings = scan.findings;
+  if (!Array.isArray(findings) || !findings.every(isHistoryFindingRecord)) return false;
+  if (!Array.isArray(scan.recommendations) ||
+      !scan.recommendations.every(item => typeof item === 'string' && item.length <= 4000)) return false;
+  if (scan.files !== undefined && (!Array.isArray(scan.files) || !scan.files.every(file =>
+    isRecord(file) && hasBoundedString(file, 'filePath', 1024) &&
+    hasBoundedString(file, 'language', 80) && typeof file.content === 'string' &&
+    hasFiniteNumber(file, 'lines') && hasFiniteNumber(file, 'size')
+  ))) return false;
+
+  const scanStrings: Array<[string, number]> = [
+    ['id', 200], ['projectName', 500], ['fileName', 500], ['language', 80],
+    ['timestamp', 80], ['modelUsed', 200], ['originalCode', 2 * 1024 * 1024],
+    ['summary', 8000],
+  ];
+  if (!scanStrings.every(([key, max]) => hasBoundedString(scan, key, max)) ||
+      !hasFiniteNumber(scan, 'executionTimeMs') ||
+      (scan.executionTimeMs as number) < 0) return false;
+
+  return hasBoundedString(item, 'id', 200) && (item.id as string).length > 0 &&
+    hasBoundedString(item, 'projectName', 500) &&
+    hasBoundedString(item, 'fileName', 500) &&
+    hasBoundedString(item, 'language', 80) &&
+    hasBoundedString(item, 'timestamp', 80) &&
+    hasFiniteNumber(item, 'score') &&
     ['A+', 'A', 'B', 'C', 'D', 'F'].includes(String(item.grade)) &&
-    typeof item.totalFindings === 'number' && Number.isFinite(item.totalFindings) &&
-    typeof item.criticalCount === 'number' && Number.isFinite(item.criticalCount) &&
-    typeof item.highCount === 'number' && Number.isFinite(item.highCount);
+    hasFiniteNumber(item, 'totalFindings') &&
+    hasFiniteNumber(item, 'criticalCount') &&
+    hasFiniteNumber(item, 'highCount') &&
+    item.id === scan.id;
 }
 
 function redactHistoryItem(item: HistoryItem): HistoryItem {
