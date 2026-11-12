@@ -535,8 +535,34 @@ async function startServer() {
       } = req.body;
 
       const patch = suggestedPatch || fixedCode;
-      if (!patch || typeof patch !== 'string') {
+      if (typeof patch !== 'string' || patch.length === 0) {
         return res.status(400).json({ error: 'suggestedPatch or fixedCode string is required for validation.' });
+      }
+
+      const optionalTextFields: Array<[string, unknown]> = [
+        ['originalSnippet', originalSnippet ?? originalCode],
+        ['surroundingContext', surroundingContext],
+        ['fullSourceCode', fullSourceCode],
+        ['language', language],
+        ['filePath', filePath],
+        ['vulnerabilityCwe', vulnerabilityCwe],
+        ['vulnerability', vulnerability],
+      ];
+      for (const [fieldName, value] of optionalTextFields) {
+        if (value !== undefined && value !== null && typeof value !== 'string') {
+          return res.status(400).json({ error: `${fieldName} must be a string.` });
+        }
+      }
+
+      const codeFields = [patch, originalSnippet || originalCode || '', surroundingContext || '', fullSourceCode || ''];
+      if (codeFields.some(value => Buffer.byteLength(value, 'utf8') > 2 * 1024 * 1024) ||
+          codeFields.reduce((total, value) => total + Buffer.byteLength(value, 'utf8'), 0) > 6 * 1024 * 1024) {
+        return res.status(413).json({ error: 'Fix validation source exceeds the configured per-field or aggregate size limit.' });
+      }
+      if ((typeof language === 'string' && language.length > 64) ||
+          (typeof filePath === 'string' && filePath.length > 1024) ||
+          (typeof vulnerabilityCwe === 'string' && vulnerabilityCwe.length > 64)) {
+        return res.status(400).json({ error: 'Fix validation metadata exceeds the allowed length.' });
       }
 
       const result = validateFix({
@@ -555,11 +581,11 @@ async function startServer() {
     }
   };
 
-  app.post('/api/fix/validate', requireSessionAuth, handleFixValidation);
-  app.post('/api/validate-fix', requireSessionAuth, handleFixValidation);
+  app.post('/api/fix/validate', requireSessionAuth, limitProviderTasks, handleFixValidation);
+  app.post('/api/validate-fix', requireSessionAuth, limitProviderTasks, handleFixValidation);
 
   // Fix Validation Suite Benchmark Endpoint (Runs the 6-test suite)
-  app.get('/api/fix/benchmark', (_req: Request, res: Response) => {
+  app.get('/api/fix/benchmark', limitProviderTasks, (_req: Request, res: Response) => {
     try {
       const report = runFixValidationSuite();
       res.json(report);
