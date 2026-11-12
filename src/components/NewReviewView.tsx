@@ -24,7 +24,7 @@ import {
   Info
 } from 'lucide-react';
 import { StagedFile, UploadLimits, SampleCode } from '../types/security';
-import { processFolderUpload, processZipUpload, processMultipleFiles, DEFAULT_LIMITS } from '../utils/archiveUtils';
+import { processFolderUpload, processZipUpload, processMultipleFiles, mergeStagedFileBatches, DEFAULT_LIMITS } from '../utils/archiveUtils';
 import { SAMPLE_CODES } from '../data/sampleCodes';
 
 interface NewReviewViewProps {
@@ -57,6 +57,16 @@ export const NewReviewView: React.FC<NewReviewViewProps> = ({
   const [method, setMethod] = useState<SubmissionMethod>('folder');
   const [dragActive, setDragActive] = useState(false);
   const [stagedFiles, setStagedFiles] = useState<StagedFile[]>([]);
+  const stagedFilesRef = useRef<StagedFile[]>([]);
+  const commitStagedFiles = (next: StagedFile[]) => {
+    stagedFilesRef.current = next;
+    setStagedFiles(next);
+  };
+  const mergeIncomingFiles = (incoming: StagedFile[], skipped: string[] = []) => {
+    const merged = mergeStagedFileBatches(stagedFilesRef.current, incoming);
+    commitStagedFiles(merged.stagedFiles);
+    setSkippedNotice([...skipped, ...merged.skippedFiles]);
+  };
   const [projectName, setProjectName] = useState('Project Review');
   const [excludeCommonDirs, setExcludeCommonDirs] = useState(true);
   const [showAdvancedOptions, setShowAdvancedOptions] = useState(false);
@@ -95,7 +105,7 @@ export const NewReviewView: React.FC<NewReviewViewProps> = ({
     setErrorMessage(null);
     try {
       const result = await processFolderUpload(fileList, { excludeCommonDirs });
-      setStagedFiles(result.stagedFiles);
+      commitStagedFiles(result.stagedFiles);
       setSkippedNotice(result.skippedFiles);
       if (result.projectName) setProjectName(result.projectName);
     } catch (err: any) {
@@ -131,12 +141,7 @@ export const NewReviewView: React.FC<NewReviewViewProps> = ({
     setErrorMessage(null);
     try {
       const result = await processMultipleFiles(fileList);
-      setStagedFiles(prev => {
-        const existingPaths = new Set(prev.map((f: StagedFile) => f.relativePath));
-        const newFiles = result.stagedFiles.filter((f: StagedFile) => !existingPaths.has(f.relativePath));
-        return [...prev, ...newFiles];
-      });
-      setSkippedNotice(result.skippedFiles);
+      mergeIncomingFiles(result.stagedFiles, result.skippedFiles);
     } catch (err: any) {
       setErrorMessage(err.message || 'Could not process the selected files.');
     } finally {
@@ -167,12 +172,7 @@ export const NewReviewView: React.FC<NewReviewViewProps> = ({
     } else {
       try {
         const result = await processMultipleFiles(files);
-        setStagedFiles(prev => {
-          const existingPaths = new Set(prev.map((f: StagedFile) => f.relativePath));
-          const newFiles = result.stagedFiles.filter((f: StagedFile) => !existingPaths.has(f.relativePath));
-          return [...prev, ...newFiles];
-        });
-        setSkippedNotice(result.skippedFiles);
+        mergeIncomingFiles(result.stagedFiles, result.skippedFiles);
         if (result.projectName) setProjectName(result.projectName);
       } catch (err: any) {
         setErrorMessage(err.message || 'Could not process dropped files.');
@@ -181,11 +181,11 @@ export const NewReviewView: React.FC<NewReviewViewProps> = ({
   };
 
   const removeStagedFile = (id: string) => {
-    setStagedFiles(prev => prev.filter(f => f.id !== id));
+    commitStagedFiles(stagedFilesRef.current.filter(f => f.id !== id));
   };
 
   const clearStagedFiles = () => {
-    setStagedFiles([]);
+    commitStagedFiles([]);
     setSkippedNotice([]);
     setErrorMessage(null);
   };
