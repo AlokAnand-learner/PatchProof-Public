@@ -310,8 +310,9 @@ export function generateMarkdownReport(scan: ScanResult): string {
   md += `**Target File:** \`${scan.fileName}\`  \n`;
   md += `**Language:** ${scan.language.toUpperCase()}  \n`;
   md += `**Review Date:** ${dateStr}  \n`;
-  md += `**Security Score:** ${scan.metrics.score} / 100 (Grade: ${scan.metrics.grade})  \n`;
+  md += `**Heuristic Risk Indicator:** ${scan.metrics.score} / 100 (Band: ${scan.metrics.grade})  \n`;
   md += `**Analysis Engine:** ${scan.modelUsed || 'Context-Aware Static Rules (Local)'}  \n`;
+  md += `**Score limitation:** This weighted indicator reflects detected findings from the configured checks; it is not a probability, certification, or proof of security.  \n`;
   md += `**Transmission Boundary:** ${scan.transmissionMode === 'CLOUD_AI_TRANSMITTED' ? 'Remote AI analysis (consent recorded)' : 'Local analysis (no remote AI transmission recorded)'}  \n\n`;
 
   md += `## Executive Summary\n\n`;
@@ -328,7 +329,7 @@ export function generateMarkdownReport(scan: ScanResult): string {
   md += `## Security Findings\n\n`;
 
   if (scan.findings.length === 0) {
-    md += `*No security issues were identified in this review.*  \n\n`;
+    md += `*No matching vulnerability patterns were identified in the analyzed files. This does not prove the code is vulnerability-free; static analysis has coverage and context limitations.*  \n\n`;
   } else {
     scan.findings.forEach((f, idx) => {
       const typeLabel = f.verificationMethod || (f.verificationType === 'STATIC_RULE_MATCH' ? 'STATIC_RULE_MATCH' : 'CONTEXTUAL_HEURISTIC');
@@ -352,7 +353,7 @@ export function generateMarkdownReport(scan: ScanResult): string {
       }
 
       if (f.suggestedPatch) {
-        const valStatus = f.fixValidation?.status || (f.patchVerificationStatus === 'VERIFIED_STATIC' ? 'VALIDATED' : 'NEEDS_REVIEW');
+        const valStatus = f.fixValidation?.status || (f.verificationStatus === 'FALSE_POSITIVE' ? 'NOT_APPLICABLE' : 'NEEDS_REVIEW');
         const valScore = f.fixValidation && typeof f.fixValidation.overallScore === 'number' && Number.isFinite(f.fixValidation.overallScore)
           ? safeReportNumber(f.fixValidation.overallScore, 0, 0, 100)
           : null;
