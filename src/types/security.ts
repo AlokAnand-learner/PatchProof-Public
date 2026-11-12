@@ -61,7 +61,7 @@ export interface FixValidationResult {
   introducedVulnerabilities: string[];
   insecureFallbacks: string[];
   timestamp: string;
-  executionMode: 'STATIC_ISOLATED_AST_ANALYSIS';
+  executionMode: 'STATIC_ISOLATED_CHECKS';
   validationChecksRun?: string[];
   limitations?: string[];
   fullFileValidationPassed?: boolean;
