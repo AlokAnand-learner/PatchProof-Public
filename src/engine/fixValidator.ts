@@ -77,13 +77,27 @@ export function validateFix(params: FixValidationParams): FixValidationResult {
   // 2. Full Replacement File Check (if fullSourceCode provided)
   let fullFileValidationPassed = true;
   if (fullSourceCode && fullSourceCode.trim().length > 0 && originalSnippet) {
-    const fullPatched = fullSourceCode.replace(originalSnippet, patchTrimmed);
-    const fullFileSyntax = checkSyntax(fullPatched, language);
-    if (!fullFileSyntax.passed) {
+    // Only validate a whole-file replacement when the exact target snippet is
+    // uniquely locatable. A missing or repeated snippet makes the proposed edit
+    // ambiguous; validating an unchanged/partially changed file would be misleading.
+    const occurrences = fullSourceCode.split(originalSnippet).length - 1;
+    if (occurrences !== 1) {
       fullFileValidationPassed = false;
       syntaxCheck.passed = false;
       syntaxCheck.status = 'FAIL';
-      syntaxCheck.message = `Full file syntax failure: ${fullFileSyntax.message}`;
+      syntaxCheck.message = occurrences === 0
+        ? 'Full file validation failed: original snippet was not found exactly.'
+        : 'Full file validation failed: original snippet occurs more than once and the replacement target is ambiguous.';
+      syntaxCheck.details = [syntaxCheck.message];
+    } else {
+      const fullPatched = fullSourceCode.replace(originalSnippet, patchTrimmed);
+      const fullFileSyntax = checkSyntax(fullPatched, language);
+      if (!fullFileSyntax.passed) {
+        fullFileValidationPassed = false;
+        syntaxCheck.passed = false;
+        syntaxCheck.status = 'FAIL';
+        syntaxCheck.message = `Full file syntax failure: ${fullFileSyntax.message}`;
+      }
     }
   }
 
