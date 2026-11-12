@@ -13,7 +13,7 @@ These percentages are engineering estimates, not test coverage or acceptance per
 | Phase | Progress | Current state |
 |---|---:|---|
 | 1. Safe source import | 75% | All 82 paths accounted for; 57 exact matches and 25 preserved differences; final conflict review and runtime smoke test remain |
-| 2. Reproducible setup | 75% | Frozen install, typecheck, production build, and full test suite pass in CI; one postinstall warning is still being investigated |
+| 2. Reproducible setup | 75% | Frozen install, typecheck, production build, local server startup, and full Node test suite pass in CI; the `protobufjs` lifecycle script remains intentionally blocked pending review |
 | 3. Detection precision | 45% | Alias propagation/reassignment regressions cover SQL, command, and URL-fetch sinks; empty positive-class metrics no longer report artificial 100% precision/recall; benchmark remains small and synthetic |
 | 4. Upload/archive safety | 82% | ZIP/folder and server-backed upload-to-analysis tests pass; all provider request branches use the source boundary; contract, prompt-injection, and remote credential-redaction tests added |
 | 5. Privacy/local boundary | 72% | Local-only boundary, consent, privacy defaults, remote-source credential redaction, redirect rejection, and DNS-pinned custom HTTPS requests are implemented and regression-tested |
@@ -50,7 +50,6 @@ Completed:
 Still required:
 - Keep the `protobufjs@7.6.6` (`node scripts/postinstall`) lifecycle script blocked until its purpose and necessity are independently established. Do not approve it merely to silence a warning.
 - Verify a clean checkout, frozen install, and local runtime startup on a developer machine. CI does not replace a clean local-machine check.
-- Verify a clean checkout and local runtime startup on a developer machine.
 
 ## Phase 3 — Detection precision
 
@@ -82,11 +81,14 @@ Completed:
 - High-confidence credential patterns include private keys and AWS, GitHub, Google, Stripe, Slack, GitLab, and npm tokens.
 - A separate untrusted-source AI boundary helper serializes source as JSON data, provides a fixed defensive system instruction, applies path/file/total limits, and flags common prompt-injection indicators. It deliberately preserves source text and does not claim heuristic detection is complete.
 
-Still required:
+Completed:
 - The fixed system instruction and separate JSON source payload are wired into Ollama, Gemini/Gemma, OpenAI-compatible, and Anthropic request branches. No tool declarations are sent by these review requests.
 - JSZip-backed ZIP/folder tests pass in the complete suite; malformed archives, duplicate entries, path collisions, and decompression limits have regression coverage.
-- Local Ollama/custom and remote custom payload-preparation tests verify the source boundary, absence of tool declarations, redirect rejection, and credential redaction. Provider adapter source-contract tests cover all four provider request shapes. Hosted Gemini/Anthropic requests have not been exercised against live credentials.
-- Remaining: real-browser upload-to-analysis smoke test, memory-use inspection under configured limits, and hosted-provider mock/live integration where credentials and explicit consent are available.
+- Local Ollama/custom and remote custom payload-preparation tests verify the source boundary, absence of tool declarations, redirect rejection, and credential redaction. Provider adapter source-contract tests cover all four provider request shapes.
+
+Still required:
+- Real-browser upload-to-analysis smoke test and memory-use inspection under configured limits.
+- Hosted Gemini/Anthropic provider-specific mock/live integration; live calls require credentials and explicit consent and are optional for local-only acceptance.
 
 ## Phase 5 — Privacy and local boundary
 
@@ -122,7 +124,7 @@ Still required:
 
 ## Verification performed in this work session
 
-- Latest full GitHub Actions run passed the Python repository/archive preflight (43 tests), type-check, production build, local server startup, and complete Node regression suite. Provider boundary tests include 22 assertions, provider adapter contract tests 16, source boundary tests 17, pinned DNS tests 10, and mobile layout/accessibility tests 14. The read-only archive comparison reports 57 exact matches, 25 preserved differences, and no missing paths.
+- Latest full code-validation GitHub Actions run (commit `7009919e55b057aa7f134f3638f396dc5bfd9300`) passed both jobs: Python repository/archive preflight, type-check, production build, local server startup, and complete Node regression suite. The new empty-suite metric regression is included in that passing run. Provider boundary tests include 22 assertions, provider adapter contract tests 16, source boundary tests 17, pinned DNS tests 10, and mobile layout/accessibility tests 14. The read-only archive comparison reports 57 exact matches, 25 preserved differences, and no missing paths.
 - Earlier foundation audit: 21 of the 23 scripted test files were executed successfully in focused mode.
 - The latest focused workflow passed 40 Python repository/archive tests, 10 same-origin API tests, 13 untrusted-source boundary checks, 18 AI-finding validation checks, 10 special-purpose IPv4 checks, and 8 special-purpose IPv6 checks (102 reported checks across the focused groups).
 - The complete suite now includes JSZip-backed upload safety and server-backed authentication boundary tests; both pass in CI.
