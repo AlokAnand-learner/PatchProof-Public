@@ -157,6 +157,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ scan, onClose }) => {
             <div className="flex items-center gap-3 bg-white dark:bg-[#1B2638] p-3 rounded-xl border border-[#DCE3ED] dark:border-[#35445A] shadow-xs">
               <div className="text-right">
                 <span className="text-[10px] uppercase text-[#68758A] dark:text-[#9BAAC0] font-medium block">Heuristic Risk Indicator</span>
+                <span className="text-[10px] text-[#68758A] dark:text-[#9BAAC0] block">Weighted static signals, not a security guarantee</span>
                 <span className="text-xl font-bold text-[#17243B] dark:text-white block">{scan.metrics.score}/100</span>
               </div>
               <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-base ${getGradeBadge(scan.metrics.grade)}`}>
@@ -230,6 +231,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ scan, onClose }) => {
               <div className="space-y-4">
                 {scan.findings.map((f, i) => {
                   const colors = getSeverityColor(f.severity);
+                  const fixStatus = f.fixValidation?.status || (f.verificationStatus === 'FALSE_POSITIVE' ? 'NOT_APPLICABLE' : 'NEEDS_REVIEW');
                   return (
                     <div
                       key={f.id}
@@ -271,15 +273,17 @@ export const ReportModal: React.FC<ReportModalProps> = ({ scan, onClose }) => {
                               Recommended Code Change
                             </strong>
                             <span className={`text-[10px] font-mono px-2 py-0.5 rounded border ${
-                              (f.fixValidation?.status || (f.patchVerificationStatus === 'VERIFIED_STATIC' ? 'VALIDATED' : 'NEEDS_REVIEW')) === 'VALIDATED'
+                              fixStatus === 'VALIDATED'
                                 ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30'
-                                : (f.fixValidation?.status || '') === 'PARTIALLY_VALIDATED'
+                                : fixStatus === 'PARTIALLY_VALIDATED'
                                 ? 'bg-amber-500/10 text-amber-700 dark:text-amber-300 border-amber-500/30'
-                                : (f.fixValidation?.status || '') === 'NEEDS_REVIEW'
+                                : fixStatus === 'NEEDS_REVIEW'
                                 ? 'bg-blue-500/10 text-blue-700 dark:text-blue-300 border-blue-500/30'
+                                : fixStatus === 'NOT_APPLICABLE'
+                                ? 'bg-slate-500/10 text-slate-700 dark:text-slate-300 border-slate-500/30'
                                 : 'bg-rose-500/10 text-rose-700 dark:text-rose-300 border-rose-500/30'
                             }`}>
-                              Fix: {f.fixValidation?.status || (f.patchVerificationStatus === 'VERIFIED_STATIC' ? 'VALIDATED' : 'NEEDS_REVIEW')}
+                              Fix: {fixStatus === 'NOT_APPLICABLE' ? 'Not applicable' : fixStatus}
                             </span>
                           </div>
                           <pre className="font-mono text-xs bg-slate-950 p-3 rounded-lg border border-slate-800 text-emerald-400 overflow-x-auto whitespace-pre-wrap">
