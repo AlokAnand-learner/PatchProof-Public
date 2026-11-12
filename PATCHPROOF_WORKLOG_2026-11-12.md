@@ -407,3 +407,32 @@ Worked only on the local-host foundation: architecture boundaries, runtime confi
 ### Phase 1 status
 
 Implementation and documentation gaps found in the foundation audit were addressed. Phase 1 is **not accepted as 100% complete yet**: dependency-backed tests, full typecheck, production build, and a running local upload smoke test remain mandatory gates. Do not mark the phase complete until those gates pass.
+
+
+## Independent completion batches — 12 November 2026
+
+### Batch 1 — API route boundary regression
+- Added `test/apiRouteBoundary.test.mjs` to audit every API mutation route for session authentication, every GET route against the explicit public-read allowlist, and expensive provider/analysis routes for the shared concurrency gate.
+- Added the regression to the default test command and the focused security command.
+- Latest full app-validation run checked **18 mutation routes, 7 API GET routes, and 10 expensive routes**.
+
+### Batch 2 — DNS-pinned provider transport regression
+- Expanded pinned DNS tests to reject mixed public/private DNS answer sets, mismatched address-family metadata, and documentation IPv4 addresses.
+- The rule remains fail-closed: every answer in a resolved set must be a valid public address.
+
+### Batch 3 — Responsive readability correction
+- Increased the minimum code/technical typography from 0.72rem (11.52px) to 0.75rem (12px).
+- Added a responsive-layout regression assertion for the minimum size. This is a source-level CSS check; it does not replace real-device readability testing.
+
+### Batch 4 — Verification integration
+- Included the API route boundary regression in both the full and focused security test commands.
+- GitHub Actions run [43301370687](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43301370687) passed both application validation and repository preflight. Application validation completed TypeScript type-check, production build, local server startup, and the complete configured regression suite.
+- GitHub Actions run [43301370428](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43301370428) passed the lockfile workflow.
+
+### Batch 5 — Documentation and release-state accuracy
+- Reconciled the source-archive comparison records: the earlier 57-match / 25-conflict figure is historical; the latest CI audit of 82 archive paths reports **36 exact matches, 46 preserved conflicts, and 0 missing paths**.
+- No differing archive file was overwritten. The old 25-path disposition list is explicitly marked as a historical baseline, not a complete list of current conflicts.
+- Kept the release decision unchanged: no merge to `main`, no public deployment, and no release-readiness claim. Browser/device smoke testing, live DNS/TLS integration on supported environments, semantic review of archive conflicts, and real-world detection evaluation remain open.
+
+### Final verification boundary
+CI passing is reproducible automated evidence for the checked commit; it is not a penetration-test certification, does not prove zero vulnerabilities, and does not complete manual PC/Android acceptance.
