@@ -76,7 +76,7 @@ async function runUploadSafetyTests() {
   assert('Reject case-colliding ZIP paths instead of staging both files', collidingResult.stagedFiles.length === 1 && collidingResult.skippedFiles.some(s => s.includes('case-colliding archive path')));
   const symlinkZip = new JSZip();
   symlinkZip.file('linked.ts', 'target.ts', { unixPermissions: '120777' as any });
-  const symlinkResult = await safeExtractZip(await symlinkZip.generateAsync({ type: 'arraybuffer' }), { excludeDirs: false });
+  const symlinkResult = await safeExtractZip(await symlinkZip.generateAsync({ type: 'arraybuffer', platform: 'UNIX' }), { excludeDirs: false });
   assert('Reject ZIP symbolic links encoded as octal-string permission metadata', symlinkResult.stagedFiles.length === 0 && symlinkResult.skippedFiles.some(item => item.includes('symbolic links are rejected')));
 
 
