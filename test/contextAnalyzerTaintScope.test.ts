@@ -35,4 +35,21 @@ const positiveStatuses = classifications(sameFunctionSource, 'service.py');
 assert.ok(positiveStatuses.includes('LIKELY'),
   'direct request-to-command flow in one function should remain detectable');
 
-console.log('Taint scope boundary regression: 3 scenarios passed.');
+
+const longLocalFlowSource = `def ping(request):
+    target = request.args.get("host")
+    status = "starting"
+    retries = 1
+    label = "network"
+    enabled = True
+    count = 0
+    count = count + 1
+    label = label + "-check"
+    status = "ready"
+    return os.popen("ping " + target).read()
+`;
+const longLocalFlowStatuses = classifications(longLocalFlowSource, 'service.py');
+assert.ok(longLocalFlowStatuses.includes('LIKELY'),
+  'request taint should remain traceable across ordinary statements within the same function and bounded lookback');
+
+console.log('Taint scope boundary regression: 4 scenarios passed.');
