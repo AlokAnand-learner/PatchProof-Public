@@ -21,6 +21,7 @@ import {
 } from 'lucide-react';
 import { VulnerabilityFinding, FixValidationStatus, FixValidationResult } from '../types/security';
 import { downloadTextFile } from '../utils/securityUtils';
+import { applyValidatedSnippetPatch } from '../utils/patchApplication';
 
 interface PatchDiffViewerProps {
   finding: VulnerabilityFinding;
@@ -65,41 +66,23 @@ export const PatchDiffViewer: React.FC<PatchDiffViewerProps> = ({
   };
 
   const executeApply = () => {
-    // Only fixes that passed every configured static check may be applied.
-    // NEEDS_REVIEW and PARTIALLY_VALIDATED remain review-only; INVALID is blocked.
-    if (status !== 'VALIDATED') {
-      setShowInvalidApplyWarning(true);
-      return;
-    }
     // Full-file AI output is preview-only until a separate validation workflow exists.
-    if (viewMode === 'full' || !finding.suggestedPatch.trim()) return;
+    if (viewMode === 'full') return;
 
-    const lines = originalCode.split('\n');
-    const startLine = finding.startLine;
-    const endLine = finding.endLine;
-    const startIdx = startLine - 1;
-    // endLine is one-based and inclusive; Array.splice uses a zero-based exclusive end.
-    const endIdx = endLine;
-    if (
-      !Number.isInteger(startLine) || !Number.isInteger(endLine) ||
-      startLine < 1 || endLine < startLine ||
-      startIdx >= lines.length || endIdx > lines.length
-    ) {
+    const result = applyValidatedSnippetPatch(originalCode, {
+      startLine: finding.startLine,
+      endLine: finding.endLine,
+      snippet: finding.snippet,
+      suggestedPatch: finding.suggestedPatch,
+    }, status);
+
+    if (!result.ok) {
       setShowInvalidApplyWarning(true);
       return;
     }
 
-    // Refuse stale or mismatched line ranges: the current source must exactly
-    // match the evidence snippet used to generate and validate this patch.
-    const currentSnippet = lines.slice(startIdx, endIdx).join('\n');
-    if (!finding.snippet || currentSnippet !== finding.snippet) {
-      setShowInvalidApplyWarning(true);
-      return;
-    }
-
-    const patchLines = finding.suggestedPatch.split('\n');
-    lines.splice(startIdx, endIdx - startIdx, ...patchLines);
-    onApplyPatch(lines.join('\n'));
+    // The user explicitly approves this exact preview by activating Apply.
+    onApplyPatch(result.code);
     setApplied(true);
     setShowInvalidApplyWarning(false);
     window.setTimeout(() => setApplied(false), 2000);
