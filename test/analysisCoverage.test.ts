@@ -31,7 +31,7 @@ assert.deepEqual(counts, { aiHypothesesCount: 2, deterministicCount: 1 });
 
 assert.match(buildAiCoverageNotice({
   attempted: 4, completed: 3, failed: 1, truncated: 2,
-  maxCharactersPerFile: 35000, offlineMode: false,
+  maxCharactersPerFile: 35000, skippedByBudget: 2, offlineMode: false,
   cloudConsentRequired: true, cloudConsentGranted: true
 }), /3 of 4 attempted files/);
 assert.match(buildAiCoverageNotice({
