@@ -181,6 +181,10 @@ export interface EvaluationTestCase {
 }
 export interface EvaluationMetrics {
   totalTestCases: number;
+  /** Cases eligible for binary precision/recall scoring; review-only cases are excluded. */
+  evaluatedCases: number;
+  /** Cases requiring human/context review and therefore excluded from binary scoring. */
+  excludedCases: number;
   truePositives: number;
   falsePositives: number;
   trueNegatives: number;
@@ -196,6 +200,7 @@ export interface EvaluationMetrics {
     passed: boolean;
     actualOutcome: string;
     actualClassification: string;
+    includedInMetrics: boolean;
     reason: string;
   }>;
 }
