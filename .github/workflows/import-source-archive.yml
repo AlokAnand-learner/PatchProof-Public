@@ -6,6 +6,8 @@ on:
       - work/ssrf-special-purpose-ipv4-2026-11-12
     paths:
       - import/PatchProof-source.zip
+      - PatchProof-Phase1-Foundation-Hardening-2026-11-12-Continuous-Phases.zip
+      - docs/SOURCE_IMPORT_HANDOFF.md
 
 permissions:
   contents: write
@@ -24,18 +26,30 @@ jobs:
           ref: work/ssrf-special-purpose-ipv4-2026-11-12
           persist-credentials: true
 
-      - name: Validate and import missing source files
+      - name: Select and validate the reviewed archive
+        id: archive
+        shell: bash
         run: |
-          if [ ! -f import/PatchProof-source.zip ]; then
-            echo "No archive present; this may be the follow-up push that removed it."
+          if [ -f import/PatchProof-source.zip ]; then
+            echo "path=import/PatchProof-source.zip" >> "$GITHUB_OUTPUT"
+          elif [ -f PatchProof-Phase1-Foundation-Hardening-2026-11-12-Continuous-Phases.zip ]; then
+            echo "path=PatchProof-Phase1-Foundation-Hardening-2026-11-12-Continuous-Phases.zip" >> "$GITHUB_OUTPUT"
+          else
+            echo "No reviewed source archive is present; nothing to import."
             exit 0
           fi
-          python3 scripts/import_source_archive.py import/PatchProof-source.zip --destination .
 
-      - name: Remove uploaded archive after extraction
-        run: rm -f import/PatchProof-source.zip
+      - name: Import missing source files without overwriting reviewed files
+        if: steps.archive.outputs.path != ''
+        run: |
+          python3 scripts/import_source_archive.py "${{ steps.archive.outputs.path }}" --destination .
+
+      - name: Remove uploaded archive after successful validation
+        if: steps.archive.outputs.path != ''
+        run: rm -f "${{ steps.archive.outputs.path }}"
 
       - name: Commit imported source tree
+        if: steps.archive.outputs.path != ''
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
