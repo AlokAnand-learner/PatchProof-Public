@@ -19,12 +19,13 @@ import { saveScanToHistoryWithStatus, getScanHistory } from './utils/securityUti
 import { authenticatedFetch, getSessionToken } from './utils/apiClient';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { PatchProofLogo } from './components/PatchProofLogo';
+import { readBrowserPreference, writeBrowserPreference } from './utils/browserStorage';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<NavigationTab>('dashboard');
   const [theme, setTheme] = useState<'light' | 'dark'>(() => {
     if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('patchproof_theme');
+      const saved = readBrowserPreference('patchproof_theme');
       if (saved === 'dark' || saved === 'light') return saved;
       return 'light';
     }
@@ -32,7 +33,7 @@ export default function App() {
   });
   const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(() => {
     if (typeof window !== 'undefined') {
-      return localStorage.getItem('patchproof_sidebar_collapsed') === 'true';
+      return readBrowserPreference('patchproof_sidebar_collapsed') === 'true';
     }
     return false;
   });
@@ -60,7 +61,7 @@ export default function App() {
     } else {
       document.documentElement.classList.remove('dark');
     }
-    localStorage.setItem('patchproof_theme', theme);
+    writeBrowserPreference('patchproof_theme', theme);
   }, [theme]);
 
   const handleToggleTheme = () => {
@@ -70,7 +71,7 @@ export default function App() {
   const handleToggleSidebar = () => {
     setSidebarCollapsed(prev => {
       const next = !prev;
-      localStorage.setItem('patchproof_sidebar_collapsed', String(next));
+      writeBrowserPreference('patchproof_sidebar_collapsed', String(next));
       return next;
     });
   };
