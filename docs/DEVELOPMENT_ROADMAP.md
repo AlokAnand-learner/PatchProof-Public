@@ -2,14 +2,27 @@
 
 ## Current repository state
 
-This repository is the public development home for PatchProof. The application source archive is being prepared for import; until that import is complete, this repository must not be treated as a runnable application.
+The public repository contains a controlled partial import of the reviewed local source archive. The import branch is not yet a runnable application. The reviewed archive contains 79 files; 40 have been transferred into this branch so far. This file-count measure is not a completion claim for the application itself: key runtime, UI, analysis, and upload modules remain to be imported.
 
 ## Phase 1 — Safe source import
 
-- Import the complete, reviewed application source tree.
-- Preserve the existing local-first architecture and localhost-only listener boundary.
-- Exclude local environment files, credentials, dependency folders, build output, user data, and test artifacts.
-- Verify that the imported tree matches the reviewed source archive.
+**Progress: approximately 50% of archive entries transferred; phase acceptance remains incomplete.**
+
+Imported so far:
+- Project manifest, TypeScript/Vite configuration, Node version pin, ignore rules, and example-only environment template.
+- Local-first architecture and foundation acceptance documentation.
+- Loopback host/origin validation, runtime configuration, bounded provider-response handling, model-name validation, request-error mapping, local authenticated API helper, and SSRF endpoint validation.
+- Security domain types and AI finding validation boundary.
+- Focused regression tests for runtime configuration, host/origin policy, model names, request errors, bounded provider responses, AI finding validation, SSRF special-purpose IPv4 boundaries, filename/path policy, middleware ordering, report safety, consent, context classification, ReDoS boundaries, and evaluation.
+- HTML entrypoint, React entrypoint, metadata, and logo assets.
+
+Still required:
+- Core server and the remaining UI, components, styles, analysis engine, provider engine, archive ingestion, persistence, and report implementation files.
+- Remaining tests and source fixtures.
+- The reviewed lockfile and a complete file-by-file import audit.
+- Secret and artifact review across the complete imported tree.
+
+The import branch deliberately remains separate from `main`.
 
 ## Phase 2 — Reproducible project setup
 
@@ -48,4 +61,4 @@ This repository is the public development home for PatchProof. The application s
 
 ## Acceptance rule
 
-A phase is complete only when its implementation is present in the repository and its relevant automated tests pass. A source-level inspection or isolated test is not a substitute for the full application test suite.
+A phase is complete only when its implementation is present in the repository and its relevant automated tests pass. A source-level inspection or isolated test is not a substitute for the full application test suite. No full application build, complete typecheck, or full test-suite result is claimed at this stage.
