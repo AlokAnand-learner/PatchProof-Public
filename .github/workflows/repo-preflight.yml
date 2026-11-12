@@ -5,34 +5,25 @@ on:
     branches:
       - work/ssrf-special-purpose-ipv4-2026-11-12
     paths:
-      - scripts/repo_preflight.py
-      - scripts/test_repo_preflight.py
-      - scripts/import_source_archive.py
-      - scripts/test_import_source_archive.py
-      - scripts/test_import_source_archive_flow.py
-      - src/utils/apiClient.ts
-      - test/apiClientOrigin.test.ts
-      - src/engine/untrustedSourceBoundary.ts
-      - test/untrustedSourceBoundary.test.ts
-      - src/engine/aiFindingValidation.ts
-      - test/aiFindingValidation.test.ts
-      - src/utils/ssrfValidator.ts
-      - test/ssrf-ipv6-special-purpose.test.ts
+      - scripts/**
+      - src/**
+      - test/**
+      - server.ts
+      - index.html
+      - vite.config.ts
       - package.json
+      - bun.lock
       - .github/workflows/repo-preflight.yml
   pull_request:
     paths:
-      - scripts/repo_preflight.py
-      - scripts/test_repo_preflight.py
-      - src/utils/apiClient.ts
-      - test/apiClientOrigin.test.ts
-      - src/engine/untrustedSourceBoundary.ts
-      - test/untrustedSourceBoundary.test.ts
-      - src/engine/aiFindingValidation.ts
-      - test/aiFindingValidation.test.ts
-      - src/utils/ssrfValidator.ts
-      - test/ssrf-ipv6-special-purpose.test.ts
+      - scripts/**
+      - src/**
+      - test/**
+      - server.ts
+      - index.html
+      - vite.config.ts
       - package.json
+      - bun.lock
       - .github/workflows/repo-preflight.yml
 
 permissions:
@@ -50,19 +41,17 @@ jobs:
       - name: Run repository preflight unit tests
         run: python -m unittest scripts.test_repo_preflight scripts.test_import_source_archive scripts.test_import_source_archive_flow -v
 
-  api-origin-tests:
+  app-validation:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
       - name: Set up Bun
         uses: oven-sh/setup-bun@v2
-
       - name: Install locked dependencies
         run: bun install --frozen-lockfile
-
-      - name: Run focused security regression suite
-        run: bun run test:focused-security
+      - name: Type-check application
+        run: bun run typecheck
+      - name: Build application
+        run: bun run build
+      - name: Run complete test suite
+        run: bun run test
