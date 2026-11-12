@@ -42,7 +42,7 @@ results.results.forEach((r, idx) => {
 
 console.log('===========================================================');
 if (allPassed) {
-  console.log('✓ ALL EVALUATION TESTS PASSED.');
+  console.log(`✓ EVALUATION PASSED. ${results.falsePositives} false positives across ${results.evaluatedCases} scored cases; review-only cases excluded.`);
   process.exit(0);
 } else {
   console.error('✗ EVALUATION FAILED: Misclassifications detected.');
