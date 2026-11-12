@@ -100,6 +100,9 @@ export function prepareUntrustedSource(
     if (seen.has(key)) throw new Error('Uploaded project contains duplicate or case-colliding paths.');
     seen.add(key);
 
+    if (totalBytes + file.content.length > policy.maxTotalBytes) {
+      throw new Error('Uploaded project exceeds the total source-size limit.');
+    }
     const size = byteLength(file.content);
     if (size > policy.maxFileBytes) throw new Error('An uploaded source file exceeds the size limit.');
     totalBytes += size;
