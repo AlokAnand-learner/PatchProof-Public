@@ -10,6 +10,7 @@ import {
   getScanHistory,
   isPrivacyModeEnabled,
   saveScanToHistory,
+  saveScanToHistoryWithStatus,
   setPrivacyMode
 } from '../src/utils/securityUtils';
 import type { ScanResult } from '../src/types/security';
@@ -17,12 +18,14 @@ import type { ScanResult } from '../src/types/security';
 class MemoryStorage {
   private values = new Map<string, string>();
   failRemovals = false;
+  failWrites = false;
 
   getItem(key: string): string | null {
     return this.values.has(key) ? this.values.get(key)! : null;
   }
 
   setItem(key: string, value: string): void {
+    if (this.failWrites) throw new Error('Synthetic storage write failure');
     this.values.set(key, String(value));
   }
 
@@ -180,6 +183,17 @@ async function run(): Promise<void> {
   console.error = originalConsoleError;
   assert('Clear history reports failure when browser storage removal throws', failedClear === false);
   storage.failRemovals = false;
+
+  saveScanToHistory(makeScan('existing-before-history-write-failure'));
+  const priorHistory = getScanHistory();
+  storage.failWrites = true;
+  const originalConsoleErrorForSave = console.error;
+  console.error = () => {};
+  const failedSave = saveScanToHistoryWithStatus(makeScan('history-write-failure'));
+  console.error = originalConsoleErrorForSave;
+  assert('History save reports storage failure instead of claiming success', failedSave.saved === false);
+  assert('History save failure preserves the previously loaded history in memory', failedSave.history.length === priorHistory.length && failedSave.history[0]?.id === priorHistory[0]?.id);
+  storage.failWrites = false;
 
   console.log('-----------------------------------------------------------');
   console.log(`Privacy regression results: ${passCount} passed, ${failCount} failed`);
