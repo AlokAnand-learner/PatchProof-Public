@@ -15,7 +15,7 @@ These percentages are engineering estimates, not test coverage or acceptance per
 | 1. Safe source import | 49% | 40/82 archive paths represented; remaining source files await guarded import |
 | 2. Reproducible setup | 30% | Node pin and scripts are present; Bun lockfile is absent and dependency installation/build/typecheck remain blocked |
 | 3. Detection precision | 40% | Bounded alias taint and review-only fixture classification added; benchmark remains small and synthetic |
-| 4. Upload/archive safety | 45% | Path normalization and collision checks added; dependency-backed ZIP suite still pending |
+| 4. Upload/archive safety | 60% | Path normalization and collision checks added; dependency-backed ZIP suite still pending |
 | 5. Privacy/local boundary | 60% | Local-only host/origin policy, SSRF controls, cloud consent, and privacy-default history are implemented |
 | 6. UX/release readiness | 40% | Inert controls removed, history-clear result surfaced, benchmark disclosures improved; full app smoke test pending |
 
@@ -26,8 +26,9 @@ These percentages are engineering estimates, not test coverage or acceptance per
 Completed:
 - Imported or recreated project configuration, Node version pin, Vite/TypeScript setup, example-only environment template, metadata, entrypoint, and visual assets.
 - Added or imported local Host/Origin validation, bounded provider response handling, model-name validation, request-error sanitization, SSRF endpoint validation, and AI finding trust-boundary checks, and production CSP without `unsafe-eval`.
-- Added a guarded source archive importer with strict path, symlink, size, compression-ratio, UTF-8, and high-confidence secret-pattern checks.
+- Added a guarded source archive importer with strict path, symlink, size, compression-ratio, UTF-8, and high-confidence secret-pattern checks, including AWS, GitHub, Google, Stripe, Slack, GitLab, npm, and private-key patterns.
 - Added a provider-neutral untrusted-source boundary helper: it separates a fixed defensive system instruction from JSON-encoded source data, enforces file/path/size limits, and flags common prompt-injection-like text without deleting source content. This helper is not yet wired into provider adapters.
+- Expanded ZIP collision checks to include implicit parent directories and cross-platform case/Unicode aliases.
 - Pinned the importer to the reviewed archive SHA-256: `f6a0cbe3ab7e1fc0c1c8ab33ad3218ad903ac65a1fc5267342b6cd642c9770b5`.
 - Added a GitHub Actions workflow that imports missing files and removes the temporary archive after a successful import.
 - Updated the handoff instructions for the 82-file archive.
@@ -115,7 +116,8 @@ Still required:
 
 ## Verification performed in this work session
 
-- 21 of the 23 scripted test files were executed successfully in focused mode.
+- Latest focused GitHub Actions run passed 38 Python repository/archive tests, 10 same-origin API tests, and 10 untrusted-source boundary tests.
+- Earlier foundation audit: 21 of the 23 scripted test files were executed successfully in focused mode.
 - 311 focused assertions/cases passed across the executed test files.
 - The two not completed were the JSZip-backed upload suite (dependency unavailable) and the server-backed authentication boundary suite (server/dependencies not running).
 - TypeScript/TSX syntax transpilation completed for 62 files with zero syntax diagnostics.
