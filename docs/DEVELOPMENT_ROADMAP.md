@@ -61,6 +61,7 @@ Completed:
 - Expanded the local context lookback to five preceding lines while keeping analysis bounded.
 - Test, sample, and documentation findings with source-to-sink indicators remain visible as informational `NEEDS_REVIEW` items rather than likely production vulnerabilities; they do not reduce the production score.
 - Reworked benchmark accounting so review-only cases are excluded from binary precision/recall calculations.
+- AI-generated findings are deduplicated by normalized title, CWE, and exact source line range; snippets continue to be derived from source rather than accepted from model output.
 - The built-in suite has 13 synthetic fixtures: 9 binary-scored cases and 4 review-only cases. The latest focused run produced 3 TP, 6 TN, 0 FP, and 0 FN for the 9 scored fixtures.
 
 Limitations:
@@ -121,7 +122,7 @@ Still required:
 
 ## Verification performed in this work session
 
-- Latest focused GitHub Actions run passed 40 Python repository/archive tests, 10 same-origin API tests, and 10 untrusted-source boundary tests.
+- Latest focused GitHub Actions run passed 40 Python repository/archive tests, 10 same-origin API tests, 13 untrusted-source boundary checks, and 14 AI-finding validation checks (including duplicate suppression).
 - Earlier foundation audit: 21 of the 23 scripted test files were executed successfully in focused mode.
 - 311 focused assertions/cases passed across the executed test files.
 - The two not completed were the JSZip-backed upload suite (dependency unavailable) and the server-backed authentication boundary suite (server/dependencies not running).
