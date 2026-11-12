@@ -40,7 +40,11 @@ class SourceArchiveImportFlowTests(unittest.TestCase):
             return import_source_archive.main()
 
     def test_valid_archive_imports_only_under_source_root(self) -> None:
-        self.write_zip([("source/src/app.ts", b"export const ok = true;\n", False)])
+        self.write_zip([
+            ("source/", b"", False),
+            ("source/src/", b"", False),
+            ("source/src/app.ts", b"export const ok = true;\n", False),
+        ])
         self.assertEqual(self.run_import(), 0)
         self.assertEqual((self.destination / "src/app.ts").read_bytes(), b"export const ok = true;\n")
 
@@ -82,6 +86,24 @@ class SourceArchiveImportFlowTests(unittest.TestCase):
     def test_path_traversal_archive_entry_is_rejected(self) -> None:
         self.write_zip([("source/../outside.txt", b"not safe", False)])
         with self.assertRaises(ValueError):
+            self.run_import()
+
+    def test_directory_entry_with_traversal_is_rejected(self) -> None:
+        self.write_zip([("source/../outside/", b"", False)])
+        with self.assertRaises(ValueError):
+            self.run_import()
+
+    def test_symlink_directory_entry_is_rejected(self) -> None:
+        self.write_zip([("source/src/link/", b"../outside", True)])
+        with self.assertRaises(SystemExit):
+            self.run_import()
+
+    def test_file_colliding_with_explicit_directory_is_rejected(self) -> None:
+        self.write_zip([
+            ("source/config/", b"", False),
+            ("source/config", b"file\n", False),
+        ])
+        with self.assertRaises(SystemExit):
             self.run_import()
 
     def test_file_directory_collision_is_rejected(self) -> None:
