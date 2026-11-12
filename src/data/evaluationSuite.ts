@@ -236,6 +236,140 @@ def render_profile_secure():
     return Math.random().toString(36).substring(2);
 }`
   }
+  ,
+  // 14. Genuine Vulnerability: Direct request input to shell command
+  {
+    id: 'eval-command-genuine-14',
+    title: 'Direct Request Input to Shell Command',
+    category: 'Command Injection',
+    description: 'Request-controlled host is interpolated into shell execution.',
+    fileName: 'ping_route.js',
+    language: 'javascript',
+    expectedOutcome: 'VULNERABILITY',
+    expectedClassification: 'LIKELY',
+    expectedCwe: 'CWE-78',
+    rationale: 'The request query parameter is passed directly into a shell execution sink.',
+    code: `function ping(req) {
+  exec("ping -c 1 " + req.query.host);
+}`
+  },
+
+  // 15. Genuine Vulnerability: Direct request URL to outbound HTTP client
+  {
+    id: 'eval-ssrf-genuine-15',
+    title: 'Request-Controlled URL Passed to HTTP Client',
+    category: 'SSRF',
+    description: 'A client-supplied URL is fetched without an allowlist.',
+    fileName: 'proxy_route.js',
+    language: 'javascript',
+    expectedOutcome: 'VULNERABILITY',
+    expectedClassification: 'LIKELY',
+    expectedCwe: 'CWE-918',
+    rationale: 'The request URL reaches an outbound HTTP request sink directly.',
+    code: `async function proxy(req) {
+  return await axios.get(req.query.url);
+}`
+  },
+
+  // 16. Review-only: Deserialization sink with unknown caller trust
+  {
+    id: 'eval-deserialization-review-16',
+    title: 'Deserialization Sink with Unknown Input Origin',
+    category: 'Deserialization',
+    description: 'A serialized parameter reaches pickle.loads, but its caller is not available.',
+    fileName: 'session_loader.py',
+    language: 'python',
+    expectedOutcome: 'NEEDS_REVIEW',
+    expectedClassification: 'NEEDS_REVIEW',
+    expectedCwe: 'CWE-502',
+    rationale: 'Deserialization is sensitive, but this isolated file does not prove the parameter is attacker-controlled.',
+    code: `def load_session(serialized):
+    return pickle.loads(serialized)`
+  },
+
+  // 17. Review-only: Dynamic evaluation with unknown input origin
+  {
+    id: 'eval-dynamic-eval-review-17',
+    title: 'Dynamic Evaluation with Unknown Input Origin',
+    category: 'Code Evaluation',
+    description: 'A formula parameter is evaluated, but its origin is unknown.',
+    fileName: 'calculator.js',
+    language: 'javascript',
+    expectedOutcome: 'NEEDS_REVIEW',
+    expectedClassification: 'NEEDS_REVIEW',
+    expectedCwe: 'CWE-95',
+    rationale: 'The eval sink is dangerous, but whole-program caller data flow is unavailable.',
+    code: `function calculate(formula) {
+  return eval(formula);
+}`
+  },
+
+  // 18. Review-only: Path construction from a generic filename
+  {
+    id: 'eval-path-review-18',
+    title: 'Filesystem Path Built from a Filename Parameter',
+    category: 'Path Traversal',
+    description: 'A filename parameter is joined to a data directory.',
+    fileName: 'attachment_store.js',
+    language: 'javascript',
+    expectedOutcome: 'NEEDS_REVIEW',
+    expectedClassification: 'NEEDS_REVIEW',
+    expectedCwe: 'CWE-22',
+    rationale: 'A path sink exists, but the isolated parameter is not proven to originate from an untrusted request.',
+    code: `function readAttachment(filename) {
+  const filePath = path.join('/var/app/data/', filename);
+  return fs.readFileSync(filePath, 'utf8');
+}`
+  },
+
+  // 19. Review-only: Outbound URL parameter with unknown caller trust
+  {
+    id: 'eval-ssrf-review-19',
+    title: 'Outbound Request Uses a URL Parameter',
+    category: 'SSRF',
+    description: 'An HTTP client receives a URL parameter whose caller is unavailable.',
+    fileName: 'remote_fetcher.js',
+    language: 'javascript',
+    expectedOutcome: 'NEEDS_REVIEW',
+    expectedClassification: 'NEEDS_REVIEW',
+    expectedCwe: 'CWE-918',
+    rationale: 'The outbound request is sensitive, but this file alone cannot establish user control.',
+    code: `async function fetchRemote(url) {
+  return await axios.get(url);
+}`
+  },
+
+  // 20. Review-only: Hardcoded credential pattern
+  {
+    id: 'eval-secret-review-20',
+    title: 'Credential-Like Literal in Configuration',
+    category: 'Secrets',
+    description: 'A key-like variable contains a long literal value.',
+    fileName: 'service_config.js',
+    language: 'javascript',
+    expectedOutcome: 'NEEDS_REVIEW',
+    expectedClassification: 'NEEDS_REVIEW',
+    expectedCwe: 'CWE-798',
+    rationale: 'A credential-like literal is present; confirm whether it is live or a fixture.',
+    code: `const api_key = "sk_live_example_123456789";`
+  },
+
+  // 21. Secure Code: Argument-array process execution
+  {
+    id: 'eval-command-secure-21',
+    title: 'Process Execution Uses an Argument Array',
+    category: 'Command Injection',
+    description: 'A fixed executable is invoked through execFile with separate arguments.',
+    fileName: 'ping_service.js',
+    language: 'javascript',
+    expectedOutcome: 'SECURE',
+    expectedClassification: 'FALSE_POSITIVE',
+    rationale: 'No shell-string concatenation or shell execution sink is present.',
+    code: `function ping(host) {
+  return execFile('ping', ['-c', '1', host]);
+}`
+  }
+
 ];
 
 /**
