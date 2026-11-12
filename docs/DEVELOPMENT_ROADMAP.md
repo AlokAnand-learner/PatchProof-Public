@@ -123,9 +123,9 @@ Still required:
 
 ## Verification performed in this work session
 
-- Latest focused GitHub Actions run passed 40 Python repository/archive tests, 10 same-origin API tests, 13 untrusted-source boundary checks, 18 AI-finding validation checks (including duplicate suppression and hostile Unicode label normalization), 10 special-purpose IPv4 SSRF checks, and 8 special-purpose IPv6 SSRF checks. The Node security suite now installs from the committed Bun lockfile before running.
+- Latest focused GitHub Actions run passed 40 Python repository/archive tests, 10 same-origin API tests, 13 untrusted-source boundary checks, 18 AI-finding validation checks (including duplicate suppression and hostile Unicode label normalization), 10 special-purpose IPv4 SSRF checks, and 11 special-purpose IPv6 SSRF checks. The Node security suite now installs from the committed Bun lockfile before running.
 - Earlier foundation audit: 21 of the 23 scripted test files were executed successfully in focused mode.
-- The latest focused workflow passed 40 Python repository/archive tests, 10 same-origin API tests, 13 untrusted-source boundary checks, 18 AI-finding validation checks, 10 special-purpose IPv4 checks, and 8 special-purpose IPv6 checks (99 reported checks across the focused groups).
+- The latest focused workflow passed 40 Python repository/archive tests, 10 same-origin API tests, 13 untrusted-source boundary checks, 18 AI-finding validation checks, 10 special-purpose IPv4 checks, and 8 special-purpose IPv6 checks (102 reported checks across the focused groups).
 - The two not completed were the JSZip-backed upload suite (dependency unavailable) and the server-backed authentication boundary suite (server/dependencies not running).
 - TypeScript/TSX syntax transpilation completed for 62 files with zero syntax diagnostics.
 - Full `tsc --noEmit` has not yet been re-run after the lockfile-backed dependency installation; the earlier attempt was blocked because `vite/client` was unavailable.
