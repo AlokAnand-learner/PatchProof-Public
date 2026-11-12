@@ -91,7 +91,7 @@ export const PatchDiffViewer: React.FC<PatchDiffViewerProps> = ({
 
     // Refuse stale or mismatched line ranges: the current source must exactly
     // match the evidence snippet used to generate and validate this patch.
-    const currentSnippet = lines.slice(startIdx, endIdx).join('\\n');
+    const currentSnippet = lines.slice(startIdx, endIdx).join('\n');
     if (!finding.snippet || currentSnippet !== finding.snippet) {
       setShowInvalidApplyWarning(true);
       return;
