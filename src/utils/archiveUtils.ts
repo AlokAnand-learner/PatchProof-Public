@@ -51,10 +51,6 @@ export function mergeStagedFileBatches(
       skippedFiles.push('Previously staged entry (Invalid path or source content rejected)');
       continue;
     }
-    if (!registerStagedPath(safePath)) {
-      skippedFiles.push(`${safePath} (Duplicate, case-colliding, or file/directory-conflicting existing path rejected)`);
-      continue;
-    }
     if (stagedFiles.length >= limits.maxFileCount) {
       skippedFiles.push(`${safePath} (Existing staged project exceeds ${limits.maxFileCount} files)`);
       continue;
@@ -70,6 +66,10 @@ export function mergeStagedFileBatches(
       skippedFiles.push(`${safePath} (Existing staged content exceeds configured source line limits)`);
       continue;
     }
+    if (!registerStagedPath(safePath)) {
+      skippedFiles.push(`${safePath} (Duplicate, case-colliding, or file/directory-conflicting existing path rejected)`);
+      continue;
+    }
 
     totalBytes += actualBytes;
     totalLines += lineCount;
@@ -80,10 +80,6 @@ export function mergeStagedFileBatches(
     const safePath = sanitizeRelativePath(file?.relativePath);
     if (!safePath || !isSupportedSourceFile(safePath) || typeof file.content !== 'string' || file.content.length === 0) {
       skippedFiles.push('Selected entry (Invalid path or source content rejected)');
-      continue;
-    }
-    if (!registerStagedPath(safePath)) {
-      skippedFiles.push(`${safePath} (Duplicate, case-colliding, or file/directory-conflicting path rejected)`);
       continue;
     }
     if (stagedFiles.length >= limits.maxFileCount) {
@@ -106,6 +102,10 @@ export function mergeStagedFileBatches(
     }
     if (totalLines + lineCount > MAX_SOURCE_LINES_PER_PROJECT) {
       skippedFiles.push(`${safePath} (Combined project exceeds source line limit of ${MAX_SOURCE_LINES_PER_PROJECT})`);
+      continue;
+    }
+    if (!registerStagedPath(safePath)) {
+      skippedFiles.push(`${safePath} (Duplicate, case-colliding, or file/directory-conflicting path rejected)`);
       continue;
     }
 
