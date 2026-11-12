@@ -216,3 +216,12 @@ CI success does not establish that PatchProof is vulnerability-free or release-r
 - A shared path registry rejects duplicate/case-colliding paths, Unicode-normalized collisions, case-colliding parent directories, and file/directory prefix conflicts across existing and incoming batches.
 - Regression tests cover unsafe pre-staged paths, stale metadata, duplicate entries, parent-directory collisions, file/directory conflicts, and cumulative resource limits.
 - Both CI jobs passed at [run 43294539727](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43294539727).
+
+
+### Follow-up engineering — nested history record validation
+
+- History loading previously checked that nested findings were objects but did not validate their required display fields, line ranges, metrics, or project-file record shape.
+- Browser history now validates required scan metadata, core metrics, findings and evidence fields, line-range ordering, optional fix-validation status, recommendations, and per-file records before passing records to the UI.
+- History records must keep the top-level and nested scan IDs consistent. Malformed records are discarded and the validated, bounded history representation is persisted when possible.
+- Regression cases cover malformed nested finding fields and invalid metrics in addition to null findings and history-list overflow.
+- Both CI jobs passed at [run 43295116948](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43295116948).
