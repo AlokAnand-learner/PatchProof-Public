@@ -46,8 +46,7 @@ export const PatchDiffViewer: React.FC<PatchDiffViewerProps> = ({
   const [showInvalidApplyWarning, setShowInvalidApplyWarning] = useState(false);
 
   const validation: FixValidationResult | undefined = finding.fixValidation;
-  const status: FixValidationStatus = validation?.status || 
-    (finding.patchVerificationStatus === 'VERIFIED_STATIC' ? 'VALIDATED' : 'NEEDS_REVIEW');
+  const status: FixValidationStatus = validation?.status || 'NEEDS_REVIEW';
 
   const handleCopy = () => {
     const textToCopy = viewMode === 'snippet' ? finding.suggestedPatch : (patchedFullCode || originalCode);
@@ -82,9 +81,10 @@ export const PatchDiffViewer: React.FC<PatchDiffViewerProps> = ({
   };
 
   const handleDownloadFixed = () => {
-    const content = patchedFullCode || originalCode;
-    const fixedFileName = `remediated_${fileName}`;
-    downloadTextFile(fixedFileName, content);
+    // A snippet patch is not a complete remediated source file. Export it as a
+    // patch artifact; full-file AI output remains preview-only until separately validated.
+    if (viewMode === 'full' || !finding.suggestedPatch) return;
+    downloadTextFile(`remediation_${fileName}.patch`, finding.suggestedPatch, 'text/plain');
   };
 
   const getValidationBadge = (st: FixValidationStatus) => {
@@ -92,9 +92,9 @@ export const PatchDiffViewer: React.FC<PatchDiffViewerProps> = ({
       case 'VALIDATED':
         return {
           icon: <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />,
-          label: 'Validated',
+          label: 'Static Checks Passed',
           badge: 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-300 border-emerald-500/30',
-          desc: 'Passed all static AST syntax, scope, and regression checks.'
+          desc: 'Passed the configured static syntax, scope, and regression checks. Runtime behavior was not tested.'
         };
       case 'PARTIALLY_VALIDATED':
         return {
@@ -141,7 +141,7 @@ export const PatchDiffViewer: React.FC<PatchDiffViewerProps> = ({
 
           {validation && (
             <span className="text-[10px] font-mono text-[#526078] dark:text-[#C2CDDC] bg-white dark:bg-[#1B2638] px-1.5 py-0.5 rounded border border-[#DCE3ED] dark:border-[#35445A]">
-              Confidence {validation.overallScore}%
+              Static check score {validation.overallScore}/100
             </span>
           )}
         </div>
@@ -185,20 +185,24 @@ export const PatchDiffViewer: React.FC<PatchDiffViewerProps> = ({
 
           <button
             onClick={handleDownloadFixed}
+            disabled={viewMode === 'full' || !finding.suggestedPatch}
             className="flex items-center gap-1 px-2.5 py-1.5 rounded-lg bg-white dark:bg-[#1B2638] hover:bg-slate-50 dark:hover:bg-[#243247] text-[#17243B] dark:text-[#F1F5FC] text-xs font-medium border border-[#DCE3ED] dark:border-[#35445A] transition cursor-pointer"
-            title="Export remediated source file"
+            title={viewMode === 'full' ? 'Full-file AI output is preview-only until independently validated' : 'Export the suggested snippet as a patch file'}
           >
             <Download className="w-3.5 h-3.5 text-[#68758A] dark:text-[#9BAAC0]" />
-            <span className="hidden sm:inline">Export</span>
+            <span className="hidden sm:inline">{viewMode === 'full' ? 'Export unavailable' : 'Export Patch'}</span>
           </button>
 
           <button
             onClick={handleApplyClick}
+            disabled={viewMode === 'full' || status === 'INVALID'}
             className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg font-semibold text-xs transition shadow-xs cursor-pointer ${
               applied
                 ? 'bg-emerald-600 text-white'
                 : status === 'INVALID'
                 ? 'bg-rose-600 hover:bg-rose-500 text-white active:scale-95'
+                : viewMode === 'full'
+                ? 'bg-slate-300 dark:bg-slate-700 text-slate-500 dark:text-slate-300 cursor-not-allowed'
                 : 'bg-[#2458D3] hover:bg-[#1948B8] dark:bg-[#4779E8] dark:hover:bg-[#386AD9] text-white active:scale-95'
             }`}
           >
@@ -210,7 +214,7 @@ export const PatchDiffViewer: React.FC<PatchDiffViewerProps> = ({
             ) : (
               <>
                 <ShieldCheck className="w-3.5 h-3.5" />
-                <span>Apply Fix</span>
+                <span>{viewMode === 'full' ? 'Preview Only' : status === 'INVALID' ? 'Fix Blocked' : 'Apply Snippet Fix'}</span>
               </>
             )}
           </button>
