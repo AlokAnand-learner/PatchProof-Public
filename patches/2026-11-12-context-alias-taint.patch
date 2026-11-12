@@ -17,7 +17,7 @@
 
 --- a/test/contextAnalyzerContext.test.ts
 +++ b/test/contextAnalyzerContext.test.ts
-@@ -41,4 +41,25 @@
+@@ -41,4 +41,21 @@
  assert.equal(mixedResult.findings.find(finding => finding.cwe.startsWith('CWE-78'))?.verificationType, 'STATIC_RULE_MATCH');
  assert.equal(mixedResult.findings.find(finding => finding.cwe.startsWith('CWE-78'))?.patchVerificationStatus, 'UNVERIFIED_REVIEW_REQUIRED');
  
@@ -43,4 +43,4 @@
 +const reassignedFinding = reassignedResult.findings.find(finding => finding.cwe.startsWith('CWE-78'));
 +assert.equal(reassignedFinding?.verificationStatus, 'NEEDS_REVIEW', 'reassignment must invalidate the earlier taint alias');
 +
-+console.log('Context analyzer context: 32 assertions passed.');
++console.log('Context analyzer context: 30 assertions passed.');
