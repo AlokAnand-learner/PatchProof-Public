@@ -14,6 +14,7 @@ MAX_ENTRIES = 100
 MAX_FILE_BYTES = 2 * 1024 * 1024
 MAX_TOTAL_BYTES = 6 * 1024 * 1024
 MAX_COMPRESSION_RATIO = 200
+EXPECTED_ARCHIVE_SHA256 = "1c359f76a577537f7ed832503860a17e9c1a129dd3d43856441e2d3ac634e480"
 
 PRIVATE_KEY = re.compile(rb"-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----")
 AWS_KEY = re.compile(rb"AKIA[0-9A-Z]{16}")
@@ -70,6 +71,9 @@ def main() -> int:
     args = parser.parse_args()
     if not args.archive.is_file():
         raise SystemExit(f"archive not found: {args.archive}")
+    archive_hash = hashlib.sha256(args.archive.read_bytes()).hexdigest()
+    if archive_hash != EXPECTED_ARCHIVE_SHA256:
+        raise SystemExit("archive SHA-256 does not match the reviewed source archive")
 
     planned: list[tuple[str, bytes]] = []
     seen: set[str] = set()
