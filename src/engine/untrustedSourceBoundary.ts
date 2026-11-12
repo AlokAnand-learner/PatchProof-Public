@@ -43,6 +43,8 @@ const SYSTEM_INSTRUCTION = [
 
 const INSTRUCTION_SIGNAL = [
   /ignore\s+(all\s+)?(previous|prior|above|system|developer)\s+instructions?/i,
+  /override\s+(the\s+)?(system|developer|safety)\s+(instruction|prompt|policy)/i,
+  /(?:dump|print|exfiltrate|leak)\s+(?:all\s+)?(?:environment\s+variables?|secrets?|credentials?|api\s+keys?)/i,
   /reveal\s+(the\s+)?(system\s+prompt|hidden\s+prompt|secrets?|credentials?)/i,
   /disclose\s+(api\s+keys?|tokens?|passwords?|secrets?)/i,
   /you\s+are\s+now\s+(an?\s+)?(admin|root|developer|system)/i,
