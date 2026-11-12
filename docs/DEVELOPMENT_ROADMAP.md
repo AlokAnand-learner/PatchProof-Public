@@ -121,7 +121,7 @@ Still required:
 
 ## Verification performed in this work session
 
-- Latest focused GitHub Actions run passed 38 Python repository/archive tests, 10 same-origin API tests, and 10 untrusted-source boundary tests.
+- Latest focused GitHub Actions run passed 40 Python repository/archive tests, 10 same-origin API tests, and 10 untrusted-source boundary tests.
 - Earlier foundation audit: 21 of the 23 scripted test files were executed successfully in focused mode.
 - 311 focused assertions/cases passed across the executed test files.
 - The two not completed were the JSZip-backed upload suite (dependency unavailable) and the server-backed authentication boundary suite (server/dependencies not running).
