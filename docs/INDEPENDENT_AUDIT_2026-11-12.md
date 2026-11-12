@@ -175,3 +175,13 @@ CI success does not establish that PatchProof is vulnerability-free or release-r
 - Added a source-contract regression test and included it in both the complete test chain and focused security chain.
 - Both CI jobs passed after the patch-application change in [run 43290244089](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43290244089); the final package/test-chain update passed in [run 43290283049](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43290283049).
 - This guardrail does not prove a patch is semantically correct or eliminate stale-content risks; review and a fresh scan remain necessary.
+
+### Follow-up engineering — patch target integrity and validation endpoint limits
+
+- Full-file patch validation now requires the exact original snippet to be supplied and to occur exactly once in the source. Missing or repeated target snippets fail closed rather than validating an unchanged or ambiguous replacement.
+- Added regression cases for absent, empty, and duplicate original snippets.
+- The fix-validation API now type-checks optional request fields, applies per-field 2 MiB and aggregate 6 MiB UTF-8 byte limits to code inputs, and bounds metadata lengths.
+- Fix-validation and fix-benchmark routes now share the server's concurrency gate to limit simultaneous CPU-heavy static validation work.
+- Added a request-contract regression test and included it in the main and focused security test chains.
+- Both CI jobs, including preflight tests, TypeScript type-check, production build, and application startup validation, passed at [run 43290818258](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43290818258).
+- These checks reduce ambiguous edits and resource-exhaustion exposure; they do not prove semantic patch correctness or eliminate all denial-of-service risks.
