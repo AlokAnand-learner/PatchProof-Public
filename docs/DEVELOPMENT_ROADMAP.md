@@ -2,27 +2,25 @@
 
 ## Current repository state
 
-The public repository contains a controlled partial import of the reviewed local source archive. The import branch is not yet a runnable application. The reviewed archive contains 79 files; 40 have been transferred into this branch so far. This file-count measure is not a completion claim for the application itself: key runtime, UI, analysis, and upload modules remain to be imported.
+The public development repository contains a partial source import on the isolated working branch. It is not yet a runnable application. The reviewed source archive contains 79 files (858,868 uncompressed bytes). At the latest audit, 39 of its 79 paths were already represented in the working branch (49.4% by archive path count); five additional branch-only files are tooling, documentation, or separately prepared regression material.
 
 ## Phase 1 — Safe source import
 
-**Progress: approximately 50% of archive entries transferred; phase acceptance remains incomplete.**
+**Progress: 49% by source-archive path count. Acceptance remains incomplete.**
 
-Imported so far:
-- Project manifest, TypeScript/Vite configuration, Node version pin, ignore rules, and example-only environment template.
-- Local-first architecture and foundation acceptance documentation.
-- Loopback host/origin validation, runtime configuration, bounded provider-response handling, model-name validation, request-error mapping, local authenticated API helper, and SSRF endpoint validation.
-- Security domain types and AI finding validation boundary.
-- Focused regression tests for runtime configuration, host/origin policy, model names, request errors, bounded provider responses, AI finding validation, SSRF special-purpose IPv4 boundaries, filename/path policy, middleware ordering, report safety, consent, context classification, ReDoS boundaries, and evaluation.
-- HTML entrypoint, React entrypoint, metadata, and logo assets.
+Completed:
+- Imported or recreated the project manifest, Node version pin, TypeScript/Vite configuration, example-only environment template, entrypoint metadata, and visual assets.
+- Added loopback Host/Origin validation, bounded provider response handling, model-name validation, request-error sanitization, SSRF endpoint validation, and an AI finding trust boundary.
+- Added focused regression coverage for the security boundaries above.
+- Added a guarded source-archive importer and GitHub Actions workflow on this working branch.
+- Pinned the importer to the reviewed archive's SHA-256: `1c359f76a577537f7ed832503860a17e9c1a129dd3d43856441e2d3ac634e480`.
+- Locally validated all 79 archive entries; path traversal and realistic credential patterns are rejected, symlinks and oversized entries are blocked, and existing branch files are never overwritten.
 
 Still required:
-- Core server and the remaining UI, components, styles, analysis engine, provider engine, archive ingestion, persistence, and report implementation files.
-- Remaining tests and source fixtures.
-- The reviewed lockfile and a complete file-by-file import audit.
-- Secret and artifact review across the complete imported tree.
-
-The import branch deliberately remains separate from `main`.
+- Upload the exact reviewed archive to `import/PatchProof-source.zip` on branch `work/ssrf-special-purpose-ipv4-2026-11-12`. The workflow then validates it and imports missing source files automatically.
+- Review any existing-file conflicts reported by the importer; it preserves these files rather than overwriting branch work.
+- Audit the complete resulting tree, finalize lockfile/package-manager alignment, and verify the import against the source archive.
+- Run dependency installation, full typecheck, production build, complete tests, and a local smoke test.
 
 ## Phase 2 — Reproducible project setup
 
