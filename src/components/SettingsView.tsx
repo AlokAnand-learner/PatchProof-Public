@@ -60,8 +60,14 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onHistoryCleared, on
     window.addEventListener('storage', handleStorage);
 
     fetch('/api/status')
-      .then(res => res.json())
-      .then(data => setServerStatus(data))
+      .then(res => {
+        if (!res.ok) throw new Error('Local status request failed.');
+        return res.json();
+      })
+      .then(data => {
+        if (data?.status !== 'operational') throw new Error('Local server is not operational.');
+        setServerStatus(data);
+      })
       .catch(() => setServerStatus({ status: 'offline' }));
 
     return () => {
