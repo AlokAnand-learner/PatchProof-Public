@@ -185,3 +185,15 @@ CI success does not establish that PatchProof is vulnerability-free or release-r
 - Added a request-contract regression test and included it in the main and focused security test chains.
 - Both CI jobs, including preflight tests, TypeScript type-check, production build, and application startup validation, passed at [run 43290818258](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43290818258).
 - These checks reduce ambiguous edits and resource-exhaustion exposure; they do not prove semantic patch correctness or eliminate all denial-of-service risks.
+
+
+### Follow-up engineering — immutable AI trust boundary and patch target freshness
+
+- Client-controlled review requests are now always serialized in the untrusted user-data payload, even when uploaded files are present. They are never appended to the provider's trusted system instruction.
+- The source-boundary helper no longer accepts a caller-supplied trusted-task extension; its defensive system instruction is immutable.
+- Remote review-request text receives the same heuristic credential redaction as uploaded source. This is defense-in-depth and does not replace user review or a complete secret scanner.
+- Regression coverage includes prompt-injection-like review requests, prompt-injection-like source comments, remote prompt secret redaction, and compatibility for bounded legacy source prompts.
+- Patch application now requires the configured static validation status to be VALIDATED. NEEDS_REVIEW, PARTIALLY_VALIDATED, and INVALID results cannot be applied from the viewer.
+- Before applying, the current source lines must exactly match the finding's source-derived evidence snippet. A stale or mismatched target fails closed. Full-file output remains preview-only.
+- CI passed both jobs for the trust-boundary and patch-application test updates in [run 43291933282](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43291933282) and [run 43292209546](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43292209546). Later commits in this follow-up are being verified separately.
+- These are guardrails, not a claim that model output is reliable or that static validation proves runtime security.
