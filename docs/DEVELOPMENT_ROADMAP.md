@@ -13,7 +13,7 @@ These percentages are engineering estimates, not test coverage or acceptance per
 | Phase | Progress | Current state |
 |---|---:|---|
 | 1. Safe source import | 49% | 40/82 archive paths represented; remaining source files await guarded import |
-| 2. Reproducible setup | 40% | Bun selected, lockfile and Node pin present; dependency installation/build/typecheck still blocked |
+| 2. Reproducible setup | 30% | Node pin and scripts are present; Bun lockfile is absent and dependency installation/build/typecheck remain blocked |
 | 3. Detection precision | 40% | Bounded alias taint and review-only fixture classification added; benchmark remains small and synthetic |
 | 4. Upload/archive safety | 45% | Path normalization and collision checks added; dependency-backed ZIP suite still pending |
 | 5. Privacy/local boundary | 60% | Local-only host/origin policy, SSRF controls, cloud consent, and privacy-default history are implemented |
@@ -41,12 +41,13 @@ Still required:
 
 Completed:
 - Node.js 22.16.0 is pinned in `.nvmrc`; the manifest requires Node.js 20.19 or later.
-- Bun is selected as the package manager because `bun.lock` is the committed lockfile.
+- Bun is selected as the package manager; a matching committed `bun.lock` is still required.
 - Development, production start, build, typecheck, and test scripts are defined.
-- README instructions now use `bun install --frozen-lockfile`.
+- README documents the intended frozen-install command but explicitly marks it blocked until the lockfile is committed.
 
 Still required:
-- Install dependencies from the committed lockfile in a network-capable environment.
+- Generate and commit the Bun lockfile from the exact imported manifest in a network-capable environment.
+- Install dependencies from that committed lockfile.
 - Run full TypeScript typecheck and production build.
 - Run all tests, including server-backed and JSZip-backed tests.
 - Verify a clean checkout and local runtime startup.
@@ -93,6 +94,8 @@ Still required:
 - Review all logs, reports, browser persistence, and error paths after full application import.
 
 ## Phase 6 — UX and release readiness
+
+Approved design requirements to integrate after full source import: preserve the user-selected original PatchProof logo; support approved liquid-glass light and midnight dark themes; provide dedicated responsive layouts across display sizes and aspect ratios; adapt immediately to portrait/landscape rotation, browser resizing, and split-screen without reload; and include keyboard/touch accessibility and reduced-motion support.
 
 Completed:
 - Responsive layout regression checks pass.
