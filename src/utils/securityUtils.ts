@@ -360,7 +360,7 @@ export function generateMarkdownReport(scan: ScanResult): string {
         md += `#### Recommended Code Change\n`;
         md += valScore === null
           ? `*Validation Status: **${valStatus}** (validation was not run for this report)*\n\n`
-          : `*Validation Status: **${valStatus}** (Confidence: ${valScore}%) - Evaluated via isolated static checks*\n\n`;
+          : `*Validation Status: **${valStatus}** (Static check score: ${valScore}/100) - Evaluated via isolated static checks*\n\n`;
         if (f.fixValidation) {
           md += `- **Syntax Check:** ${f.fixValidation.syntaxCheck.passed ? 'PASS' : 'FAIL'}\n`;
           md += `- **Scope & Imports:** ${f.fixValidation.scopeAndImportsCheck.passed ? 'PASS' : 'WARN/FAIL'}\n`;
@@ -471,7 +471,7 @@ export function generateHtmlReport(scan: ScanResult): string {
               <div class="code-title" style="display:flex; justify-content:space-between; align-items:center;">
                 <span>Recommended Patch</span>
                 <span style="font-size:10px; font-weight:bold; padding:2px 8px; border-radius:12px; background:${valStatus === 'VALIDATED' ? 'rgba(16,185,129,0.2)' : valStatus === 'PARTIALLY_VALIDATED' ? 'rgba(245,158,11,0.2)' : valStatus === 'NOT APPLICABLE' ? 'rgba(100,116,139,0.2)' : 'rgba(239,68,68,0.2)'}; color:${valStatus === 'VALIDATED' ? '#34d399' : valStatus === 'PARTIALLY_VALIDATED' ? '#fbbf24' : valStatus === 'NOT APPLICABLE' ? '#cbd5e1' : '#f87171'};">
-                  ${escapeHtml(valStatus)}${valScore === null ? ' (not executed)' : ` (Confidence: ${valScore}%)`}
+                  ${escapeHtml(valStatus)}${valScore === null ? ' (not executed)' : ` (Static check score: ${valScore}/100)`}
                 </span>
               </div>
               <pre><code>${escapeHtml(f.suggestedPatch)}</code></pre>
