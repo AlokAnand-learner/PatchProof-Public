@@ -54,10 +54,20 @@ class SourceArchiveSafetyTests(unittest.TestCase):
             b"AKIAABCDEFGHIJKLMNOP",
             b"ghp_abcdefghijklmnopqrstuvwxyz123456",
             b"AIza12345678901234567890123456789012",
+            b"sk_live_" + b"x" * 24,
+            b"xoxb-" + b"x" * 20,
+            b"glpat-" + b"x" * 20,
+            b"npm_" + b"x" * 36,
         ):
             with self.subTest(content=content):
                 with self.assertRaises(ValueError):
                     scan_for_realistic_secrets("src/config.ts", content)
+
+    def test_path_depth_and_length_limits_are_enforced(self) -> None:
+        with self.assertRaises(ValueError):
+            safe_relative_path("source/" + "/".join(["x"] * 34) + "/file.ts")
+        with self.assertRaises(ValueError):
+            safe_relative_path("source/" + ("x" * 256) + ".ts")
 
     def test_known_synthetic_redaction_fixture_is_allowed_only_at_its_test_path(self) -> None:
         fixture = b"ghp_abcdefghijklmnopqrstuvwxyz123456"
