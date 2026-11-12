@@ -105,6 +105,13 @@ try {
   assert.equal(remotePayload.reviewRequest.includes(remotePromptSecret), false, 'remote review request tokens must be redacted');
   assert.equal(remotePayload.reviewRequest.includes(trustedTask), true, 'non-secret review instructions remain available as user data');
 
+  const legacyLongSource = 'const value = 1;\\n'.repeat(1200);
+  const legacyLongPayload = prepareProviderReviewPayload('ollama', 'http://127.0.0.1:11434', legacyLongSource);
+  assert.equal(JSON.parse(legacyLongPayload.userPayload).sourceFiles[0].content, legacyLongSource, 'legacy source prompts above 8000 characters remain supported within the source cap');
+  assert.throws(() => prepareProviderReviewPayload('ollama', 'http://127.0.0.1:11434', 'review'.repeat(1400), [
+    { path: 'src/app.ts', content: 'const x = 1;' },
+  ]), /size limit/, 'separate review requests must remain bounded');
+
   // Legacy free-form prompts are also treated as untrusted data, never as system instructions.
   await generateAnalysisWithActiveProvider(injectedSource);
   const legacy = requests.at(-1)!;
