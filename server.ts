@@ -39,6 +39,7 @@ import { loadRuntimeConfig } from './src/utils/runtimeConfig.ts';
 import { getContentSecurityPolicy } from './src/utils/securityHeaders.ts';
 import { countSourceLinesWithinLimit, MAX_SOURCE_LINES_PER_FILE, MAX_SOURCE_LINES_PER_PROJECT } from './src/utils/sourceLimits.ts';
 import { buildAiCoverageNotice, countFindingOrigins } from './src/engine/analysisCoverage.ts';
+import { createConcurrencyGate } from './src/utils/concurrencyGate.ts';
 
 dotenv.config();
 
@@ -55,6 +56,24 @@ const { host: HOST, port: PORT } = loadRuntimeConfig(process.env);
 // In-memory rate limiting with bounded memory pruning (max 120 requests per minute per IP)
 const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
 const MAX_RATE_LIMIT_ENTRIES = 10_000;
+
+// Bound expensive provider/analysis work independently from the per-IP rate limit.
+const providerTaskGate = createConcurrencyGate(2);
+function limitProviderTasks(_req: Request, res: Response, next: NextFunction) {
+  const release = providerTaskGate.tryAcquire();
+  if (!release) {
+    return res.status(429).json({ error: 'PatchProof is already processing the maximum number of provider or analysis tasks. Please retry shortly.' });
+  }
+  let released = false;
+  const releaseOnce = () => {
+    if (released) return;
+    released = true;
+    release();
+  };
+  res.once('finish', releaseOnce);
+  res.once('close', releaseOnce);
+  next();
+}
 
 // Prune expired rate limit entries every 2 minutes to prevent memory leaks
 setInterval(() => {
@@ -259,7 +278,7 @@ async function startServer() {
   });
 
   // Status & Health Endpoint
-  app.get('/api/status', async (_req: Request, res: Response) => {
+  app.get('/api/status', limitProviderTasks, async (_req: Request, res: Response) => {
     const provState = getProviderState();
     const ollamaStatus = await queryOllama(provState.providers.ollama.endpoint);
     res.json({
@@ -361,7 +380,7 @@ async function startServer() {
   });
 
   // Test Provider Connection (Protected mutation with SSRF and credential masking)
-  app.post('/api/provider/test', requireSessionAuth, async (req: Request, res: Response) => {
+  app.post('/api/provider/test', requireSessionAuth, limitProviderTasks, async (req: Request, res: Response) => {
     const { provider, model, apiKey, endpoint } = req.body;
     if (!provider) return res.status(400).json({ success: false, message: 'Provider required' });
     const result = await testProviderConnection({ provider, model, apiKey, endpoint });
@@ -439,7 +458,7 @@ async function startServer() {
     });
   });
 
-  app.post('/api/test-connection', requireSessionAuth, async (req: Request, res: Response) => {
+  app.post('/api/test-connection', requireSessionAuth, limitProviderTasks, async (req: Request, res: Response) => {
     const { provider, config, model, apiKey, endpoint } = req.body;
     if (!provider) return res.status(400).json({ success: false, message: 'Provider required' });
     const cfg = config || { model, apiKey, endpoint };
@@ -447,7 +466,7 @@ async function startServer() {
     res.json(result);
   });
 
-  app.post('/api/query', requireSessionAuth, async (req: Request, res: Response) => {
+  app.post('/api/query', requireSessionAuth, limitProviderTasks, async (req: Request, res: Response) => {
     const { endpoint } = req.body;
     try {
       const result = await queryOllama(endpoint);
@@ -468,7 +487,7 @@ async function startServer() {
   });
 
   // Endpoint for generating analysis from provider
-  app.post('/api/generate-analysis', requireSessionAuth, async (req: Request, res: Response) => {
+  app.post('/api/generate-analysis', requireSessionAuth, limitProviderTasks, async (req: Request, res: Response) => {
     const { prompt, provider } = req.body;
     try {
       if (provider) {
@@ -482,7 +501,7 @@ async function startServer() {
   });
 
   // Query Ollama Installed Models
-  app.get('/api/ollama/models', requireSessionAuth, async (req: Request, res: Response) => {
+  app.get('/api/ollama/models', requireSessionAuth, limitProviderTasks, async (req: Request, res: Response) => {
     const endpoint = typeof req.query.endpoint === 'string' ? req.query.endpoint : undefined;
     const result = await queryOllama(endpoint);
     res.json(result);
@@ -549,7 +568,7 @@ async function startServer() {
   });
 
   // Code Security Review Endpoint (Supports single file and multi-file projects)
-  app.post('/api/analyze', requireSessionAuth, async (req: Request, res: Response) => {
+  app.post('/api/analyze', requireSessionAuth, limitProviderTasks, async (req: Request, res: Response) => {
     const startTime = Date.now();
     try {
       const { code, fileName, language, projectName, files } = req.body;
