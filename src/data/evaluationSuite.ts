@@ -252,10 +252,19 @@ export function runEvaluationSuite(testCases: EvaluationTestCase[] = EVALUATION_
     const { findings } = analyzeSourceCodeContextAware(tc.code, tc.fileName);
     const activeFindings = findings.filter(f => f.verificationStatus !== 'FALSE_POSITIVE');
     const hasVulnerability = activeFindings.some(f => f.severity !== 'INFO');
-    const topClassification = activeFindings[0]?.verificationStatus || 'FALSE_POSITIVE';
+    const expectedFinding = tc.expectedCwe
+      ? activeFindings.find(f => f.cwe === tc.expectedCwe)
+      : activeFindings[0];
+    const topClassification = expectedFinding?.verificationStatus || 'FALSE_POSITIVE';
     const classificationMatches = topClassification === tc.expectedClassification;
+    const cweMatches = !tc.expectedCwe || !!expectedFinding;
+    const sourceLineCount = tc.code.split('\\n').length;
+    const lineRangesValid = findings.every(f =>
+      Number.isInteger(f.startLine) && Number.isInteger(f.endLine) &&
+      f.startLine >= 1 && f.endLine >= f.startLine && f.endLine <= sourceLineCount
+    );
     const includedInMetrics = tc.expectedOutcome !== 'NEEDS_REVIEW';
-    let passed = classificationMatches;
+    let passed = classificationMatches && cweMatches && lineRangesValid;
 
     // Review-only fixtures are not ground-truth positives or negatives. Counting
     // them in the confusion matrix would inflate precision/recall without a
@@ -278,10 +287,16 @@ export function runEvaluationSuite(testCases: EvaluationTestCase[] = EVALUATION_
       passed,
       actualOutcome: topClassification === 'NEEDS_REVIEW' ? 'NEEDS_REVIEW' : hasVulnerability ? 'VULNERABILITY' : 'SECURE',
       actualClassification: topClassification,
+      actualCwes: activeFindings.map(f => f.cwe),
+      cweMatches,
+      lineRangesValid,
       includedInMetrics,
-      reason: classificationMatches
-        ? tc.rationale
-        : `${tc.rationale} Expected classification ${tc.expectedClassification}, received ${topClassification}.`
+      reason: [
+        tc.rationale,
+        !classificationMatches ? `Expected classification ${tc.expectedClassification}, received ${topClassification}.` : '',
+        !cweMatches ? `Expected CWE ${tc.expectedCwe} was not detected; observed ${activeFindings.map(f => f.cwe).join(', ') || 'no active findings'}.` : '',
+        !lineRangesValid ? 'One or more findings contain line ranges outside the source file.' : ''
+      ].filter(Boolean).join(' ')
     };
   });
 
