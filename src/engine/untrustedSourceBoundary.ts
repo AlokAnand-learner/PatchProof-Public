@@ -80,9 +80,17 @@ export function prepareUntrustedSource(
       throw new Error('Uploaded source file is invalid.');
     }
     const path = file.path.normalize('NFC');
-    if (!path || path.length > 1024 || path.startsWith('/') || path.includes('\\') ||
-        path.split('/').some((part) => !part || part === '.' || part === '..' || part.includes(':')) ||
-        /[\x00-\x1f]/.test(path)) {
+    const parts = path.split('/');
+    const reservedWindowsName = /^(CON|PRN|AUX|NUL|COM[1-9]|LPT[1-9])(?:\..*)?$/i;
+    const unsafePart = parts.some((part) =>
+      !part || part === '.' || part === '..' || part.includes(':') ||
+      part.endsWith('.') || part.endsWith(' ') ||
+      /[<>:"|?*\x00-\x1f]/.test(part) ||
+      new TextEncoder().encode(part).byteLength > 255 ||
+      reservedWindowsName.test(part)
+    );
+    if (!path || path.length > 1024 || parts.length > 33 || path.startsWith('/') ||
+        path.includes('\\') || unsafePart) {
       throw new Error('Uploaded source path is unsafe.');
     }
     const key = path.toLocaleLowerCase('en-US');
