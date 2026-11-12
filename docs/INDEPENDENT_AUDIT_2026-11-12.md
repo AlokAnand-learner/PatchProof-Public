@@ -159,3 +159,10 @@ CI success does not establish that PatchProof is vulnerability-free or release-r
 - Routes now await provider completion. Ordinary provider fetches retain their AbortController-backed deadline; DNS-pinned HTTPS requests enforce a hard wall-clock deadline and destroy the underlying request on timeout or response overflow.
 - Added a CI contract test covering all three awaited provider routes and both transport deadline mechanisms.
 - Both CI jobs passed at code commit 669239b5e21a2e2718e76d23789ee547c8cc62bd in [run 43288091975](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43288091975). A following branch commit updates architecture documentation only.
+
+### Follow-up engineering — bounded local source-to-sink continuity
+
+- The contextual taint heuristic previously inspected only the short evidence window (five preceding lines), so ordinary statements between a request-derived assignment and a sensitive sink could cause a missed local flow.
+- The heuristic now inspects up to 200 preceding lines from the same file, while retaining its function-boundary resets and keeping displayed evidence snippets small. This remains a bounded lexical heuristic, not AST, control-flow, or interprocedural taint analysis.
+- Added a regression case with intervening ordinary statements and retained cross-function isolation and multiline-comment cases.
+- Both CI jobs passed for the new analyzer and regression-test commits in runs [43289649501](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43289649501) and [43289655700](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43289655700). The latest branch head is the test commit.
