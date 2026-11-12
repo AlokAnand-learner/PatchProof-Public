@@ -507,7 +507,7 @@ async function countZipEntriesBeforeParsing(
   const centralDirectoryEnd = centralDirectoryOffset + centralDirectorySize;
   if (!Number.isSafeInteger(centralDirectoryOffset) || !Number.isSafeInteger(centralDirectorySize) ||
       centralDirectoryOffset < 0 || centralDirectorySize < 0 ||
-      centralDirectoryEnd > directoryBoundary || centralDirectoryEnd > bytes.length) {
+      centralDirectoryEnd !== directoryBoundary || centralDirectoryEnd > bytes.length) {
     throw new Error('Invalid ZIP central-directory bounds.');
   }
 
