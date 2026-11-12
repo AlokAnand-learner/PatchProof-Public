@@ -58,6 +58,38 @@ function byteLength(value: string): number {
 }
 
 /**
+ * Redacts high-confidence credential patterns before source is sent to a
+ * remote provider. This is a defense-in-depth filter, not a complete secret
+ * scanner; users must still review files before granting cloud transmission.
+ */
+export function redactLikelySecrets(files: readonly UntrustedSourceFile[]): UntrustedSourceFile[] {
+  const redactValue = (value: string) => value.replace(/[^\r\n]/g, ' ');
+  const patterns: RegExp[] = [
+    /-----BEGIN (?:RSA |EC |OPENSSH )?PRIVATE KEY-----[\s\S]*?-----END (?:RSA |EC |OPENSSH )?PRIVATE KEY-----/g,
+    /\bAKIA[0-9A-Z]{16}\b/g,
+    /\b(?:gh[pousr]_[A-Za-z0-9]{20,}|github_pat_[A-Za-z0-9_]{20,})\b/g,
+    /\bAIza[0-9A-Za-z_-]{30,}\b/g,
+    /\bsk_(?:live|test)_[0-9A-Za-z]{24,}\b/g,
+    /\bxox[baprs]-[0-9A-Za-z-]{10,}\b/g,
+    /\bglpat-[0-9A-Za-z_-]{20,}\b/g,
+    /\bnpm_[0-9A-Za-z]{36}\b/g,
+    /\bBearer\s+[A-Za-z0-9._~+/-]{16,}=?/gi,
+  ];
+  const assignmentPattern = /(["']?\b(?:api[_-]?key|client[_-]?secret|secret|token|password|access[_-]?key|private[_-]?key)\b["']?\s*[:=]\s*)(["'])([^"'\r\n]{8,})\2/gi;
+
+  return files.map((file) => {
+    let content = file.content;
+    for (const pattern of patterns) {
+      content = content.replace(pattern, (match) => redactValue(match));
+    }
+    content = content.replace(assignmentPattern, (_match, prefix: string, quote: string) =>
+      prefix + quote + '[REDACTED]' + quote
+    );
+    return { path: file.path, content };
+  });
+}
+
+/**
  * Produces a provider-ready, data-only payload. trustedTask is reserved for
  * fixed server-authored review instructions; never pass client-controlled text
  * in that parameter. Suspicious source text is preserved for accurate review.
