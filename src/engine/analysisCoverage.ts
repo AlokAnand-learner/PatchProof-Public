@@ -44,7 +44,8 @@ export function buildAiCoverageNotice(input: AiCoverageNoticeInput): string {
     return `AI review completed for ${completed} of ${attempted} attempted files. At most the first ${maxCharactersPerFile.toLocaleString()} characters per file were sent to AI${partial}. AI findings remain hypotheses until independently reviewed.${failures}${budget}`;
   }
   if (attempted > 0) {
-    return `AI review did not complete for the attempted files${failed > 0 ? ` (${failed} failure(s))` : ''}. Local static checks completed; no AI coverage is claimed.`;
+    const budget = skippedByBudget > 0 ? ` ${skippedByBudget} additional eligible file(s) received static-only review because the per-project AI request cap was reached.` : '';
+    return `AI review did not complete for the attempted files${failed > 0 ? ` (${failed} failure(s))` : ''}. Local static checks completed; no AI coverage is claimed.${budget}`;
   }
   if (skippedByBudget > 0) return `${skippedByBudget} eligible file(s) received static-only review because the per-project AI request cap was reached.`;
   if (offlineMode) return 'Offline mode is active. Only local static checks ran.';
