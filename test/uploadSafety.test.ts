@@ -4,7 +4,7 @@
  * 2MB single-file limit, 20MB total extraction limit, and plain-text .txt handling.
  */
 import JSZip from 'jszip';
-import { safeExtractZip, sanitizeRelativePath, validateUploadedFile, isAllowedSourceFile, processFiles } from '../src/utils/archiveUtils';
+import { safeExtractZip, sanitizeRelativePath, validateUploadedFile, isAllowedSourceFile, processFiles, hasZipSymlinkPermissions } from '../src/utils/archiveUtils';
 
 console.log('===========================================================');
 console.log('   PATCHPROOF UPLOAD & ARCHIVE SECURITY TEST SUITE         ');
@@ -75,9 +75,13 @@ async function runUploadSafetyTests() {
   const collidingResult = await safeExtractZip(collidingBuffer, { excludeDirs: false });
   assert('Reject case-colliding ZIP paths instead of staging both files', collidingResult.stagedFiles.length === 1 && collidingResult.skippedFiles.some(s => s.includes('case-colliding archive path')));
   const symlinkZip = new JSZip();
-  symlinkZip.file('linked.ts', 'target.ts', { unixPermissions: '120777' as any });
+  symlinkZip.file('linked.ts', 'target.ts', { unixPermissions: 0o120777 });
   const symlinkResult = await safeExtractZip(await symlinkZip.generateAsync({ type: 'arraybuffer', platform: 'UNIX' }), { excludeDirs: false });
-  assert('Reject ZIP symbolic links encoded as octal-string permission metadata', symlinkResult.stagedFiles.length === 0 && symlinkResult.skippedFiles.some(item => item.includes('symbolic links are rejected')));
+  assert('Reject ZIP symbolic links encoded in Unix external attributes', symlinkResult.stagedFiles.length === 0 && symlinkResult.skippedFiles.some(item => item.includes('symbolic links are rejected')));
+  assert('Detect numeric ZIP symlink permission mode', hasZipSymlinkPermissions(0o120777));
+  assert('Detect octal-string ZIP symlink permission mode', hasZipSymlinkPermissions('120777'));
+  assert('Detect symbolic ZIP permission strings', hasZipSymlinkPermissions('lrwxrwxrwx'));
+  assert('Do not classify regular ZIP files as symlinks', !hasZipSymlinkPermissions('100644') && !hasZipSymlinkPermissions(0o100644));
 
 
   assert('Reject Windows trailing-dot path segments', sanitizeRelativePath('src/evil.ts./file.ts') === null);
