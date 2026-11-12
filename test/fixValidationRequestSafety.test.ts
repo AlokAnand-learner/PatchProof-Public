@@ -13,7 +13,7 @@ assert.ok(handler.includes("['originalCode', originalCode]"), 'both original sou
 assert.ok(handler.includes("Buffer.byteLength(value, 'utf8') > 2 * 1024 * 1024"), 'individual source fields must have a byte limit');
 assert.ok(handler.includes("> 6 * 1024 * 1024"), 'combined source fields must have an aggregate byte limit');
 assert.ok(handler.includes('metadata exceeds the allowed length'), 'metadata lengths must be bounded');
-assert.match(source, /app\.post\('\/api\/fix\/validate', requireSessionAuth, limitProviderTasks, handleFixValidation\)/);
-assert.match(source, /app\.post\('\/api\/validate-fix', requireSessionAuth, limitProviderTasks, handleFixValidation\)/);
-assert.match(source, /app\.get\('\/api\/fix\/benchmark', limitProviderTasks/);
+assert.match(source, /app\.post\('\/api\/fix\/validate', requireSessionAuth, withProviderTask, handleFixValidation\)/);
+assert.match(source, /app\.post\('\/api\/validate-fix', requireSessionAuth, withProviderTask, handleFixValidation\)/);
+assert.match(source, /app\.get\('\/api\/fix\/benchmark', withProviderTask/);
 console.log('Fix validation request safety: 8 assertions passed');
