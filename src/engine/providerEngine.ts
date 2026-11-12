@@ -27,8 +27,10 @@ export function prepareProviderReviewPayload(
   const submittedFiles: readonly UntrustedSourceFile[] = sourceFiles && sourceFiles.length > 0
     ? sourceFiles
     : [{ path: 'user-input.txt', content: prompt }];
-  if (typeof prompt !== 'string' || prompt.length > 8000) {
-    throw new Error('Review request must be a string of at most 8000 characters.');
+  if (typeof prompt !== 'string' ||
+      (sourceFiles && sourceFiles.length > 0 && prompt.length > 8000) ||
+      (!sourceFiles?.length && prompt.length > 2 * 1024 * 1024)) {
+    throw new Error('Review request exceeds the allowed size limit.');
   }
   const outboundFiles = needsCloudConsent ? redactLikelySecrets(submittedFiles) : submittedFiles;
   const prepared = prepareUntrustedSource(outboundFiles);
