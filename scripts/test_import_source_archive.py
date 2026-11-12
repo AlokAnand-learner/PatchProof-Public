@@ -20,6 +20,11 @@ class SourceArchiveSafetyTests(unittest.TestCase):
             "source\\app.ts",
             "/source/app.ts",
             "source/C:/app.ts",
+            "source/CON.txt",
+            "source/folder./file.ts",
+            "source/trailing /file.ts",
+            "source/bad?.ts",
+            "source/LPT1/log.txt",
         ):
             with self.subTest(path=path):
                 with self.assertRaises(ValueError):
