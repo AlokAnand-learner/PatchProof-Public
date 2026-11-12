@@ -75,16 +75,22 @@ export function redactLikelySecrets(files: readonly UntrustedSourceFile[]): Untr
     /\bnpm_[0-9A-Za-z]{36}\b/g,
     /\bBearer\s+[A-Za-z0-9._~+/-]{16,}=?/gi,
   ];
-  const assignmentPattern = /(["']?\b(?:api[_-]?key|client[_-]?secret|secret|token|password|access[_-]?key|private[_-]?key)\b["']?\s*[:=]\s*)(["'])([^"'\r\n]{8,})\2/gi;
+  // Covers JSON/YAML-style quoted values and common dotenv/config assignments
+  // where credentials are unquoted (including colon-separated key/value pairs).
+  // Values stop at whitespace or common structural/comment delimiters so adjacent
+  // configuration syntax is preserved.
+  const assignmentPattern = /(["']?\b(?:api[_-]?key|client[_-]?secret|secret|token|password|passwd|credential|credentials|authorization|access[_-]?key|private[_-]?key|db[_-]?password|jwt[_-]?secret|session[_-]?key|signing[_-]?key|encryption[_-]?key|refresh[_-]?token)\b["']?\s*[:=]\s*)(?:"([^"\r\n]{8,})"|'([^'\r\n]{8,})'|([^\s,;#}\]]{8,}))/gi;
 
   return files.map((file) => {
     let content = file.content;
     for (const pattern of patterns) {
       content = content.replace(pattern, (match) => redactValue(match));
     }
-    content = content.replace(assignmentPattern, (_match, prefix: string, quote: string) =>
-      prefix + quote + '[REDACTED]' + quote
-    );
+    content = content.replace(assignmentPattern, (_match, prefix: string, doubleQuoted: string | undefined, singleQuoted: string | undefined) => {
+      if (doubleQuoted !== undefined) return prefix + '"[REDACTED]"';
+      if (singleQuoted !== undefined) return prefix + "'[REDACTED]'";
+      return prefix + '[REDACTED]';
+    });
     return { path: file.path, content };
   });
 }
