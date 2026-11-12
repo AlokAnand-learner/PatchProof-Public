@@ -655,8 +655,8 @@ export function generateHtmlReport(scan: ScanResult): string {
 export function sanitizeDownloadFilename(filename: unknown): string {
   if (typeof filename !== 'string') return 'PatchProof-Report';
   const safe = filename
-    .replace(/[\\/\\\\:\\u0000-\\u001f\\u007f]/g, '_')
-    .replace(/^\\.+/, '')
+    .replace(/[\/\\:\u0000-\u001f\u007f]/g, '_')
+    .replace(/^\.+/, '')
     .trim()
     .slice(0, 180);
   return safe || 'PatchProof-Report';
