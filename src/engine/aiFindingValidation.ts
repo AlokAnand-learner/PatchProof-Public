@@ -37,6 +37,11 @@ function boundedText(value: unknown, fallback: string, max = MAX_TEXT): string {
   return cleaned.trim().slice(0, max) || fallback;
 }
 
+/** Sanitize bounded model prose before it is persisted or displayed. */
+export function sanitizeAIText(value: unknown, maxLength = MAX_TEXT, fallback = ''): string {
+  return boundedText(value, fallback, maxLength);
+}
+
 function boundedCwe(value: unknown): string {
   const candidate = boundedText(value, 'CWE-Other', 100);
   if (/^CWE-(?:\d{1,5}|Other)$/i.test(candidate)) {
