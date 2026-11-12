@@ -17,7 +17,7 @@ These percentages are engineering estimates, not test coverage or acceptance per
 | 3. Detection precision | 48% | Bounded taint now resets at clear function boundaries to reduce cross-function false positives; alias-copy and scope-isolation regressions added; benchmark remains small and synthetic |
 | 4. Upload/archive safety | 82% | ZIP/folder and server-backed upload-to-analysis tests pass; all provider request branches use the source boundary; contract, prompt-injection, and remote credential-redaction tests added |
 | 5. Privacy/local boundary | 74% | Local-only boundary, consent, privacy defaults, remote-source credential redaction, redirect rejection, DNS-pinned custom HTTPS, and hard request deadlines are implemented; live transport audit remains |
-| 6. UX/release readiness | 52% | Reduced-motion support, modal keyboard focus trapping/restoration, and 44px mobile navigation targets are implemented and regression-tested; real-device browser smoke remains |
+| 6. UX/release readiness | 54% | Reduced-motion support, modal keyboard focus trapping/restoration, 44px mobile navigation targets, and active-page semantics for assistive technology are implemented and regression-tested; real-device review remains |
 
 ## Phase 1 — Safe source import
 
@@ -120,13 +120,13 @@ Completed:
 Still required:
 - Run the application in a real browser and verify upload, analysis, provider selection, reports, history, clear-history, mobile layout, and error recovery.
 - Verify empty, loading, and failure states on Android-sized viewports.
-- Mobile navigation moves focus into the drawer, traps forward/reverse Tab, closes on Escape, and restores prior focus. Bottom navigation controls have a minimum 44px touch target. Global reduced-motion support is implemented and regression-tested.
+- Mobile navigation moves focus into the drawer, traps forward/reverse Tab, closes on Escape, and restores prior focus. The active bottom-navigation item exposes `aria-current="page"` for assistive technology. Bottom navigation controls have a minimum 44px touch target. Global reduced-motion support is implemented and regression-tested.
 - Complete screen-reader and color-contrast review; automated source-level checks do not replace assistive-technology testing.
 - Keep public deployment disabled until a separate deployment threat model and security review are complete.
 
 ## Verification performed in this work session
 
-- Latest full code-validation GitHub Actions run (commit `7009919e55b057aa7f134f3638f396dc5bfd9300`) passed both jobs: Python repository/archive preflight, type-check, production build, local server startup, and complete Node regression suite. The new empty-suite metric regression is included in that passing run. Provider boundary tests include 22 assertions, provider adapter contract tests 16, source boundary tests 17, pinned DNS tests 10, and mobile layout/accessibility tests 14. The read-only archive comparison reports 57 exact matches, 25 preserved differences, and no missing paths.
+- Latest full code-validation GitHub Actions run (commit `c43c43b367cacf00ed6897a06d1ac86b87f4ead8`) passed both jobs: Python repository/archive preflight, type-check, production build, local server startup, and complete Node regression suite. The empty-suite metric regression, function-scope taint isolation, alias-copy semantics, and active mobile navigation accessibility assertion are included in passing runs. Provider boundary tests include 22 assertions, provider adapter contract tests 16, source boundary tests 17, pinned DNS tests 10, and mobile layout/accessibility tests 15. The read-only archive comparison reports 57 exact matches, 25 preserved differences, and no missing paths.
 - Earlier foundation audit: 21 of the 23 scripted test files were executed successfully in focused mode.
 - The latest focused workflow passed 40 Python repository/archive tests, 10 same-origin API tests, 13 untrusted-source boundary checks, 18 AI-finding validation checks, 10 special-purpose IPv4 checks, and 8 special-purpose IPv6 checks (102 reported checks across the focused groups).
 - The complete suite now includes JSZip-backed upload safety and server-backed authentication boundary tests; both pass in CI.
