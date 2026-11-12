@@ -146,7 +146,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ scan, onClose }) => {
                 <PatchProofLogo variant="full" size="sm" showSubtitle={false} />
               </div>
               <h1 className="text-2xl font-bold tracking-tight text-[#17243B] dark:text-white mt-0.5">
-                Executive Security Report
+                Code Security Review Report
               </h1>
               <p className="text-xs text-[#526078] dark:text-[#C2CDDC] mt-1">
                 Target: <span className="font-mono font-medium text-[#17243B] dark:text-white">{scan.fileName}</span> ({scan.language.toUpperCase()})
@@ -156,7 +156,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ scan, onClose }) => {
             {/* Score Box */}
             <div className="flex items-center gap-3 bg-white dark:bg-[#1B2638] p-3 rounded-xl border border-[#DCE3ED] dark:border-[#35445A] shadow-xs">
               <div className="text-right">
-                <span className="text-[10px] uppercase text-[#68758A] dark:text-[#9BAAC0] font-medium block">Security Score</span>
+                <span className="text-[10px] uppercase text-[#68758A] dark:text-[#9BAAC0] font-medium block">Heuristic Risk Indicator</span>
                 <span className="text-xl font-bold text-[#17243B] dark:text-white block">{scan.metrics.score}/100</span>
               </div>
               <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-base ${getGradeBadge(scan.metrics.grade)}`}>
@@ -224,7 +224,7 @@ export const ReportModal: React.FC<ReportModalProps> = ({ scan, onClose }) => {
 
             {scan.findings.length === 0 ? (
               <div className="p-6 text-center bg-white dark:bg-[#1B2638] rounded-xl border border-[#DCE3ED] dark:border-[#35445A] text-xs text-[#526078] dark:text-[#C2CDDC]">
-                No vulnerabilities were detected in this review.
+                No matching vulnerability patterns were identified in this review. This is not proof that the code is vulnerability-free; static rules have coverage and context limitations.
               </div>
             ) : (
               <div className="space-y-4">
