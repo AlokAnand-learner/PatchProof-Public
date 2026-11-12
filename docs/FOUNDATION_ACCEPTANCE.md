@@ -40,7 +40,7 @@ Phase 1 is complete only when all items below are implemented and verified.
 - [x] High-confidence credential patterns are redacted before any remote provider receives source; this is defense-in-depth, not a complete secret scanner.
 - [x] AI review is capped at 10 files per multi-file project and response notices disclose partial character coverage, skipped files, provider failure and consent/offline fallback.
 - [x] Finding-origin metrics count AI hypotheses separately from deterministic findings.
-- [x] Provider/analysis work has a two-task concurrency gate.
+- [x] Provider/analysis work has a two-task concurrency gate whose slots remain held until the actual handler Promise settles, including after client disconnects.
 - [x] Fix validation labels describe static checks rather than claiming full AST/compiler or runtime verification.
 - [x] Full-file AI rewrites are not applied or exported as validated source; snippet exports are emitted as patch artifacts.
 - [x] History persistence failures are surfaced separately from successful code analysis.
