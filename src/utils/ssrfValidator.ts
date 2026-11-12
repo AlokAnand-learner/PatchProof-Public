@@ -136,7 +136,12 @@ export function isRestrictedOrPrivateIp(ip: string): boolean {
     }
 
     return false;
-  }const CLOUD_METADATA_HOSTNAMES = new Set([
+  }
+
+  return false;
+}
+
+const CLOUD_METADATA_HOSTNAMES = new Set([
   '169.254.169.254',
   'metadata.google.internal',
   'metadata',
