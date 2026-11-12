@@ -20,6 +20,10 @@ for (const [name, startMarker, endMarker, required] of sections as [string, stri
   }
   assert.equal(/\btools\s*:/.test(section), false, name + ' review request must not declare provider tools');
 }
-assert.ok(source.includes('fetchPinnedHttpsResponseText(requestUrl'), 'remote custom provider must use DNS-pinned HTTPS transport');
-assert.ok(source.includes("redirect: 'error'"), 'custom provider requests must reject redirects');
-console.log('Provider adapter source contract tests: 16 assertions passed');
+assert.ok(source.includes('fetchPinnedHttpsResponseText(requestUrl'), 'remote provider requests must use DNS-pinned HTTPS transport');
+assert.ok(source.includes("provider === 'custom' && isCustomLocal"), 'ordinary fetch must be limited to trusted custom loopback during connection tests');
+assert.ok(source.includes("activeProvider === 'custom' && isCustomLocal"), 'ordinary fetch must be limited to trusted custom loopback during analysis');
+assert.ok(source.includes('Every remote HTTPS endpoint is DNS-pinned'), 'OpenAI and remote custom connection tests must share pinned transport');
+assert.ok(source.includes('Remote OpenAI and custom HTTPS endpoints must use DNS-pinned transport'), 'OpenAI and remote custom analysis must share pinned transport');
+assert.ok(source.includes("redirect: 'error'"), 'provider requests must reject redirects');
+console.log('Provider adapter source contract tests: 20 assertions passed');
