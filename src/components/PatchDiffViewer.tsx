@@ -315,7 +315,7 @@ export const PatchDiffViewer: React.FC<PatchDiffViewerProps> = ({
             <Cpu className="w-3.5 h-3.5 text-[#2458D3] dark:text-cyan-400" />
             <span className="font-semibold text-[#17243B] dark:text-slate-200">Fix Validation Engine Assessment</span>
             <span className="text-[10px] text-[#68758A] dark:text-slate-500 hidden sm:inline">
-              (Isolated Static AST Analysis — Never executes untrusted code)
+              (Isolated static checks — never executes untrusted code)
             </span>
           </div>
           {showValidationDetails ? (
@@ -329,7 +329,7 @@ export const PatchDiffViewer: React.FC<PatchDiffViewerProps> = ({
           <div className="p-4 pt-1 space-y-3.5 text-xs">
             {/* 4 Check Dimension Cards */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-2.5">
-              {/* Check 1: Syntax & AST Parsing */}
+              {/* Check 1: Syntax & Structural Checks */}
               <div className="bg-white dark:bg-[#243247] p-3 rounded-xl border border-[#DCE3ED] dark:border-[#35445A] shadow-xs">
                 <div className="flex items-center justify-between mb-1">
                   <span className="text-[11px] font-medium text-[#17243B] dark:text-slate-200">Syntax & Parsing</span>
