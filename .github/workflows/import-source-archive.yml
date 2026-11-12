@@ -1,0 +1,44 @@
+name: Import reviewed PatchProof source archive
+
+on:
+  push:
+    branches:
+      - work/ssrf-special-purpose-ipv4-2026-11-12
+    paths:
+      - import/PatchProof-source.zip
+
+permissions:
+  contents: write
+
+concurrency:
+  group: patchproof-source-import
+  cancel-in-progress: false
+
+jobs:
+  import-source:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out the working branch
+        uses: actions/checkout@v4
+        with:
+          ref: work/ssrf-special-purpose-ipv4-2026-11-12
+          persist-credentials: true
+
+      - name: Validate and import missing source files
+        run: |
+          python3 scripts/import_source_archive.py import/PatchProof-source.zip --destination .
+
+      - name: Remove uploaded archive after extraction
+        run: rm -f import/PatchProof-source.zip
+
+      - name: Commit imported source tree
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          if git diff --cached --quiet; then
+            echo "No source changes to commit."
+          else
+            git commit -m "build: import reviewed PatchProof source archive"
+            git push origin HEAD:work/ssrf-special-purpose-ipv4-2026-11-12
+          fi
