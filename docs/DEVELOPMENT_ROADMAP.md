@@ -61,7 +61,7 @@ Completed:
 - Added alias propagation and reassignment regression cases for SQL, command-execution, and URL-fetch sinks.
 - Empty precision/recall denominators and entirely empty evaluation suites now return conservative zero metrics rather than artificial perfect scores; dedicated edge-case tests cover both.
 - AI-generated findings are deduplicated by normalized title, CWE, and exact source line range; snippets continue to be derived from source rather than accepted from model output.\n- Untrusted model-supplied labels and prose have non-printing control and bidirectional formatting characters removed; CWE identifiers are constrained to a recognized `CWE-<number>` or `CWE-Other` form.
-- The built-in suite has 13 synthetic fixtures: 9 binary-scored cases and 4 review-only cases. The latest successful focused run produced 3 TP, 6 TN, 0 FP, and 0 FN for the 9 scored fixtures; a new empty-suite metric regression is awaiting CI.
+- The built-in suite has 13 synthetic fixtures: 9 binary-scored cases and 4 review-only cases. The latest successful focused run produced 3 TP, 6 TN, 0 FP, and 0 FN for the 9 scored fixtures; the empty-suite metric regression passes CI.
 
 Limitations:
 - These percentages describe a small synthetic suite, not real-world accuracy. They are not evidence of zero false positives or complete detection.
