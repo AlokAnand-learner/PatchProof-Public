@@ -65,6 +65,21 @@ class SourceArchiveImportFlowTests(unittest.TestCase):
         self.assertEqual(self.run_import(), 0)
         self.assertEqual(target.read_text(encoding="utf-8"), "reviewed local content\n")
 
+    def test_special_filesystem_entry_is_rejected(self) -> None:
+        with zipfile.ZipFile(self.archive_path, "w") as archive:
+            info = zipfile.ZipInfo("source/src/pipe")
+            info.external_attr = (stat.S_IFIFO | 0o600) << 16
+            archive.writestr(info, b"not a regular file")
+        with self.assertRaises(SystemExit):
+            self.run_import()
+
+    def test_duplicate_archive_file_entries_are_rejected(self) -> None:
+        with zipfile.ZipFile(self.archive_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
+            archive.writestr("source/src/app.ts", b"one")
+            archive.writestr("source/src/app.ts", b"two")
+        with self.assertRaises(SystemExit):
+            self.run_import()
+
     def test_symlink_archive_entry_is_rejected(self) -> None:
         self.write_zip([("source/src/link", b"../outside", True)])
         with self.assertRaises(SystemExit):
