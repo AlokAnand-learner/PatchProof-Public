@@ -14,9 +14,9 @@ These percentages are engineering estimates, not test coverage or acceptance per
 |---|---:|---|
 | 1. Safe source import | 75% | All 82 paths accounted for; 57 exact matches and 25 preserved differences; final conflict review and runtime smoke test remain |
 | 2. Reproducible setup | 75% | Frozen install, typecheck, production build, local server startup, and full Node test suite pass in CI; the `protobufjs` lifecycle script remains intentionally blocked pending review |
-| 3. Detection precision | 45% | Alias propagation/reassignment regressions cover SQL, command, and URL-fetch sinks; empty positive-class metrics no longer report artificial 100% precision/recall; benchmark remains small and synthetic |
+| 3. Detection precision | 48% | Bounded taint now resets at clear function boundaries to reduce cross-function false positives; alias-copy and scope-isolation regressions added; benchmark remains small and synthetic |
 | 4. Upload/archive safety | 82% | ZIP/folder and server-backed upload-to-analysis tests pass; all provider request branches use the source boundary; contract, prompt-injection, and remote credential-redaction tests added |
-| 5. Privacy/local boundary | 72% | Local-only boundary, consent, privacy defaults, remote-source credential redaction, redirect rejection, and DNS-pinned custom HTTPS requests are implemented and regression-tested |
+| 5. Privacy/local boundary | 74% | Local-only boundary, consent, privacy defaults, remote-source credential redaction, redirect rejection, DNS-pinned custom HTTPS, and hard request deadlines are implemented; live transport audit remains |
 | 6. UX/release readiness | 52% | Reduced-motion support, modal keyboard focus trapping/restoration, and 44px mobile navigation targets are implemented and regression-tested; real-device browser smoke remains |
 
 ## Phase 1 — Safe source import
@@ -60,8 +60,9 @@ Completed:
 - Reworked benchmark accounting so review-only cases are excluded from binary precision/recall calculations.
 - Added alias propagation and reassignment regression cases for SQL, command-execution, and URL-fetch sinks.
 - Empty precision/recall denominators and entirely empty evaluation suites now return conservative zero metrics rather than artificial perfect scores; dedicated edge-case tests cover both.
+- The bounded source-to-sink heuristic resets at obvious function boundaries to avoid carrying request-derived taint into a different function. Alias copies retain their taint when the original variable is later reassigned; dedicated regression cases cover both behaviors.
 - AI-generated findings are deduplicated by normalized title, CWE, and exact source line range; snippets continue to be derived from source rather than accepted from model output.\n- Untrusted model-supplied labels and prose have non-printing control and bidirectional formatting characters removed; CWE identifiers are constrained to a recognized `CWE-<number>` or `CWE-Other` form.
-- The built-in suite has 13 synthetic fixtures: 9 binary-scored cases and 4 review-only cases. The latest successful focused run produced 3 TP, 6 TN, 0 FP, and 0 FN for the 9 scored fixtures; the empty-suite metric regression passes CI.
+- The built-in suite has 13 synthetic fixtures: 9 binary-scored cases and 4 review-only cases. The latest successful focused run produced 3 TP, 6 TN, 0 FP, and 0 FN for the 9 scored fixtures; the empty-suite metric regression passes CI. The later function-scope taint and alias-copy tests plus hard HTTPS deadline change are queued for the latest CI validation.
 
 Limitations:
 - These percentages describe a small synthetic suite, not real-world accuracy. They are not evidence of zero false positives or complete detection.
@@ -101,7 +102,7 @@ Completed:
 
 Still required:
 - Verify DNS-pinned custom HTTPS transport against controlled integration endpoints and confirm certificate/hostname validation across supported operating systems. Source-level tests cover address validation and pinned lookup behavior, but do not prove live TLS/DNS behavior on every supported OS.
-- Remote custom HTTPS requests pin validated DNS answers, reject restricted address sets, and do not follow redirects; audit equivalent timeout, response-bound, redirect, and redaction behavior across all providers.
+- Remote custom HTTPS requests pin validated DNS answers, reject restricted address sets, and do not follow redirects. Both socket inactivity and hard wall-clock request deadlines are enforced; audit equivalent timeout, response-bound, redirect, and redaction behavior across all providers.
 - Review all logs, reports, browser persistence, and error paths after full application import.
 
 ## Phase 6 — UX and release readiness
