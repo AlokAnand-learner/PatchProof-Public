@@ -280,6 +280,7 @@ export default function App() {
 
         {/* Main Content Area: Centered inside dedicated content column */}
         <main className="flex-1 w-full max-w-7xl mx-auto px-3.5 sm:px-6 lg:px-8 py-5 sm:py-8 pb-24 md:pb-8 min-w-0">
+          <div key={isLoading ? "loading" : activeTab} className="pp-view-enter">
           {/* Loading Progress State */}
           {isLoading ? (
             <ScanProgress 
@@ -381,6 +382,7 @@ export default function App() {
               )}
             </>
           )}
+          </div>
         </main>
 
         {/* Minimal Footer */}
