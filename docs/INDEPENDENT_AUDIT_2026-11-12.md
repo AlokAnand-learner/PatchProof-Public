@@ -269,3 +269,8 @@ CI success does not establish that PatchProof is vulnerability-free or release-r
 - Added bounded, failure-safe preference read/write helpers and routed App theme/sidebar preferences through them. Storage failures now leave the app usable; persistence may simply be unavailable.
 - Added regression tests for missing storage values, invalid/overlong preference fields, blocked reads/writes, and the App's use of the helper boundary.
 - Both CI jobs passed for the helper, app integration, and full-suite test inclusion in [run 43298382658](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43298382658).
+
+
+### Current source-archive comparison correction
+
+The earlier follow-up text records a historical comparison of 57 exact matches and 25 preserved differences. A later CI read-only comparison checked the same 82 archive paths and reported **36 exact matches, 46 differing existing files, and 0 missing paths**. The earlier 57/25 figure is therefore a historical baseline, not the current count. All differing working-tree files remain preserved; no archive conflict was overwritten. The detailed 25-path disposition list in `docs/SOURCE_CONFLICT_RECONCILIATION.md` describes the original baseline and does not enumerate all 46 current differences.
