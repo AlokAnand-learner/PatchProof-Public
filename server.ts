@@ -960,7 +960,7 @@ CRITICAL RULES:
           ]);
 
           const parsed = extractJsonFromModelResponse(responseText);
-          if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) throw new Error('Invalid AI response structure');
+          if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || !Array.isArray(parsed.findings)) throw new Error('Invalid AI response structure');
           aiReviewCompleted = true;
           modelUsed = `${provState.activeProvider}:${provState.activeModel} (Hybrid Analysis)`;
           if (typeof parsed?.summary === 'string') summary = parsed.summary.slice(0, 4000);
