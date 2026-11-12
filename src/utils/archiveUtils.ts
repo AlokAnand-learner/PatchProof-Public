@@ -1,0 +1,643 @@
+import JSZip from 'jszip';
+import { StagedFile, UploadLimits } from '../types/security';
+
+export const DEFAULT_LIMITS: UploadLimits = {
+  maxSingleFileSize: 2 * 1024 * 1024,      // 2MB per file
+  maxArchiveSize: 25 * 1024 * 1024,        // 25MB archive limit
+  maxTotalExtractedSize: 20 * 1024 * 1024, // 20MB cumulative extracted limit
+  maxFileCount: 60,                        // Up to 60 source files per project review
+  maxArchiveEntries: 5000                  // Bound ZIP metadata/entry iteration, including skipped files
+};
+
+export const DEFAULT_EXCLUDED_DIRS = [
+  'node_modules',
+  '.git',
+  'dist',
+  'build',
+  'out',
+  '.next',
+  'vendor',
+  '__pycache__',
+  '.vscode',
+  '.idea',
+  'coverage',
+  '.turbo',
+  'venv',
+  '.venv',
+  '.env',
+  '.cache'
+];
+
+const SUPPORTED_EXTENSIONS = new Set([
+  'js', 'jsx', 'mjs', 'cjs',
+  'ts', 'tsx',
+  'py', 'pyw',
+  'go',
+  'java',
+  'php',
+  'c', 'cpp', 'cc', 'cxx', 'h', 'hpp',
+  'rs',
+  'cs',
+  'rb',
+  'sql',
+  'sh', 'bash', 'zsh',
+  'json', 'yaml', 'yml',
+  'html', 'htm',
+  'css', 'scss',
+  'xml', 'toml', 'ini', 'env.example',
+  'txt', 'text'
+]);
+
+const PROHIBITED_EXTENSIONS = new Set([
+  'exe', 'dll', 'bin', 'so', 'dylib', 'class', 'pyc', 'wasm',
+  'zip', 'tar', 'gz', '7z', 'rar', 'bz2',
+  'png', 'jpg', 'jpeg', 'gif', 'webp', 'svg', 'ico', 'mp4', 'mp3', 'wav',
+  'pdf', 'docx', 'xlsx', 'pptx', 'sqlite', 'db'
+]);
+
+/**
+ * Heuristically inspects plain-text source content to identify language
+ * when file extension is .txt, generic text, or unmapped.
+ */
+export function detectLanguageFromContent(content: string): string {
+  const trimmed = content.trim();
+  if (!trimmed) return 'plaintext';
+
+  // Shebang or python syntax
+  if (
+    /^#!\s*\/.*\bpython\b/m.test(trimmed) ||
+    /(^|\n)\s*(def\s+\w+\s*\(|import\s+[\w\.]+|from\s+[\w\.]+\s+import|elif\s+|if\s+__name__\s*==\s*['"]__main__['"]:)/.test(trimmed)
+  ) {
+    return 'python';
+  }
+
+  // Shell script
+  if (
+    /^#!\s*\/.*\b(bash|sh|zsh)\b/m.test(trimmed) ||
+    /(^|\n)\s*(echo\s+|chmod\s+|export\s+[A-Z_]+=)/.test(trimmed)
+  ) {
+    return 'shell';
+  }
+
+  // JavaScript / TypeScript
+  if (
+    /(^|\n)\s*(import\s+.*from\s+['"]|const\s+\w+\s*=|let\s+\w+\s*=|var\s+\w+\s*=|function\s+\w+\s*\(|module\.exports\s*=|require\s*\(['"])/.test(trimmed)
+  ) {
+    return /(:\s*(string|number|boolean|any)\b|interface\s+\w+|type\s+\w+\s*=)/.test(trimmed) ? 'typescript' : 'javascript';
+  }
+
+  // Java
+  if (/(^|\n)\s*(public\s+class\s+\w+|public\s+static\s+void\s+main|System\.out\.print)/.test(trimmed)) {
+    return 'java';
+  }
+
+  // Go
+  if (/(^|\n)\s*package\s+\w+\b/.test(trimmed) || /(^|\n)\s*func\s+\w+\s*\(/.test(trimmed)) {
+    return 'go';
+  }
+
+  // PHP
+  if (/<\?php/.test(trimmed)) {
+    return 'php';
+  }
+
+  // SQL
+  if (/^\s*(SELECT|INSERT|UPDATE|DELETE|CREATE TABLE|ALTER TABLE|DROP TABLE)\b/i.test(trimmed)) {
+    return 'sql';
+  }
+
+  // JSON
+  if (trimmed.startsWith('{') || trimmed.startsWith('[')) {
+    try {
+      JSON.parse(trimmed);
+      return 'json';
+    } catch {}
+  }
+
+  return 'plaintext';
+}
+
+export function detectLanguage(filename: string, content?: string): string {
+  const parts = filename.split('.');
+  const ext = parts.length > 1 ? parts.pop()!.toLowerCase() : '';
+
+  if (ext === 'txt' || ext === 'text') {
+    // Check if filename has double extension like app.js.txt or script.py.txt
+    if (parts.length > 1) {
+      const secondExt = parts[parts.length - 1].toLowerCase();
+      const detectedFromSecond = detectLanguage(`file.${secondExt}`);
+      if (detectedFromSecond !== 'plaintext') {
+        return detectedFromSecond;
+      }
+    }
+    if (content) {
+      return detectLanguageFromContent(content);
+    }
+    return 'plaintext';
+  }
+
+  switch (ext) {
+    case 'py':
+    case 'pyw': return 'python';
+    case 'js':
+    case 'jsx':
+    case 'mjs':
+    case 'cjs': return 'javascript';
+    case 'ts':
+    case 'tsx': return 'typescript';
+    case 'go': return 'go';
+    case 'java': return 'java';
+    case 'php': return 'php';
+    case 'c':
+    case 'h':
+    case 'cpp':
+    case 'cc':
+    case 'cxx':
+    case 'hpp': return 'cpp';
+    case 'rs': return 'rust';
+    case 'cs': return 'csharp';
+    case 'rb': return 'ruby';
+    case 'sql': return 'sql';
+    case 'sh':
+    case 'bash':
+    case 'zsh': return 'shell';
+    case 'json': return 'json';
+    case 'yaml':
+    case 'yml': return 'yaml';
+    case 'html':
+    case 'htm': return 'html';
+    case 'css': return 'css';
+    default: return content ? detectLanguageFromContent(content) : 'plaintext';
+  }
+}
+
+export function isSupportedSourceFile(filename: string): boolean {
+  const normalized = filename.replace(/\\/g, '/');
+  const baseName = normalized.split('/').pop() || '';
+  if (!baseName || baseName.startsWith('.')) {
+    // Allow the explicitly supported example environment template.
+    if (baseName !== '.env.example') return false;
+  }
+  if (baseName === '.env.example') return true;
+
+  const parts = baseName.split('.');
+  if (parts.length < 2) return false;
+  const ext = parts.pop()!.toLowerCase();
+
+  if (PROHIBITED_EXTENSIONS.has(ext)) return false;
+  return SUPPORTED_EXTENSIONS.has(ext);
+}
+
+export const isAllowedSourceFile = isSupportedSourceFile;
+
+/**
+ * Convert a user-supplied single-file label to a safe display/analysis filename.
+ * Single-file reviews never need directory paths; only the final path segment is kept.
+ */
+export function sanitizeSingleFileName(rawName: unknown): string | null {
+  if (typeof rawName !== 'string' || rawName.length === 0 || rawName.length > 500) return null;
+  if (/[\x00-\x1F\x7F]/.test(rawName)) return null;
+
+  const normalized = rawName.replace(/\\/g, '/');
+  const leaf = normalized.split('/').pop() || '';
+  const safeName = leaf.replace(/[^a-zA-Z0-9_.-]/g, '').slice(0, 160);
+  if (!safeName || safeName === '.' || safeName === '..' || !isSupportedSourceFile(safeName)) return null;
+  return safeName;
+}
+
+export function validateUploadedFile(
+  filename: string,
+  size: number,
+  limits: UploadLimits = DEFAULT_LIMITS
+): { valid: boolean; error?: string } {
+  if (size === 0) {
+    return { valid: false, error: 'File is empty (0 bytes).' };
+  }
+  if (size > limits.maxSingleFileSize) {
+    return {
+      valid: false,
+      error: `File exceeds 2MB limit: ${(size / (1024 * 1024)).toFixed(1)}MB.`
+    };
+  }
+  if (!isSupportedSourceFile(filename)) {
+    return {
+      valid: false,
+      error: `Unsupported file type. Supported formats include .js, .ts, .py, .go, .java, .txt, etc.`
+    };
+  }
+  return { valid: true };
+}
+
+export function isBinaryContent(content: string): boolean {
+  // Check for null bytes or excessive unprintable control characters in initial slice
+  return /[\x00-\x08\x0E-\x1F]/.test(content.slice(0, 1024));
+}
+
+export function isPathExcluded(relativePath: string, excludedDirs: string[]): boolean {
+  const segments = relativePath.replace(/\\/g, '/').split('/');
+  return segments.some(segment => excludedDirs.includes(segment));
+}
+
+// Sanitizes and validates a path to prevent Zip Slip / Directory Traversal attacks
+export function sanitizeRelativePath(rawPath: string): string | null {
+  if (!rawPath || typeof rawPath !== 'string' || rawPath.length > 500) return null;
+  if (/[\x00-\x1F\x7F]/.test(rawPath)) return null;
+
+  // Reject Windows drive letters (C:, D:) or UNC network shares (\\server\share)
+  if (/^[a-zA-Z]:/i.test(rawPath) || rawPath.startsWith('\\\\')) {
+    return null;
+  }
+
+  // Normalize separators but reject surrounding whitespace instead of silently
+  // changing a caller-supplied path into a different logical filename.
+  let clean = rawPath.replace(/\\/g, '/');
+  if (clean !== clean.trim()) return null;
+
+  // Explicitly reject absolute paths
+  if (clean.startsWith('/')) {
+    return null;
+  }
+
+  // Reject paths attempting directory traversal (Zip Slip)
+  // Check for .. as a component or isolated element
+  const segments = clean.split('/');
+  // Empty segments, dot segments, trailing dots/spaces, and Windows device names
+  // create ambiguous aliases across operating systems; reject them consistently.
+  const invalidSegment = segments.some(seg =>
+    seg.length === 0 || seg.trim() === '..' || seg.trim() === '.' ||
+    seg !== seg.trim() || /[. ]$/.test(seg) || /[<>:"|?*]/.test(seg) ||
+    /^(?:con|prn|aux|nul|com[1-9]|lpt[1-9])(?:\.|$)/i.test(seg)
+  );
+  if (invalidSegment) return null;
+
+  // Reject embedded colon or null characters
+  if (clean.includes(':') || clean.includes('\0')) {
+    return null;
+  }
+
+  return clean;
+}
+
+export interface ExtractionResult {
+  stagedFiles: StagedFile[];
+  skippedFiles: string[];
+  totalExtractedSize: number;
+  projectName: string;
+}
+
+/**
+ * Safely extracts a ZIP archive in-memory with strict Zip Slip, Symlink, Zip Bomb, and file filtering guards.
+ * Never writes to disk and never executes code.
+ */
+export async function safeExtractZip(
+  zipInput: File | Blob | ArrayBuffer | Uint8Array,
+  options?: {
+    excludeDirs?: boolean;
+    excludeCommonDirs?: boolean;
+    excludedDirsList?: string[];
+    limits?: Partial<UploadLimits>;
+    archiveName?: string;
+  }
+): Promise<ExtractionResult> {
+  const limits = { ...DEFAULT_LIMITS, ...options?.limits };
+  const excludeDirs = options?.excludeDirs ?? options?.excludeCommonDirs ?? true;
+  const excludedDirs = options?.excludedDirsList ?? DEFAULT_EXCLUDED_DIRS;
+
+  // Determine size
+  let byteSize = 0;
+  let archiveName = options?.archiveName || 'Uploaded Project';
+  if (typeof (zipInput as any).size === 'number') {
+    byteSize = (zipInput as any).size;
+    if ((zipInput as any).name) {
+      archiveName = (zipInput as any).name;
+    }
+  } else if ((zipInput as any).byteLength) {
+    byteSize = (zipInput as any).byteLength;
+  }
+
+  // 1. Check archive size
+  if (byteSize > limits.maxArchiveSize) {
+    throw new Error(
+      `ZIP archive is ${(byteSize / (1024 * 1024)).toFixed(1)}MB, which exceeds the ${limits.maxArchiveSize / (1024 * 1024)}MB archive limit.`
+    );
+  }
+
+  const zip = new JSZip();
+  let loadedZip: JSZip;
+  try {
+    loadedZip = await zip.loadAsync(zipInput);
+  } catch (err) {
+    throw new Error('Invalid or corrupted ZIP archive. Please ensure the file is a valid .zip file.');
+  }
+
+  const stagedFiles: StagedFile[] = [];
+  const skippedFiles: string[] = [];
+  const seenPaths = new Set<string>();
+  let totalExtractedSize = 0;
+
+  // Derive project name from zip filename
+  const projectName = archiveName.replace(/\.zip$/i, '') || 'Uploaded Project';
+
+  const entries = Object.keys(loadedZip.files);
+  if (entries.length === 0) {
+    throw new Error('The uploaded ZIP archive is empty.');
+  }
+  if (entries.length > limits.maxArchiveEntries) {
+    throw new Error(`ZIP archive contains too many entries (maximum ${limits.maxArchiveEntries}).`);
+  }
+
+  for (const rawPath of entries) {
+    const entry = loadedZip.files[rawPath];
+    if (entry.dir) continue; // Skip directory entries
+
+    // Check for symlinks (POSIX symlink attribute 0o120000)
+    const unixPerms = (entry as any).unixPermissions;
+    if (typeof unixPerms === 'number' && (unixPerms & 0o170000) === 0o120000) {
+      skippedFiles.push(`${rawPath} (Security: symbolic links are rejected)`);
+      continue;
+    }
+
+    // Zip Slip path traversal guard & absolute path rejection
+    const cleanPath = sanitizeRelativePath(rawPath);
+    if (!cleanPath) {
+      skippedFiles.push(`${rawPath} (Security: path traversal or ambiguous path detected)`);
+      continue;
+    }
+
+    // Reject duplicate and case/Unicode-colliding paths before staging. This
+    // prevents platform-dependent overwrites when projects move between OSes.
+    const pathKey = cleanPath.normalize('NFC').toLocaleLowerCase('en-US');
+    if (seenPaths.has(pathKey)) {
+      skippedFiles.push(`${cleanPath} (Security: duplicate or case-colliding archive path rejected)`);
+      continue;
+    }
+    seenPaths.add(pathKey);
+
+    // Excluded directory check
+    if (excludeDirs && isPathExcluded(cleanPath, excludedDirs)) {
+      continue;
+    }
+
+    // Supported source file filter
+    if (!isSupportedSourceFile(cleanPath)) {
+      skippedFiles.push(cleanPath);
+      continue;
+    }
+
+    // File count guard
+    if (stagedFiles.length >= limits.maxFileCount) {
+      skippedFiles.push(`${cleanPath} (File count limit reached: ${limits.maxFileCount})`);
+      break;
+    }
+
+    // Check entry uncompressed size estimate for zip bomb prevention
+    // @ts-ignore - internal uncompressedSize in JSZip
+    const estimatedSize = entry._data?.uncompressedSize || 0;
+    if (estimatedSize > limits.maxSingleFileSize) {
+      skippedFiles.push(`${cleanPath} (Exceeds 2MB single file limit)`);
+      continue;
+    }
+
+    if (totalExtractedSize + estimatedSize > limits.maxTotalExtractedSize) {
+      throw new Error(
+        `Archive contents exceed total size limit (${limits.maxTotalExtractedSize / (1024 * 1024)}MB). Possible decompression bomb or oversized repository.`
+      );
+    }
+
+    // Extract text content safely in memory
+    const text = await entry.async('string');
+    const actualSize = new Blob([text]).size;
+
+    if (actualSize === 0 || text.trim().length === 0) {
+      skippedFiles.push(`${cleanPath} (Empty file: 0 bytes)`);
+      continue;
+    }
+
+    if (actualSize > limits.maxSingleFileSize) {
+      skippedFiles.push(`${cleanPath} (Exceeds 2MB single file limit)`);
+      continue;
+    }
+
+    totalExtractedSize += actualSize;
+    if (totalExtractedSize > limits.maxTotalExtractedSize) {
+      throw new Error(`Total extracted source code exceeds limit of ${limits.maxTotalExtractedSize / (1024 * 1024)}MB.`);
+    }
+
+    // Check binary bytes
+    if (isBinaryContent(text)) {
+      skippedFiles.push(`${cleanPath} (Binary file content rejected)`);
+      continue;
+    }
+
+    const lines = text.split('\n').length;
+    const lang = detectLanguage(cleanPath, text);
+    const fileNameOnly = cleanPath.split('/').pop() || cleanPath;
+
+    stagedFiles.push({
+      id: `file-${stagedFiles.length + 1}-${Math.random().toString(36).substring(2, 7)}`,
+      name: fileNameOnly,
+      relativePath: cleanPath,
+      size: actualSize,
+      language: lang,
+      content: text,
+      lines
+    });
+  }
+
+  if (stagedFiles.length === 0) {
+    if (skippedFiles.some(s => s.includes('Empty file'))) {
+      throw new Error('All files in the archive are empty (0 bytes). Please provide files containing source code.');
+    }
+    if (skippedFiles.some(s => s.includes('Binary file'))) {
+      throw new Error('Archive contains only binary files. Please include plain-text source code files.');
+    }
+    throw new Error(
+      'No supported source code files were found in the archive. Supported formats include .js, .ts, .py, .go, .java, .php, .c, .cpp, .cs, .rb, .sql, .txt, etc.'
+    );
+  }
+
+  return {
+    stagedFiles,
+    skippedFiles,
+    totalExtractedSize,
+    projectName
+  };
+}
+
+/**
+ * Processes a FileList or array of Files (from folder upload webkitdirectory or multi-file selection).
+ * Preserves relative paths using file.webkitRelativePath where present.
+ */
+export async function processFiles(
+  files: FileList | File[],
+  options?: {
+    excludeDirs?: boolean;
+    excludeCommonDirs?: boolean;
+    excludedDirsList?: string[];
+    limits?: Partial<UploadLimits>;
+  }
+): Promise<ExtractionResult> {
+  const limits = { ...DEFAULT_LIMITS, ...options?.limits };
+  const excludeDirs = options?.excludeDirs ?? options?.excludeCommonDirs ?? true;
+  const excludedDirs = options?.excludedDirsList ?? DEFAULT_EXCLUDED_DIRS;
+
+  const fileArray = Array.from(files);
+  if (fileArray.length === 0) {
+    throw new Error('No files were selected.');
+  }
+
+  // Derive the project name only from a validated relative path. Browser-provided
+  // webkitRelativePath is still treated as untrusted input.
+  let projectName = 'Project Review';
+  const firstWithRel = fileArray.find(f => typeof (f as any).webkitRelativePath === 'string' && (f as any).webkitRelativePath.length > 0);
+  if (firstWithRel) {
+    const firstPath = sanitizeRelativePath((firstWithRel as any).webkitRelativePath);
+    const rootDir = firstPath?.split('/')[0];
+    if (rootDir) projectName = rootDir;
+  }
+
+  const stagedFiles: StagedFile[] = [];
+  const skippedFiles: string[] = [];
+  let totalExtractedSize = 0;
+  const seenPaths = new Set<string>();
+
+  for (const file of fileArray) {
+    const relativePath = (file as any).webkitRelativePath;
+    const rawPath = typeof relativePath === 'string' && relativePath.length > 0 ? relativePath : file.name;
+    const cleanPath = sanitizeRelativePath(rawPath);
+
+    // Never fall back to the basename when a supplied path is unsafe: doing so
+    // would silently turn a rejected traversal/absolute path into an accepted file.
+    if (!cleanPath) {
+      skippedFiles.push('Selected file (Security: unsafe or invalid relative path rejected)');
+      continue;
+    }
+
+    // Reject ambiguous duplicate paths (including case-only collisions) so that
+    // different platforms cannot resolve the same project tree differently.
+    const pathKey = cleanPath.normalize('NFC').toLocaleLowerCase('en-US');
+    if (seenPaths.has(pathKey)) {
+      skippedFiles.push(`${cleanPath} (Duplicate or case-colliding path rejected)`);
+      continue;
+    }
+    seenPaths.add(pathKey);
+
+    // Validate file metadata before reading content.
+    if (!Number.isSafeInteger(file.size) || file.size < 0) {
+      skippedFiles.push(`${cleanPath} (Invalid file size metadata)`);
+      continue;
+    }
+
+    // Check directory exclusion
+    if (excludeDirs && isPathExcluded(cleanPath, excludedDirs)) {
+      continue;
+    }
+
+    // Supported source file check
+    if (!isSupportedSourceFile(cleanPath)) {
+      skippedFiles.push(cleanPath);
+      continue;
+    }
+
+    // Empty file check
+    if (file.size === 0) {
+      skippedFiles.push(`${cleanPath} (Empty file: 0 bytes)`);
+      continue;
+    }
+
+    // Single file size limit
+    if (file.size > limits.maxSingleFileSize) {
+      skippedFiles.push(`${cleanPath} (File exceeds 2MB limit: ${(file.size / (1024 * 1024)).toFixed(1)}MB)`);
+      continue;
+    }
+
+    // Cumulative size check
+    if (totalExtractedSize + file.size > limits.maxTotalExtractedSize) {
+      skippedFiles.push(`${cleanPath} (Project total size limit reached)`);
+      break;
+    }
+
+    // File count limit
+    if (stagedFiles.length >= limits.maxFileCount) {
+      skippedFiles.push(`${cleanPath} (File limit of ${limits.maxFileCount} reached)`);
+      break;
+    }
+
+    // Read content safely
+    try {
+      const content = await readFileText(file);
+      if (!content || content.trim().length === 0) {
+        skippedFiles.push(`${cleanPath} (Empty file: 0 bytes)`);
+        continue;
+      }
+      if (isBinaryContent(content)) {
+        skippedFiles.push(`${cleanPath} (Binary file content detected)`);
+        continue;
+      }
+
+      totalExtractedSize += file.size;
+      const lines = content.split('\n').length;
+      const lang = detectLanguage(cleanPath, content);
+      const fileNameOnly = cleanPath.split('/').pop() || cleanPath;
+
+      stagedFiles.push({
+        id: `file-${stagedFiles.length + 1}-${Math.random().toString(36).substring(2, 7)}`,
+        name: fileNameOnly,
+        relativePath: cleanPath,
+        size: file.size,
+        language: lang,
+        content,
+        lines
+      });
+    } catch (err) {
+      skippedFiles.push(`${cleanPath} (Error reading file as UTF-8)`);
+    }
+  }
+
+  if (stagedFiles.length === 0) {
+    if (skippedFiles.some(s => s.includes('Empty file'))) {
+      throw new Error('The selected file(s) are empty (0 bytes). Please upload files containing source code.');
+    }
+    if (skippedFiles.some(s => s.includes('Binary file'))) {
+      throw new Error('The selected file(s) contain binary data and cannot be parsed as text source code.');
+    }
+    throw new Error('No supported text source code files found. Supported formats include .js, .ts, .py, .go, .java, .php, .c, .cpp, .cs, .rb, .sql, .txt, etc.');
+  }
+
+  return {
+    stagedFiles,
+    skippedFiles,
+    totalExtractedSize,
+    projectName
+  };
+}
+
+// Aliases for unified upload component integration
+export const processZipUpload = safeExtractZip;
+export const processFolderUpload = (
+  files: FileList | File[],
+  options?: {
+    excludeDirs?: boolean;
+    excludeCommonDirs?: boolean;
+    excludedDirsList?: string[];
+    limits?: Partial<UploadLimits>;
+  }
+) => processFiles(files, options);
+export const processMultipleFiles = (
+  files: FileList | File[],
+  options?: {
+    excludeDirs?: boolean;
+    excludeCommonDirs?: boolean;
+    excludedDirsList?: string[];
+    limits?: Partial<UploadLimits>;
+  }
+) => processFiles(files, options);
+
+function readFileText(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => resolve((e.target?.result as string) || '');
+    reader.onerror = () => reject(new Error('Failed to read file as UTF-8 text'));
+    reader.readAsText(file, 'UTF-8');
+  });
+}
