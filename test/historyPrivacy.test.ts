@@ -210,6 +210,29 @@ async function run(): Promise<void> {
   assert('Failed history deletions preserve the loaded record list', failedSingleDelete.history.some(item => item.id === 'delete-failure-record'));
   storage.failWrites = false;
 
+  setPrivacyMode(false);
+  clearScanHistory();
+  saveScanToHistory(makeScan('history-validation-valid'));
+  const historyKey = 'patchproof_scan_history_v1';
+  const validRawHistory = JSON.parse(storage.getItem(historyKey) || '[]');
+  const malformedHistoryItem = {
+    ...validRawHistory[0],
+    id: 'malformed-history-item',
+    scanResult: { ...validRawHistory[0].scanResult, findings: [null] }
+  };
+  const oversizedHistory = [
+    ...validRawHistory,
+    null,
+    malformedHistoryItem,
+    ...Array.from({ length: 45 }, (_, index) => ({ ...validRawHistory[0], id: 'history-overflow-' + index }))
+  ];
+  storage.setItem(historyKey, JSON.stringify(oversizedHistory));
+  const validatedHistory = getScanHistory();
+  assert('Ignore malformed browser-history records before rendering', validatedHistory.every(item => item.id !== 'malformed-history-item'));
+  assert('Cap loaded browser history to the same 40-record retention limit', validatedHistory.length === 40);
+  assert('Persist the bounded, validated history representation', JSON.parse(storage.getItem(historyKey) || '[]').length === 40);
+  setPrivacyMode(true);
+
   console.log('-----------------------------------------------------------');
   console.log(`Privacy regression results: ${passCount} passed, ${failCount} failed`);
   if (failCount > 0) throw new Error('Privacy regression suite failed.');
