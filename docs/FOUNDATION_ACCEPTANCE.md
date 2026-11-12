@@ -14,13 +14,14 @@ Phase 1 is complete only when all items below are implemented and verified.
 - [x] Development, production start, build, typecheck, and test commands are defined.
 - [x] Host and port are validated before listening; only loopback hosts are accepted.
 - [x] Proxy trust is disabled and Express identifies itself as little as practical.
+- [x] Production Content Security Policy excludes `unsafe-eval`; development-only allowances are gated by runtime mode.
 - [ ] Dependencies installed from the declared manifest.
 - [ ] Full TypeScript typecheck passes.
 - [ ] Production build passes.
 - [ ] Full test suite passes.
 
 ## Source ingestion
-- [x] ZIP and folder uploads preserve relative paths and reject traversal, absolute paths, ambiguous separators, and control characters.
+- [x] ZIP and folder uploads preserve relative paths and reject traversal, absolute paths, ambiguous separators, control characters, and cross-platform path aliases.
 - [x] ZIP extraction is in-memory only; symlinks and unsupported/binary files are rejected.
 - [x] Per-file, archive-size, ZIP-entry-count, project-size, and file-count limits exist.
 - [x] Server independently validates multi-file project paths and content.
