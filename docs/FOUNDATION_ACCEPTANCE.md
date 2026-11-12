@@ -32,7 +32,7 @@ Phase 1 is complete only when all items below are implemented and verified.
 - [x] Single-file labels are reduced to safe supported filenames; client language labels are allowlisted.
 - [x] Dependency-backed ZIP/folder upload suite passes in the complete project environment.
 - [ ] End-to-end upload-to-analysis smoke test passes in a running local application.
-- [x] AI source-boundary helper keeps uploaded source and client-controlled review requests in untrusted JSON data separate from an immutable defensive system instruction, applies file/path/size limits, and flags common prompt-injection indicators without mutating the source.
+- [x] AI source-boundary helper keeps uploaded source and client-controlled review requests in untrusted JSON data separate from an immutable defensive system instruction. The reviewRequest may prioritize defensive review but cannot override policy, request hidden data, or authorize tools/network/execution. File/path/size limits and prompt-injection indicators are applied without mutating source.
 - [x] Ollama, Gemini, OpenAI-compatible, and Anthropic request branches use the source boundary; no tool declarations are sent and uploaded source is not executed by PatchProof.
 - [x] Provider adapter source-contract tests cover request separation and DNS-pinned transport for Gemini/Gemma, OpenAI-compatible, and Anthropic; live hosted credentials are not required for these contract tests.
 - [x] Local Ollama, local OpenAI-compatible, and mocked remote custom provider integration tests confirm prompt-injection-like source remains separate from system instructions and cannot add tool declarations.
