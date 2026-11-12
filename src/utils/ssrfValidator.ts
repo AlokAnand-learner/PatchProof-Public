@@ -124,9 +124,7 @@ export function isRestrictedOrPrivateIp(ip: string): boolean {
 
     // Explicit non-global/special-purpose blocks inside 2000::/3.
     const blockedPrefixes: Array<[string, number]> = [
-      ['2001::', 32],       // Teredo
-      ['2001:2::', 48],     // Benchmarking
-      ['2001:10::', 28],    // Deprecated ORCHID
+      ['2001::', 23],       // IETF protocol assignments; default-deny the block
       ['2001:db8::', 32],   // Documentation
       ['2002::', 16],       // 6to4 transition
       ['3fff::', 20],       // Documentation
