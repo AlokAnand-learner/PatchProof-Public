@@ -126,6 +126,8 @@ export interface ScanResult {
   files?: ProjectFileRecord[];
   transmissionMode?: 'LOCAL_ONLY' | 'CLOUD_AI_TRANSMITTED';
   cloudDisclosed?: boolean;
+  /** Explains whether AI ran, any partial coverage, and the limits of this review. */
+  analysisNotice?: string;
 }
 export interface StagedFile {
   id: string;
