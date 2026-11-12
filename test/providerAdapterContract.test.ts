@@ -27,16 +27,16 @@ assert.ok(source.includes('Every remote HTTPS endpoint is DNS-pinned'), 'OpenAI 
 assert.ok(source.includes('Remote OpenAI and custom HTTPS endpoints must use DNS-pinned transport'), 'OpenAI and remote custom analysis must share pinned transport');
 assert.ok(source.includes("redirect: 'error'"), 'provider requests must reject redirects');
 const anthropicStart = source.indexOf('// 4. ANTHROPIC');
-const analysisStart = source.indexOf('/**\\n * Dispatches code analysis', anthropicStart);
+const analysisStart = source.indexOf('/**\n * Dispatches code analysis', anthropicStart);
 const analysisAnthropicStart = source.indexOf('// D. ANTHROPIC', analysisStart);
-const analysisAnthropicEnd = source.indexOf('\\n  throw new Error(`Unsupported provider: ${activeProvider}`);', analysisAnthropicStart);
+const analysisAnthropicEnd = source.indexOf('\n  throw new Error(`Unsupported provider: ${activeProvider}`);', analysisAnthropicStart);
 assert.ok(anthropicStart >= 0 && analysisStart > anthropicStart, 'Anthropic connection adapter must be discoverable');
 assert.ok(analysisAnthropicStart >= 0 && analysisAnthropicEnd > analysisAnthropicStart, 'Anthropic analysis adapter must be discoverable');
 const anthropicConnectionSection = source.slice(anthropicStart, analysisStart);
 const anthropicAnalysisSection = source.slice(analysisAnthropicStart, analysisAnthropicEnd);
 for (const [name, section] of [['Anthropic connection test', anthropicConnectionSection], ['Anthropic analysis', anthropicAnalysisSection]] as const) {
-  assert.equal((section.match(/fetchPinnedHttpsResponseText\\(/g) || []).length, 1, name + ' must use DNS-pinned HTTPS transport');
-  assert.equal(/fetchResponseText\\(/.test(section), false, name + ' must not use ordinary fetch transport');
+  assert.equal((section.match(/fetchPinnedHttpsResponseText\(/g) || []).length, 1, name + ' must use DNS-pinned HTTPS transport');
+  assert.equal(/fetchResponseText\(/.test(section), false, name + ' must not use ordinary fetch transport');
 }
 
 console.log('Provider adapter source contract tests: 20 assertions passed');
