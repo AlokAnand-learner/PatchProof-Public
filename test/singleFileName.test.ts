@@ -1,3 +1,5 @@
+import fs from 'node:fs';
+import path from 'node:path';
 import { sanitizeRelativePath, sanitizeSingleFileName } from '../src/utils/archiveUtils';
 
 const valid: Array<[unknown, string]> = [
@@ -25,5 +27,15 @@ for (const candidate of unsafePaths) {
 }
 if (sanitizeRelativePath('src/components/App.tsx') !== 'src/components/App.tsx') {
   throw new Error('A normal relative source path was rejected.');
+}
+const serverSource = fs.readFileSync(path.join(process.cwd(), 'server.ts'), 'utf8');
+assertServerLanguageIsServerDerived(serverSource);
+function assertServerLanguageIsServerDerived(source: string): void {
+  if (!source.includes('const safeLanguage = detectedLanguage;')) {
+    throw new Error('Single-file analysis must derive its language from the validated filename/content.');
+  }
+  if (source.includes('allowedLanguages.has(language)')) {
+    throw new Error('Single-file analysis must not trust the client-supplied language label.');
+  }
 }
 console.log(`Single-file/path policy: ${valid.length + invalid.length + unsafePaths.length + 1} assertions passed.`);
