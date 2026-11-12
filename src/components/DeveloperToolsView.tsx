@@ -113,8 +113,9 @@ export const DeveloperToolsView: React.FC<DeveloperToolsViewProps> = ({
       if (data.activeProvider) {
         setSelectedProviderId(data.activeProvider);
       }
-    } catch (e) {
-      console.error('Failed to load providers:', e);
+    } catch (e: any) {
+      setSaveNotice(e.message || 'Failed to load provider configuration.');
+      setTimeout(() => setSaveNotice(null), 3500);
     }
   };
 
@@ -229,8 +230,9 @@ export const DeveloperToolsView: React.FC<DeveloperToolsViewProps> = ({
       onRefreshStatus();
       setSaveNotice('Credentials removed successfully.');
       setTimeout(() => setSaveNotice(null), 3000);
-    } catch (err) {
-      console.error('Delete config failed:', err);
+    } catch (err: any) {
+      setSaveNotice(err.message || 'Credential removal failed.');
+      setTimeout(() => setSaveNotice(null), 3500);
     }
   };
 
