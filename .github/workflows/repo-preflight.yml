@@ -40,6 +40,12 @@ jobs:
           python-version: "3.12"
       - name: Run repository preflight unit tests
         run: python -m unittest scripts.test_repo_preflight scripts.test_import_source_archive scripts.test_import_source_archive_flow scripts.test_audit_source_archive_conflicts -v
+      - name: Audit preserved source archive conflicts (read-only)
+        run: |
+          curl --fail --location --silent --show-error \
+            "https://raw.githubusercontent.com/AlokAnand-learner/PatchProof-Public/1fae022c3419a6552367a4a8715e07fb4bea1d07/PatchProof-Phase1-Foundation-Hardening-2026-11-12-Continuous-Phases.zip" \
+            --output /tmp/patchproof-reviewed-source.zip
+          python scripts/audit_source_archive_conflicts.py /tmp/patchproof-reviewed-source.zip --destination .
 
   app-validation:
     runs-on: ubuntu-latest
