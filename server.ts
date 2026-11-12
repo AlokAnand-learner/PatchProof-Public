@@ -13,7 +13,7 @@ import dotenv from 'dotenv';
 import { analyzeSourceCodeContextAware } from './src/engine/contextAnalyzer.ts';
 import { runEvaluationSuite } from './src/data/evaluationSuite.ts';
 import { validateFix } from './src/engine/fixValidator.ts';
-import { validateAIModelFindings } from './src/engine/aiFindingValidation.ts';
+import { validateAIModelFindings, sanitizeAIText } from './src/engine/aiFindingValidation.ts';
 import { runFixValidationSuite } from './src/data/fixValidationSuite.ts';
 import { VulnerabilityFinding, SecurityMetrics } from './src/types/security.ts';
 import {
@@ -990,9 +990,15 @@ CRITICAL RULES:
           if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed) || !Array.isArray(parsed.findings)) throw new Error('Invalid AI response structure');
           aiReviewCompleted = true;
           modelUsed = `${provState.activeProvider}:${provState.activeModel} (Hybrid Analysis)`;
-          if (typeof parsed?.summary === 'string') summary = parsed.summary.slice(0, 4000);
+          if (typeof parsed?.summary === 'string') {
+            summary = sanitizeAIText(parsed.summary, 4000);
+          }
           if (Array.isArray(parsed?.recommendations)) {
-            recommendations = parsed.recommendations.filter((item: unknown): item is string => typeof item === 'string').slice(0, 30).map((item: string) => item.slice(0, 1000));
+            recommendations = parsed.recommendations
+              .filter((item: unknown): item is string => typeof item === 'string')
+              .slice(0, 30)
+              .map((item: string) => sanitizeAIText(item, 1000))
+              .filter((item: string) => item.length > 0);
           }
           // A model-proposed full-file rewrite is not applied as authoritative output.
           // Keep the original source until a separate patch-validation workflow approves a patch.
