@@ -364,7 +364,7 @@ async function runAuthBoundaryTests() {
         'Origin': 'https://ais-dev-applet-12345.asia-southeast1.run.app'
       }
     });
-    assert('Genuine Cloud Run preview Origin allowed (HTTP 200)', cloudRunOrigin.statusCode === 200);
+    assert('Non-local Cloud Run preview Origin is rejected by strict local-only boundary (HTTP 403)', cloudRunOrigin.statusCode === 403);
 
     // 25. State Mutation: Unauthenticated POST /api/set-offline-mode
     const unauthSetOffline = await sendRawHttpRequest({
