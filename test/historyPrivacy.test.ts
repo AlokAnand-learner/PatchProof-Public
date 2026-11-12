@@ -7,6 +7,8 @@
 
 import {
   clearScanHistory,
+  deleteScanFromHistoryWithStatus,
+  deleteMultipleScansFromHistoryWithStatus,
   getScanHistory,
   isPrivacyModeEnabled,
   saveScanToHistory,
@@ -193,6 +195,19 @@ async function run(): Promise<void> {
   console.error = originalConsoleErrorForSave;
   assert('History save reports storage failure instead of claiming success', failedSave.saved === false);
   assert('History save failure preserves the previously loaded history in memory', failedSave.history.length === priorHistory.length && failedSave.history[0]?.id === priorHistory[0]?.id);
+  storage.failWrites = false;
+
+  setPrivacyMode(true);
+  saveScanToHistory(makeScan('delete-failure-record'));
+  storage.failWrites = true;
+  const originalConsoleErrorForDelete = console.error;
+  console.error = () => {};
+  const failedSingleDelete = deleteScanFromHistoryWithStatus('delete-failure-record');
+  const failedMultiDelete = deleteMultipleScansFromHistoryWithStatus(['delete-failure-record']);
+  console.error = originalConsoleErrorForDelete;
+  assert('Single history deletion reports storage failure', failedSingleDelete.saved === false);
+  assert('Bulk history deletion reports storage failure', failedMultiDelete.saved === false);
+  assert('Failed history deletions preserve the loaded record list', failedSingleDelete.history.some(item => item.id === 'delete-failure-record'));
   storage.failWrites = false;
 
   console.log('-----------------------------------------------------------');
