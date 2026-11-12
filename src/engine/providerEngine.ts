@@ -9,6 +9,7 @@ import { validateEndpointUrl, sanitizeErrorMessage } from '../utils/ssrfValidato
 import { normalizeModelName } from '../utils/modelName';
 import { readResponseTextLimited, parseProviderJson } from '../utils/httpResponse';
 import { prepareUntrustedSource, redactLikelySecrets, UntrustedSourceFile } from './untrustedSourceBoundary';
+import { fetchPinnedHttpsResponseText } from '../utils/pinnedHttps';
 
 export interface ProviderState {
   activeProvider: ProviderType;
@@ -471,9 +472,11 @@ export async function testProviderConnection(params: {
         headers['Authorization'] = `Bearer ${keyToUse}`;
       }
 
-      const { response: res, bodyText } = await fetchResponseText(
-        `${cleanEndpoint}/models`, { method: 'GET', headers }, 6000, 64 * 1024
-      );
+      const requestUrl = `${cleanEndpoint}/models`;
+      const request = provider === 'custom' && !isCustomLocal
+        ? fetchPinnedHttpsResponseText(requestUrl, { method: 'GET', headers, redirect: 'error' }, 6000, 64 * 1024)
+        : fetchResponseText(requestUrl, { method: 'GET', headers }, 6000, 64 * 1024);
+      const { response: res, bodyText } = await request;
 
       if (!res.ok) {
         throw new Error(`Endpoint returned HTTP ${res.status}: ${sanitizeErrorMessage(bodyText.slice(0, 120))}`);
@@ -667,21 +670,25 @@ export async function generateAnalysisWithActiveProvider(
     const headers: Record<string, string> = { 'Content-Type': 'application/json' };
     if (cfg.apiKey) headers['Authorization'] = `Bearer ${cfg.apiKey}`;
 
-    const { response: res, bodyText } = await fetchResponseText(
-      `${cleanEndpoint}/chat/completions`, {
-        method: 'POST',
-        headers,
-        body: JSON.stringify({
-          model: activeModel,
-          messages: [
-            { role: 'system', content: systemInstruction },
-            { role: 'user', content: userPayload },
-          ],
-          temperature: 0.1,
-          max_tokens: 2048
-        })
-      }, 18000, 2 * 1024 * 1024
-    );
+    const requestUrl = `${cleanEndpoint}/chat/completions`;
+    const requestInit: RequestInit = {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        model: activeModel,
+        messages: [
+          { role: 'system', content: systemInstruction },
+          { role: 'user', content: userPayload },
+        ],
+        temperature: 0.1,
+        max_tokens: 2048
+      }),
+      redirect: 'error',
+    };
+    const request = activeProvider === 'custom' && !isCustomLocal
+      ? fetchPinnedHttpsResponseText(requestUrl, requestInit, 18000, 2 * 1024 * 1024)
+      : fetchResponseText(requestUrl, requestInit, 18000, 2 * 1024 * 1024);
+    const { response: res, bodyText } = await request;
 
     if (!res.ok) {
       throw new Error(`${activeProvider} API error (${res.status}): ${sanitizeErrorMessage(bodyText.slice(0, 100))}`);
