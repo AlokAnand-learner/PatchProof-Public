@@ -77,6 +77,7 @@ def main() -> int:
 
     planned: list[tuple[str, bytes]] = []
     seen: set[str] = set()
+    seen_casefolded: set[str] = set()
     total = 0
     with zipfile.ZipFile(args.archive) as archive:
         infos = [item for item in archive.infolist() if not item.is_dir()]
@@ -84,9 +85,10 @@ def main() -> int:
             raise SystemExit(f"archive has {len(infos)} files; limit is {MAX_ENTRIES}")
         for info in infos:
             rel = safe_relative_path(info.filename)
-            if rel in seen:
-                raise SystemExit(f"duplicate normalized path: {rel}")
+            if rel in seen or rel.casefold() in seen_casefolded:
+                raise SystemExit(f"duplicate or case-colliding normalized path: {rel}")
             seen.add(rel)
+            seen_casefolded.add(rel.casefold())
             mode = (info.external_attr >> 16) & 0xFFFF
             if stat.S_ISLNK(mode):
                 raise SystemExit(f"symlink entries are not allowed: {info.filename}")
@@ -104,10 +106,16 @@ def main() -> int:
             scan_for_realistic_secrets(rel, data)
             planned.append((rel, data))
 
+    root = args.destination.resolve()
     added = identical = 0
     conflicts: list[str] = []
     for rel, data in planned:
-        target = args.destination / rel
+        target = root / rel
+        for parent in (target, *target.parents):
+            if parent == root:
+                break
+            if parent.is_symlink() or not parent.resolve().is_relative_to(root):
+                raise SystemExit(f"destination path crosses a symlink or escapes the repository: {rel}")
         if target.exists():
             if target.is_file() and hashlib.sha256(target.read_bytes()).digest() == hashlib.sha256(data).digest():
                 identical += 1
