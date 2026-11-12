@@ -309,14 +309,25 @@ export function runInitialDetection(code: string, fileName: string): RawDetectio
       continue; // Skip comments in initial detection
     }
 
-    // Bounded line length limit to prevent ReDoS on massive lines (e.g. 800KB single line minified/malicious inputs)
+    // Inspect every bounded window so attackers cannot hide a sink after a long prefix.
+    // A 768-character overlap exceeds the longest bounded SQL expression below.
+    // Each regex sees at most 4096 characters, keeping work bounded per window.
     const MAX_LINE_INSPECT_LENGTH = 4096;
-    const inspectText = lineText.length > MAX_LINE_INSPECT_LENGTH ? lineText.slice(0, MAX_LINE_INSPECT_LENGTH) : lineText;
+    const WINDOW_OVERLAP = 768;
+    const inspectTexts: string[] = [];
+    if (lineText.length <= MAX_LINE_INSPECT_LENGTH) {
+      inspectTexts.push(lineText);
+    } else {
+      const step = MAX_LINE_INSPECT_LENGTH - WINDOW_OVERLAP;
+      for (let offset = 0; offset < lineText.length; offset += step) {
+        inspectTexts.push(lineText.slice(offset, offset + MAX_LINE_INSPECT_LENGTH));
+      }
+    }
 
     const surroundingLines = getSurroundingLines(lines, lineNum);
 
     // Rule 1: SQL Injection (bounded patterns avoiding quadratic backtracking)
-    if (
+    if (inspectTexts.some(inspectText =>
       /(?:SELECT|INSERT|UPDATE|DELETE|DROP)\s+[^\n]{1,300}?(?:\+|\%|\$|f"|f'|\`|\$\{)/i.test(inspectText) ||
       /(?:SELECT|INSERT|UPDATE|DELETE|DROP)\s+[^\n]{1,300}?WHERE[^\n]{1,300}?[\+\$]/i.test(inspectText) ||
       /cursor\.execute\s*\(\s*f["'][^\n]{0,300}?SELECT/i.test(inspectText) ||
@@ -324,7 +335,7 @@ export function runInitialDetection(code: string, fileName: string): RawDetectio
       /\.query\s*\(\s*["'][^\n]{0,300}?[\+\$]/i.test(inspectText) ||
       (/\.query\s*\(\s*(query|sql|stmt)\b/i.test(inspectText) && surroundingLines.some(l => /(SELECT|INSERT|UPDATE|DELETE)/i.test(l.text) && /[\+\$]/.test(l.text))) ||
       (/(query|sql|stmt)\s*=\s*["'][^\n]{0,300}?(SELECT|INSERT|UPDATE|DELETE)/i.test(inspectText) && /[\+\$]/.test(inspectText))
-    ) {
+    )) {
       candidates.push({
         ruleId: 'CWE-89',
         title: 'SQL Injection via Unsanitized Input Concatenation',
