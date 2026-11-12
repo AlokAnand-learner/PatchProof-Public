@@ -20,6 +20,12 @@ assert.equal(parsed.sourceFiles[0].path, 'src/app.ts');
 assert.throws(() => prepareUntrustedSource([]), /file count/);
 assert.throws(() => prepareUntrustedSource([{ path: '../outside.ts', content: 'x' }]), /path is unsafe/);
 assert.throws(() => prepareUntrustedSource([{ path: 'C:/outside.ts', content: 'x' }]), /path is unsafe/);
+for (const path of ['src/CON.txt', 'src/LPT1/log.ts', 'src/trailing./file.ts', 'src/trailing /file.ts', 'src/bad?.ts']) {
+  assert.throws(() => prepareUntrustedSource([{ path, content: 'x' }]), /path is unsafe/);
+}
+assert.throws(() => prepareUntrustedSource([
+  { path: 'source/' + Array.from({ length: 34 }, () => 'x').join('/') + '/file.ts', content: 'x' },
+]), /path is unsafe/);
 assert.throws(() => prepareUntrustedSource([
   { path: 'src/App.ts', content: 'a' }, { path: 'src/app.ts', content: 'b' },
 ]), /case-colliding/);
