@@ -54,7 +54,7 @@ export function validateAIModelFindings(raw: unknown, sourceCode: string): SafeA
 
     const title = boundedText(f.title, 'Potential security weakness', 180);
     const cwe = boundedText(f.cwe, 'CWE-Other', 100);
-    const duplicateKey = [title.toLocaleLowerCase('en-US').replace(/\\s+/g, ' '), cwe.toUpperCase(), start, end].join('|');
+    const duplicateKey = [title.toLocaleLowerCase('en-US').replace(/\s+/g, ' '), cwe.toUpperCase(), start, end].join('|');
     if (seenFindings.has(duplicateKey)) continue;
     seenFindings.add(duplicateKey);
 
