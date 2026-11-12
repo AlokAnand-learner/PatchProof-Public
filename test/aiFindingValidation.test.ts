@@ -50,8 +50,8 @@ assert.equal(bounded.severity, 'MEDIUM');
 assert.equal(bounded.confidence, 'LOW');
 console.log('AI finding validation tests: 18 passed');
 
-const longerSource = [...source, 'const hidden = req.body.secret;', 'exec(hidden);'].join('\\n');
-const submittedPrefix = longerSource.split('\\n').slice(0, 3).join('\\n');
+const longerSource = [...source, 'const hidden = req.body.secret;', 'exec(hidden);'].join('\n');
+const submittedPrefix = longerSource.split('\n').slice(0, 3).join('\n');
 assert.equal(validateAIModelFindings([{ ...valid, startLine: 5, endLine: 5, snippet: 'exec(hidden);' }], submittedPrefix).length, 0,
   'AI findings outside the submitted prefix must be rejected even if they match the full file');
 const serverSource = fs.readFileSync(path.join(process.cwd(), 'server.ts'), 'utf8');
