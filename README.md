@@ -36,6 +36,7 @@ For verification:
 
 ```bash
 bun run test
+bun run test:focused-security
 bun run typecheck
 bun run build
 ```
