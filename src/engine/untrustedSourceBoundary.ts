@@ -79,7 +79,7 @@ export function redactLikelySecrets(files: readonly UntrustedSourceFile[]): Untr
   // where credentials are unquoted (including colon-separated key/value pairs).
   // Values stop at whitespace or common structural/comment delimiters so adjacent
   // configuration syntax is preserved.
-  const assignmentPattern = /(["']?\b(?:api[_-]?key|client[_-]?secret|secret|token|password|passwd|credential|credentials|authorization|access[_-]?key|private[_-]?key|db[_-]?password|jwt[_-]?secret|session[_-]?key|signing[_-]?key|encryption[_-]?key|refresh[_-]?token)\b["']?\s*[:=]\s*)(?:"([^"\r\n]{8,})"|'([^'\r\n]{8,})'|([^\s,;#}\]]{8,}))/gi;
+  const assignmentPattern = /(["']?\b(?:api[_-]?key|client[_-]?secret|secret|token|password|passwd|credential|credentials|authorization|access[_-]?key|private[_-]?key|db[_-]?password|jwt[_-]?secret|session[_-]?key|signing[_-]?key|encryption[_-]?key|refresh[_-]?token)\b["']?\s*[:=]\s*)(?:"([^"\r\n]{1,})"|'([^'\r\n]{1,})'|([^\s,;#}\]]{1,}))/gi;
 
   return files.map((file) => {
     let content = file.content;
