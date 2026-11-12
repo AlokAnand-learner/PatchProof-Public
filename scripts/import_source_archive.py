@@ -11,7 +11,7 @@ import sys
 import unicodedata
 import zipfile
 
-MAX_ENTRIES = 100
+MAX_ENTRIES = 256
 MAX_ARCHIVE_BYTES = 12 * 1024 * 1024
 MAX_FILE_BYTES = 2 * 1024 * 1024
 MAX_TOTAL_BYTES = 6 * 1024 * 1024
@@ -40,6 +40,16 @@ def safe_relative_path(name: str) -> str:
     raw_parts = name.split("/")
     if any(part in ("", ".", "..") for part in raw_parts):
         raise ValueError(f"unsafe or non-canonical path: {name!r}")
+    if len(raw_parts) > 33 or len(name) > 1024:
+        raise ValueError(f"path exceeds depth or length limit: {name!r}")
+    for part in raw_parts:
+        if len(part.encode("utf-8")) > 255 or part.endswith((" ", ".")):
+            raise ValueError(f"non-portable path component: {name!r}")
+        if any(ord(char) < 32 or char in '<>:"|?*' for char in part):
+            raise ValueError(f"non-portable path character: {name!r}")
+        device_name = part.split(".", 1)[0].upper()
+        if device_name in {"CON", "PRN", "AUX", "NUL"} or re.fullmatch(r"(?:COM|LPT)[1-9]", device_name):
+            raise ValueError(f"reserved cross-platform path component: {name!r}")
     pure = PurePosixPath(name)
     if pure.is_absolute() or not pure.parts or pure.parts[0] != "source":
         raise ValueError(f"unexpected archive root: {name!r}")
@@ -65,6 +75,28 @@ def scan_for_realistic_secrets(rel: str, content: bytes) -> None:
                 raise ValueError(f"possible {label} detected in {rel}; refusing import")
 
 
+def read_entry_bounded(archive: zipfile.ZipFile, info: zipfile.ZipInfo, remaining_total: int) -> bytes:
+    """Read one ZIP member with a hard bound on actual decompressed bytes."""
+    if info.compress_type not in (zipfile.ZIP_STORED, zipfile.ZIP_DEFLATED):
+        raise ValueError(f"unsupported compression method: {info.filename}")
+    if info.file_size > MAX_FILE_BYTES or info.file_size > remaining_total:
+        raise ValueError(f"declared extracted size exceeds limits: {info.filename}")
+    chunks: list[bytes] = []
+    actual_size = 0
+    with archive.open(info, "r") as member:
+        while True:
+            chunk = member.read(min(64 * 1024, MAX_FILE_BYTES + 1 - actual_size))
+            if not chunk:
+                break
+            actual_size += len(chunk)
+            if actual_size > MAX_FILE_BYTES or actual_size > remaining_total:
+                raise ValueError(f"actual extracted size exceeds limits: {info.filename}")
+            chunks.append(chunk)
+    if actual_size != info.file_size:
+        raise ValueError(f"declared and actual extracted sizes differ: {info.filename}")
+    return b"".join(chunks)
+
+
 def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("archive", type=Path)
@@ -85,9 +117,10 @@ def main() -> int:
     seen_casefolded: set[str] = set()
     total = 0
     with zipfile.ZipFile(args.archive) as archive:
-        infos = [item for item in archive.infolist() if not item.is_dir()]
-        if len(infos) > MAX_ENTRIES:
-            raise SystemExit(f"archive has {len(infos)} files; limit is {MAX_ENTRIES}")
+        all_infos = archive.infolist()
+        if len(all_infos) > MAX_ENTRIES:
+            raise SystemExit(f"archive has {len(all_infos)} entries; limit is {MAX_ENTRIES}")
+        infos = [item for item in all_infos if not item.is_dir()]
         for info in infos:
             rel = safe_relative_path(info.filename)
             normalized_key = unicodedata.normalize('NFC', rel).casefold()
@@ -107,10 +140,20 @@ def main() -> int:
                 raise SystemExit(f"invalid compressed size: {rel}")
             if info.compress_size and info.file_size / info.compress_size > MAX_COMPRESSION_RATIO:
                 raise SystemExit(f"suspicious compression ratio: {rel}")
-            data = archive.read(info)
+            data = read_entry_bounded(archive, info, MAX_TOTAL_BYTES - (total - info.file_size))
+            if len(data) != info.file_size:
+                raise ValueError(f"unexpected extracted size: {rel}")
             data.decode("utf-8", errors="strict")
             scan_for_realistic_secrets(rel, data)
             planned.append((rel, data))
+
+    planned_paths = {rel for rel, _ in planned}
+    for rel in planned_paths:
+        parts = PurePosixPath(rel).parts
+        for index in range(1, len(parts)):
+            parent = PurePosixPath(*parts[:index]).as_posix()
+            if parent in planned_paths:
+                raise SystemExit(f"file/directory path collision: {parent} and {rel}")
 
     root = args.destination.resolve()
     added = identical = 0
@@ -148,6 +191,6 @@ def main() -> int:
 if __name__ == "__main__":
     try:
         raise SystemExit(main())
-    except (ValueError, zipfile.BadZipFile, UnicodeDecodeError) as exc:
+    except (ValueError, RuntimeError, NotImplementedError, zipfile.BadZipFile, UnicodeDecodeError, EOFError) as exc:
         print(f"Import refused: {exc}", file=sys.stderr)
         raise SystemExit(2)
