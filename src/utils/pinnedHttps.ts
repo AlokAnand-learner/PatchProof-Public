@@ -27,6 +27,27 @@ export function validatePublicDnsAnswers(
   }
 }
 
+/** Build a resolver callback that can return only the already-validated addresses. */
+export function createPinnedLookup(
+  hostname: string,
+  answers: readonly { address: string; family: number }[],
+): (requestedHost: string, options: any, callback: any) => void {
+  const normalizedHost = hostname.replace(/^\[|\]$/g, '').toLowerCase();
+  const pinnedAnswers = answers.map((answer) => ({ address: answer.address, family: answer.family }));
+  return (requestedHost: string, options: any, callback: any) => {
+    if (requestedHost.replace(/^\[|\]$/g, '').toLowerCase() !== normalizedHost) {
+      const error = Object.assign(new Error('Pinned DNS lookup host mismatch.'), { code: 'ENOTFOUND' });
+      callback(error);
+      return;
+    }
+    if (options && typeof options === 'object' && options.all) {
+      callback(null, pinnedAnswers);
+      return;
+    }
+    callback(null, pinnedAnswers[0].address, pinnedAnswers[0].family);
+  };
+}
+
 /**
  * Make a single HTTPS request using the exact public DNS answers checked above.
  * Redirects are never followed. The pinned lookup callback prevents a second DNS
@@ -52,20 +73,7 @@ export async function fetchPinnedHttpsResponseText(
     ? [{ address: hostname, family: net.isIPv4(hostname) ? 4 : 6 }]
     : await dns.lookup(hostname, { all: true, verbatim: true });
   validatePublicDnsAnswers(hostname, answers);
-  const pinnedAnswers = answers.map((answer) => ({ address: answer.address, family: answer.family }));
-
-  const pinnedLookup = (requestedHost: string, options: any, callback: any) => {
-    if (requestedHost.replace(/^\[|\]$/g, '').toLowerCase() !== hostname) {
-      const error = Object.assign(new Error('Pinned DNS lookup host mismatch.'), { code: 'ENOTFOUND' });
-      callback(error);
-      return;
-    }
-    if (options && typeof options === 'object' && options.all) {
-      callback(null, pinnedAnswers);
-      return;
-    }
-    callback(null, pinnedAnswers[0].address, pinnedAnswers[0].family);
-  };
+  const pinnedLookup = createPinnedLookup(hostname, answers);
 
   const headers = init.headers as Record<string, string> | undefined;
   const agent = new https.Agent({ keepAlive: false, lookup: pinnedLookup as any });
