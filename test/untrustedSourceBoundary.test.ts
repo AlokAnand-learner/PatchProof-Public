@@ -89,4 +89,4 @@ const prefixedRedacted = redactLikelySecrets([{ path: 'src/env.ts', content: pre
 for (const secret of ['sk-example-openai-secret', 'google-example-secret', 'sk_test_example_secret', 'postgres://user:password@localhost/db']) {
   assert.equal(prefixedRedacted.includes(secret), false, `prefixed credential ${secret} must be redacted`);
 }
-console.log('Untrusted source boundary tests: 19 passed');
+console.log('Untrusted source boundary tests: 20 passed');
