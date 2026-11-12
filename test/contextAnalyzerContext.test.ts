@@ -33,3 +33,31 @@ assert.equal(mixedResult.findings.find(finding => finding.cwe.startsWith('CWE-78
 assert.equal(mixedResult.findings.find(finding => finding.cwe.startsWith('CWE-78'))?.verificationType, 'STATIC_RULE_MATCH');
 assert.equal(mixedResult.findings.find(finding => finding.cwe.startsWith('CWE-78'))?.patchVerificationStatus, 'UNVERIFIED_REVIEW_REQUIRED');
 console.log('Context analyzer context: 26 assertions passed.');
+
+const aliasSqlSource = `function load(req) {
+  const original = req.query.name;
+  const alias = original;
+  const secondAlias = alias;
+  db.query("SELECT * FROM users WHERE name='" + secondAlias + "'");
+}`;
+const aliasSqlResult = analyzeSourceCodeContextAware(aliasSqlSource, 'src/userStore.ts');
+assert.equal(aliasSqlResult.findings.find(f => f.cwe.startsWith('CWE-89'))?.verificationStatus, 'LIKELY', 'simple identifier alias chains should preserve bounded taint evidence');
+
+const reassignedAliasSqlSource = `function load(req) {
+  const original = req.query.name;
+  let alias = original;
+  alias = "internal";
+  db.query("SELECT * FROM users WHERE name='" + alias + "'");
+}`;
+const reassignedAliasSqlResult = analyzeSourceCodeContextAware(reassignedAliasSqlSource, 'src/userStore.ts');
+assert.equal(reassignedAliasSqlResult.findings.find(f => f.cwe.startsWith('CWE-89'))?.verificationStatus, 'NEEDS_REVIEW', 'reassignment of an alias should invalidate the bounded taint indicator');
+
+const testFixtureResult = analyzeSourceCodeContextAware(`describe("test", () => {
+  const formula = req.query.formula;
+  eval("const result = " + formula);
+});`, 'test/evaluator.test.js');
+const fixtureFinding = testFixtureResult.findings.find(f => f.cwe.startsWith('CWE-95'));
+assert.equal(fixtureFinding?.verificationStatus, 'NEEDS_REVIEW', 'test fixture findings should not be classified as likely production vulnerabilities');
+assert.equal(fixtureFinding?.severity, 'INFO', 'test fixture findings should not lower production security score');
+
+console.log('Alias propagation and test-context classification: 4 additional assertions passed.');
