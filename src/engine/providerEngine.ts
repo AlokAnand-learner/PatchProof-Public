@@ -27,13 +27,22 @@ export function prepareProviderReviewPayload(
   const submittedFiles: readonly UntrustedSourceFile[] = sourceFiles && sourceFiles.length > 0
     ? sourceFiles
     : [{ path: 'user-input.txt', content: prompt }];
+  if (typeof prompt !== 'string' || prompt.length > 8000) {
+    throw new Error('Review request must be a string of at most 8000 characters.');
+  }
   const outboundFiles = needsCloudConsent ? redactLikelySecrets(submittedFiles) : submittedFiles;
-  const prepared = sourceFiles && sourceFiles.length > 0
-    ? prepareUntrustedSource(outboundFiles, {}, prompt)
-    : prepareUntrustedSource(outboundFiles);
+  const prepared = prepareUntrustedSource(outboundFiles);
+  // The review request can originate from the client. Keep it in the user-data
+  // channel even when uploaded files are present; never promote it to a system instruction.
+  const userPayload = sourceFiles && sourceFiles.length > 0
+    ? JSON.stringify({
+        reviewRequest: prompt,
+        sourcePayload: JSON.parse(prepared.userPayload),
+      })
+    : prepared.userPayload;
   return {
     systemInstruction: prepared.systemInstruction,
-    userPayload: prepared.userPayload,
+    userPayload,
     needsCloudConsent,
   };
 }
@@ -610,9 +619,8 @@ export async function generateAnalysisWithActiveProvider(
   prompt: string,
   sourceFiles?: readonly UntrustedSourceFile[],
 ): Promise<string> {
-  // When called by the server review pipeline, prompt is a fixed server-authored task
-  // and sourceFiles contains the untrusted upload. Legacy/free-form prompts are treated
-  // entirely as untrusted data and never elevated into system instructions.
+  // Both the review request and uploaded source are untrusted input. The request is
+  // never promoted into the provider's trusted system instruction, regardless of caller.
   const { activeProvider, activeModel, offlineMode, cloudConsentGranted } = state;
   const cfg = state.providers[activeProvider];
   const prepared = prepareProviderReviewPayload(activeProvider, cfg.endpoint, prompt, sourceFiles);
