@@ -62,3 +62,10 @@ assert.match(emptyMarkdown, /No matching vulnerability patterns were identified/
 assert.match(emptyMarkdown, /does not prove the code is vulnerability-free/);
 assert.match(emptyMarkdown, /Heuristic Risk Indicator/);
 console.log('Report confidence and status semantics: 5 assertions passed.');
+
+assert.match(html, /Heuristic Risk Indicator/);
+assert.match(html, /not a security guarantee/);
+const emptyHtml = generateHtmlReport(emptyScan);
+assert.match(emptyHtml, /No matching vulnerability patterns were identified/);
+assert.match(emptyHtml, /does not prove the code is vulnerability-free/);
+console.log('HTML report confidence semantics: 4 assertions passed.');
