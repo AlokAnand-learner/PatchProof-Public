@@ -168,7 +168,7 @@ async function runUploadSafetyTests() {
   try {
     await safeExtractZip(falseEocdBytes, { excludeDirs: false });
   } catch (err: any) {
-    falseEocdCaught = err.message.includes('Invalid ZIP central-directory bounds');
+    falseEocdCaught = err.message.includes('Invalid or corrupted ZIP archive');
   }
   assert('Reject a false EOCD signature embedded in the ZIP comment', realEocdOffset >= 0 && falseEocdCaught);
 
