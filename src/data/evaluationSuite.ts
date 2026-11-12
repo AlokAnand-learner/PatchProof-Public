@@ -253,7 +253,7 @@ export function runEvaluationSuite(testCases: EvaluationTestCase[] = EVALUATION_
     const activeFindings = findings.filter(f => f.verificationStatus !== 'FALSE_POSITIVE');
     const hasVulnerability = activeFindings.some(f => f.severity !== 'INFO');
     const expectedFinding = tc.expectedCwe
-      ? activeFindings.find(f => f.cwe === tc.expectedCwe)
+      ? activeFindings.find(f => f.cwe.split(':')[0].trim() === tc.expectedCwe)
       : activeFindings[0];
     const topClassification = expectedFinding?.verificationStatus || 'FALSE_POSITIVE';
     const classificationMatches = topClassification === tc.expectedClassification;
