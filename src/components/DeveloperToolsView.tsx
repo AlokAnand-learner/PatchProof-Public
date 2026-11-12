@@ -495,7 +495,7 @@ export const DeveloperToolsView: React.FC<DeveloperToolsViewProps> = ({
                       API Endpoint URL
                     </label>
                     {isLocalEndpoint(endpointInput) && (
-                      <span className="text-[10px] font-mono text-[#2458D3] dark:text-cyan-400">Localhost / LAN Endpoint</span>
+                      <span className="text-[10px] font-mono text-[#2458D3] dark:text-cyan-400">Loopback Endpoint</span>
                     )}
                   </div>
                   <input
@@ -539,7 +539,7 @@ export const DeveloperToolsView: React.FC<DeveloperToolsViewProps> = ({
                     </button>
                   </div>
                   <p className="text-[11px] text-[#68758A] dark:text-slate-500 leading-relaxed">
-                    Credentials are held server-side only in memory, never exposed in client bundles, and never sent to third parties.
+                    Credentials are held server-side in memory. They are sent to the selected provider endpoint for authentication when you test the connection or run remote analysis. The endpoint operator receives the key; use HTTPS for non-local endpoints.
                   </p>
                 </div>
               )}
