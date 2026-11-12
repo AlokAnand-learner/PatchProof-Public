@@ -49,13 +49,25 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onHistoryCleared, on
     };
     updateCount();
     window.addEventListener('patchproof_history_updated', updateCount);
+    const handleStorage = (event: StorageEvent) => {
+      if (event.key === null || event.key === 'patchproof_privacy_no_source') {
+        setPrivacyModeEnabled(isPrivacyModeEnabled());
+      }
+      if (event.key === null || event.key === 'patchproof_scan_history_v1') {
+        updateCount();
+      }
+    };
+    window.addEventListener('storage', handleStorage);
 
     fetch('/api/status')
       .then(res => res.json())
       .then(data => setServerStatus(data))
       .catch(() => setServerStatus({ status: 'offline' }));
 
-    return () => window.removeEventListener('patchproof_history_updated', updateCount);
+    return () => {
+      window.removeEventListener('patchproof_history_updated', updateCount);
+      window.removeEventListener('storage', handleStorage);
+    };
   }, []);
 
   const handleRunBenchmark = async () => {
