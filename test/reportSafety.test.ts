@@ -37,9 +37,9 @@ assert.match(markdown, /\*\*Method:\*\* STATIC_RULE_MATCH/);
 assert.equal(markdown.includes('100% In-Memory Local'), false);
 console.log('Report safety: 8 assertions passed.');
 
-assert.equal(sanitizeDownloadFilename('../../reports\\r\\n<script>.html').includes('/'), false);
-assert.equal(sanitizeDownloadFilename('../../reports\\r\\n<script>.html').includes('\\n'), false);
-assert.equal(sanitizeDownloadFilename('\\\\server\\\\share\\\\report.json').includes('\\\\'), false);
+assert.equal(sanitizeDownloadFilename('../../reports\r\n<script>.html').includes('/'), false);
+assert.equal(sanitizeDownloadFilename('../../reports\r\n<script>.html').includes('\n'), false);
+assert.equal(sanitizeDownloadFilename('\\\\server\\share\\report.json').includes('\\'), false);
 assert.equal(sanitizeDownloadFilename('...'), 'PatchProof-Report');
 assert.equal(sanitizeDownloadFilename('x'.repeat(250)).length, 180);
 console.log('Report download filename safety: 5 assertions passed.');
