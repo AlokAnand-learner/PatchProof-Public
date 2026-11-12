@@ -754,6 +754,9 @@ export async function processFiles(
         skippedFiles.push(`${cleanPath} (Actual project content exceeds the total size limit)`);
         break;
       }
+      // Count bytes actually read even when the file is later rejected as
+      // binary or too newline-dense; rejected inputs still consume resources.
+      totalExtractedSize += actualByteSize;
       if (!content || content.trim().length === 0) {
         skippedFiles.push(`${cleanPath} (Empty file: 0 bytes)`);
         continue;
@@ -773,7 +776,6 @@ export async function processFiles(
         continue;
       }
       totalLineCount += lineCount;
-      totalExtractedSize += actualByteSize;
       const lang = detectLanguage(cleanPath, content);
       const fileNameOnly = cleanPath.split('/').pop() || cleanPath;
 
