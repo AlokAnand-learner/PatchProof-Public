@@ -31,7 +31,7 @@ Phase 1 is complete only when all items below are implemented and verified.
 - [x] Single-file labels are reduced to safe supported filenames; client language labels are allowlisted.
 - [x] Dependency-backed ZIP/folder upload suite passes in the complete project environment.
 - [ ] End-to-end upload-to-analysis smoke test passes in a running local application.
-- [x] AI source-boundary helper keeps uploaded source as JSON data separate from a fixed defensive system instruction, applies file/path/size limits, and flags common prompt-injection indicators without mutating the source.
+- [x] AI source-boundary helper keeps uploaded source and client-controlled review requests in untrusted JSON data separate from an immutable defensive system instruction, applies file/path/size limits, and flags common prompt-injection indicators without mutating the source.
 - [x] Ollama, Gemini, OpenAI-compatible, and Anthropic request branches use the source boundary; no tool declarations are sent and uploaded source is not executed by PatchProof.
 - [x] Provider adapter source-contract tests cover request separation and DNS-pinned transport for Gemini/Gemma, OpenAI-compatible, and Anthropic; live hosted credentials are not required for these contract tests.
 - [x] Local Ollama, local OpenAI-compatible, and mocked remote custom provider integration tests confirm prompt-injection-like source remains separate from system instructions and cannot add tool declarations.
@@ -56,8 +56,8 @@ Do not mark Phase 1 as 100% while any unchecked verification item remains. Sourc
 
 ## Patch application safeguards
 
-- INVALID fixes are blocked in the apply handler; there is no confirmation bypass.
-- Snippet application validates one-based inclusive source line ranges before editing and rejects invalid or out-of-file ranges.
+- Only fixes with the configured VALIDATED static-check status may be applied; NEEDS_REVIEW, PARTIALLY_VALIDATED, and INVALID fixes remain blocked in the handler.
+- Snippet application validates one-based inclusive source line ranges and requires the current source text to exactly match the finding's source-derived evidence snippet, preventing stale or mismatched line-target edits.
 - Full-file AI output remains preview-only. These checks constrain the UI edit operation; they do not establish semantic correctness or replace review and rescanning.
 
 ## Fix validation API resource controls
