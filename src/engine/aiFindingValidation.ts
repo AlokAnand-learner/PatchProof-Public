@@ -38,6 +38,7 @@ export function validateAIModelFindings(raw: unknown, sourceCode: string): SafeA
   const lines = sourceCode.split('\n');
   const lineCount = lines.length;
   const validated: SafeAIModelFinding[] = [];
+  const seenFindings = new Set<string>();
 
   for (const item of raw.slice(0, MAX_FINDINGS)) {
     if (!item || typeof item !== 'object' || Array.isArray(item)) continue;
@@ -51,14 +52,20 @@ export function validateAIModelFindings(raw: unknown, sourceCode: string): SafeA
     const end = endLine as number;
     if (start < 1 || end < start || end > lineCount || end - start > 200) continue;
 
+    const title = boundedText(f.title, 'Potential security weakness', 180);
+    const cwe = boundedText(f.cwe, 'CWE-Other', 100);
+    const duplicateKey = [title.toLocaleLowerCase('en-US').replace(/\\s+/g, ' '), cwe.toUpperCase(), start, end].join('|');
+    if (seenFindings.has(duplicateKey)) continue;
+    seenFindings.add(duplicateKey);
+
     const rawSeverity = typeof f.severity === 'string' ? f.severity.toUpperCase() as SafeAISeverity : 'MEDIUM';
     const rawConfidence = typeof f.confidence === 'string' ? f.confidence.toUpperCase() as SafeAIConfidence : 'LOW';
     const severity = SEVERITIES.has(rawSeverity) ? rawSeverity : 'MEDIUM';
     const confidence = CONFIDENCES.has(rawConfidence) ? rawConfidence : 'LOW';
 
     validated.push({
-      title: boundedText(f.title, 'Potential security weakness', 180),
-      cwe: boundedText(f.cwe, 'CWE-Other', 100),
+      title,
+      cwe,
       owaspCategory: boundedText(f.owaspCategory, 'Uncategorized', 120),
       severity,
       confidence,
