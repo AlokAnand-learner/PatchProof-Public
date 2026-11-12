@@ -65,28 +65,39 @@ export const PatchDiffViewer: React.FC<PatchDiffViewerProps> = ({
   };
 
   const executeApply = () => {
-    if (viewMode === 'full' && patchedFullCode) {
-      onApplyPatch(patchedFullCode);
-    } else {
-      const lines = originalCode.split('\n');
-      const startIdx = Math.max(0, finding.startLine - 1);
-      const endIdx = Math.max(startIdx + 1, finding.endLine);
-      const patchLines = finding.suggestedPatch.split('\n');
-      
-      lines.splice(startIdx, endIdx - startIdx, ...patchLines);
-      onApplyPatch(lines.join('\n'));
+    // INVALID means blocked: never provide a warning-confirmation bypass.
+    if (status === 'INVALID') {
+      setShowInvalidApplyWarning(true);
+      return;
     }
+    // Full-file AI output is preview-only until a separate validation workflow exists.
+    if (viewMode === 'full' || !finding.suggestedPatch.trim()) return;
+
+    const lines = originalCode.split('\n');
+    const startLine = finding.startLine;
+    const endLine = finding.endLine;
+    const startIdx = startLine - 1;
+    // endLine is one-based and inclusive; Array.splice uses a zero-based exclusive end.
+    const endIdx = endLine;
+    if (
+      !Number.isInteger(startLine) || !Number.isInteger(endLine) ||
+      startLine < 1 || endLine < startLine ||
+      startIdx >= lines.length || endIdx > lines.length
+    ) {
+      setShowInvalidApplyWarning(true);
+      return;
+    }
+
+    const patchLines = finding.suggestedPatch.split('\n');
+    lines.splice(startIdx, endIdx - startIdx, ...patchLines);
+    onApplyPatch(lines.join('\n'));
     setApplied(true);
     setShowInvalidApplyWarning(false);
-    setTimeout(() => setApplied(false), 2000);
+    window.setTimeout(() => setApplied(false), 2000);
   };
 
   const handleApplyClick = () => {
-    if (status === 'INVALID') {
-      setShowInvalidApplyWarning(true);
-    } else {
-      executeApply();
-    }
+    executeApply();
   };
 
   const handleDownloadFixed = () => {
@@ -204,7 +215,7 @@ export const PatchDiffViewer: React.FC<PatchDiffViewerProps> = ({
 
           <button
             onClick={handleApplyClick}
-            disabled={viewMode === 'full' || status === 'INVALID'}
+            disabled={viewMode === 'full'}
             className={`flex items-center gap-1.5 px-3.5 py-1.5 rounded-lg font-semibold text-xs transition shadow-xs cursor-pointer ${
               applied
                 ? 'bg-emerald-600 text-white'
@@ -236,9 +247,9 @@ export const PatchDiffViewer: React.FC<PatchDiffViewerProps> = ({
           <div className="flex items-start gap-2.5">
             <AlertOctagon className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
             <div>
-              <span className="font-semibold text-rose-900 dark:text-rose-300 block">Warning: Suggested Fix Failed Validation</span>
+              <span className="font-semibold text-rose-900 dark:text-rose-300 block">Patch Application Blocked</span>
               <p className="text-[11px] text-rose-700 dark:text-rose-200/90 leading-relaxed mt-0.5">
-                The Fix Validation Engine identified potential syntax errors, unmitigated issues, or secondary regressions. Applying this fix could break your build or compromise security.
+                This patch is marked invalid or its source line range is no longer valid. PatchProof will not apply it. Re-run the review and inspect the source before trying another fix.
               </p>
             </div>
           </div>
@@ -249,12 +260,7 @@ export const PatchDiffViewer: React.FC<PatchDiffViewerProps> = ({
             >
               Cancel
             </button>
-            <button
-              onClick={executeApply}
-              className="px-3 py-1 rounded-lg bg-rose-600 hover:bg-rose-500 text-white font-medium text-[11px] cursor-pointer"
-            >
-              Apply Anyway
-            </button>
+
           </div>
         </div>
       )}
