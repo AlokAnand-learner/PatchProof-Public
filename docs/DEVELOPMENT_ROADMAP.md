@@ -123,7 +123,7 @@ Still required:
 
 ## Verification performed in this work session
 
-- Latest focused GitHub Actions run passed 40 Python repository/archive tests, 10 same-origin API tests, 13 untrusted-source boundary checks, 14 AI-finding validation checks (including duplicate suppression), and 8 special-purpose IPv6 SSRF checks.
+- Latest focused GitHub Actions run passed 40 Python repository/archive tests, 10 same-origin API tests, 13 untrusted-source boundary checks, 14 AI-finding validation checks (including duplicate suppression), 10 special-purpose IPv4 SSRF checks, and 8 special-purpose IPv6 SSRF checks. The Node security suite now installs from the committed Bun lockfile before running.
 - Earlier foundation audit: 21 of the 23 scripted test files were executed successfully in focused mode.
 - 311 focused assertions/cases passed across the executed test files.
 - The two not completed were the JSZip-backed upload suite (dependency unavailable) and the server-backed authentication boundary suite (server/dependencies not running).
