@@ -95,7 +95,7 @@ The findings above describe the repository snapshot inspected at the time of the
 
 - Local browser upload-to-analysis smoke testing remains pending; CI source tests do not replace a real browser/device run.
 - Live DNS/TLS integration fixtures remain outstanding for pinned remote connections.
-- Hosted Gemini and Anthropic provider-specific mock/credential-backed contract checks remain outstanding.
+- Hosted Gemini and Anthropic source-contract checks now assert request shape and pinned transport; provider-specific mock-server/credential-backed integration checks remain outstanding.
 - The 25 differing source files still need semantic conflict review.
 - Detection precision still needs a substantially larger independently labelled corpus and broader interprocedural analysis.
 - Responsive behavior, keyboard accessibility, and assistive-technology behavior still need real-device/browser verification.
@@ -122,3 +122,23 @@ The application is still **not release-ready**. Passing CI is meaningful regress
 - Manual local browser/device validation remains pending, including upload-to-analysis, patch export/apply flow, mobile layouts, keyboard navigation and reduced-motion behavior.
 - The 25 differing source files still require semantic reconciliation against the original supplied source archive. The archive itself must be available to complete that comparison.
 - Detection accuracy claims remain limited to the small synthetic benchmark; no production-grade recall/precision claim is made.
+
+
+### Follow-up engineering — provider egress and ZIP preflight
+
+- Gemini/Gemma requests now use the Google REST endpoint through the shared DNS-pinned HTTPS transport instead of the Google SDK's independent network stack. API keys are sent in the `x-goog-api-key` header, not in the URL. Connection probes use a 10-token output cap; analysis responses remain byte-bounded.
+- Anthropic connection tests and analysis now use the same pinned HTTPS transport as OpenAI-compatible and remote Custom HTTPS requests. Redirects remain rejected and response bodies are bounded.
+- Provider source-contract tests now separately assert pinned transport for Google and Anthropic connection/analysis paths. These are contract tests, not live provider integration tests.
+- ZIP preflight now verifies the actual central-directory record count and record lengths against EOCD/ZIP64 metadata before JSZip parses the archive. It requires the central directory to end at the correct EOCD boundary, preventing a false EOCD signature in a ZIP comment from substituting a fake zero-entry directory.
+- ZIP symlink permission checks recognize numeric, octal-string, and symbolic permission representations. Regression tests cover the permission parser and a Unix-mode symlink archive.
+- The upload/archive suite and application validation both passed in GitHub Actions run [43286681123](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43286681123) at code commit `5cd61af1d0d667d4ec7aed332454134675e25ba8`. Subsequent branch commits in this batch update documentation only.
+
+### Remaining release gates
+
+- Live DNS/TLS fixtures and provider-specific Gemini/Anthropic mock or credential-backed tests.
+- Semantic reconciliation of the 25 differing source files, if the original source archive is available.
+- Larger independently labelled detection corpus, including interprocedural data flow and false-positive coverage.
+- Real browser/device checks for upload-to-analysis, responsive layouts, keyboard access, focus management, and reduced motion.
+- A separate deployment threat model before any non-loopback/public deployment.
+
+CI success does not establish that PatchProof is vulnerability-free or release-ready.
