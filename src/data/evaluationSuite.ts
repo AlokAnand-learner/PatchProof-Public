@@ -297,9 +297,10 @@ export function runEvaluationSuite(testCases: EvaluationTestCase[] = EVALUATION_
   const f1Score = (precision + recall) > 0
     ? Number(((2 * (precision * recall)) / (precision + recall)).toFixed(1))
     : 0;
+  // An empty scored set has no measurable accuracy; report 0 rather than a false perfect score.
   const accuracy = evaluatedCases > 0
     ? Number((((truePositives + trueNegatives) / evaluatedCases) * 100).toFixed(1))
-    : 100;
+    : 0;
 
   return {
     totalTestCases: testCases.length,
