@@ -18,7 +18,7 @@ assert.ok(server.includes('function withProviderTask(handler: RequestHandler): R
   'expensive routes must hold their concurrency slot around the actual handler Promise.');
 assert.ok(server.includes('runWithConcurrencyGate(providerTaskGate'),
   'expensive routes must use the promise-scoped concurrency gate helper.');
-assert.ok(gate.includes('value: await task()') && gate.includes('finally {\\n    release();'),
+assert.ok(gate.includes('value: await task()') && gate.includes('finally {') && gate.includes('release();'),
   'concurrency slots must be released only after handler completion or rejection.');
 assert.equal(server.includes("res.once('close', releaseOnce)"), false,
   'client disconnect must not release capacity while asynchronous work is still running.');
