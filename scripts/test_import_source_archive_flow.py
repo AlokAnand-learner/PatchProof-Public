@@ -2,7 +2,6 @@
 from __future__ import annotations
 
 import hashlib
-import io
 from pathlib import Path
 import stat
 import sys
@@ -84,6 +83,32 @@ class SourceArchiveImportFlowTests(unittest.TestCase):
         self.write_zip([("source/../outside.txt", b"not safe", False)])
         with self.assertRaises(ValueError):
             self.run_import()
+
+    def test_file_directory_collision_is_rejected(self) -> None:
+        self.write_zip([
+            ("source/config", b"file\n", False),
+            ("source/config/settings.json", b"child\n", False),
+        ])
+        with self.assertRaises(SystemExit):
+            self.run_import()
+
+    def test_unsupported_compression_is_rejected(self) -> None:
+        with zipfile.ZipFile(self.archive_path, "w", compression=zipfile.ZIP_BZIP2) as archive:
+            archive.writestr("source/src/app.ts", b"export const ok = true;\n")
+        digest = hashlib.sha256(self.archive_path.read_bytes()).hexdigest()
+        args = ["import_source_archive.py", str(self.archive_path), "--destination", str(self.destination)]
+        with patch.object(import_source_archive, "EXPECTED_ARCHIVE_SHA256", digest), patch.object(sys, "argv", args):
+            with self.assertRaises(ValueError):
+                import_source_archive.main()
+
+    def test_malformed_zip_is_rejected_without_writing(self) -> None:
+        self.archive_path.write_bytes(b"not a zip archive")
+        digest = hashlib.sha256(self.archive_path.read_bytes()).hexdigest()
+        args = ["import_source_archive.py", str(self.archive_path), "--destination", str(self.destination)]
+        with patch.object(import_source_archive, "EXPECTED_ARCHIVE_SHA256", digest), patch.object(sys, "argv", args):
+            with self.assertRaises(zipfile.BadZipFile):
+                import_source_archive.main()
+        self.assertEqual(list(self.destination.iterdir()), [])
 
 
 if __name__ == "__main__":
