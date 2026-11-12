@@ -133,6 +133,31 @@ async function runUploadSafetyTests() {
   }
   assert('Reject forged ZIP entry-count metadata before full archive parsing', eocdOffset >= 0 && forgedCountCaught);
 
+  // 6c. Forge both ZIP size declarations below the real decompressed output.
+  // The streaming guard must enforce the actual inflated byte count, not metadata.
+  const forgedSizeZip = new JSZip();
+  forgedSizeZip.file('src/oversized.ts', 'A'.repeat(2 * 1024 * 1024 + 1));
+  const forgedSizeBytes = new Uint8Array(await forgedSizeZip.generateAsync({ type: 'arraybuffer', compression: 'DEFLATE' }));
+  let localHeader = -1;
+  let centralHeader = -1;
+  for (let i = 0; i <= forgedSizeBytes.length - 4; i += 1) {
+    const signature = new DataView(forgedSizeBytes.buffer).getUint32(i, true);
+    if (signature === 0x04034b50 && localHeader < 0) localHeader = i;
+    if (signature === 0x02014b50 && centralHeader < 0) centralHeader = i;
+  }
+  if (localHeader >= 0 && centralHeader >= 0) {
+    const forgedView = new DataView(forgedSizeBytes.buffer);
+    forgedView.setUint32(localHeader + 22, 1, true);
+    forgedView.setUint32(centralHeader + 24, 1, true);
+  }
+  let forgedSizeCaught = false;
+  try {
+    await safeExtractZip(forgedSizeBytes);
+  } catch (err: any) {
+    forgedSizeCaught = /No supported source|actual decompressed|limit/i.test(err.message);
+  }
+  assert('Enforce actual streamed ZIP output when local and central size metadata are forged low', localHeader >= 0 && centralHeader >= 0 && forgedSizeCaught);
+
   // 7. Folder upload path handling: unsafe browser-supplied paths must not
   // fall back to file.name, and duplicate/case-colliding paths are rejected.
   const originalFileReader = (globalThis as any).FileReader;
