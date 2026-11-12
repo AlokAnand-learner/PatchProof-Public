@@ -135,6 +135,16 @@ const missingTarget = validateRemediationPatch(
   'const untouched = true;'
 );
 assert('Reject full-file validation when the original snippet is absent', !missingTarget.fullFileValidationPassed && missingTarget.status === 'INVALID');
+const emptyTarget = validateRemediationPatch(
+  'const safe = true;',
+  '',
+  'CWE-89',
+  'javascript',
+  'app.js',
+  'const untouched = true;'
+);
+assert('Reject full-file validation when no original target snippet is supplied', !emptyTarget.fullFileValidationPassed && emptyTarget.status === 'INVALID');
+
 
 const duplicateTarget = validateRemediationPatch(
   'const safe = true;',
