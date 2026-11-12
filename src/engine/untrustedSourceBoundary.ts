@@ -80,7 +80,7 @@ export function prepareUntrustedSource(
     const path = file.path.normalize('NFC');
     if (!path || path.length > 1024 || path.startsWith('/') || path.includes('\\') ||
         path.split('/').some((part) => !part || part === '.' || part === '..' || part.includes(':')) ||
-        /[\\u0000-\\u001f]/.test(path)) {
+        /[\x00-\x1f]/.test(path)) {
       throw new Error('Uploaded source path is unsafe.');
     }
     const key = path.toLocaleLowerCase('en-US');
