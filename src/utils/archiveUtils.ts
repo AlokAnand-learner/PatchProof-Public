@@ -286,6 +286,90 @@ export interface ExtractionResult {
 }
 
 /**
+ * Reads ZIP end-of-central-directory metadata before JSZip parses the archive.
+ * This rejects oversized entry tables before the ZIP parser allocates per-entry
+ * objects. ZIP64 archives are supported for counting; multi-disk archives are
+ * rejected because they are not valid single-upload inputs for this application.
+ */
+async function countZipEntriesBeforeParsing(
+  input: File | Blob | ArrayBuffer | Uint8Array,
+  maxEntries: number,
+): Promise<number> {
+  let bytes: Uint8Array;
+  if (input instanceof Uint8Array) {
+    bytes = input;
+  } else if (input instanceof ArrayBuffer) {
+    bytes = new Uint8Array(input);
+  } else {
+    bytes = new Uint8Array(await input.arrayBuffer());
+  }
+
+  const view = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
+  const minimumEocdLength = 22;
+  const maxCommentLength = 0xffff;
+  const searchStart = Math.max(0, bytes.length - minimumEocdLength - maxCommentLength);
+  let eocdOffset = -1;
+
+  for (let offset = bytes.length - minimumEocdLength; offset >= searchStart; offset -= 1) {
+    if (view.getUint32(offset, true) !== 0x06054b50) continue;
+    const commentLength = view.getUint16(offset + 20, true);
+    if (offset + minimumEocdLength + commentLength === bytes.length) {
+      eocdOffset = offset;
+      break;
+    }
+  }
+
+  if (eocdOffset < 0) throw new Error('Invalid or corrupted ZIP archive. Please ensure the file is a valid .zip file.');
+
+  const diskNumber = view.getUint16(eocdOffset + 4, true);
+  const centralDirectoryDisk = view.getUint16(eocdOffset + 6, true);
+  const entriesOnDisk = view.getUint16(eocdOffset + 8, true);
+  const totalEntries16 = view.getUint16(eocdOffset + 10, true);
+
+  if (diskNumber !== 0 || centralDirectoryDisk !== 0) {
+    throw new Error('Multi-disk ZIP archives are not supported.');
+  }
+
+  let totalEntries: number;
+  if (totalEntries16 !== 0xffff) {
+    if (entriesOnDisk !== totalEntries16) {
+      throw new Error('Invalid or corrupted ZIP archive entry metadata.');
+    }
+    totalEntries = totalEntries16;
+  } else {
+    // ZIP64 locator immediately precedes the classic EOCD record.
+    const locatorOffset = eocdOffset - 20;
+    if (locatorOffset < 0 || view.getUint32(locatorOffset, true) !== 0x07064b50) {
+      throw new Error('Invalid ZIP64 archive metadata.');
+    }
+    const zip64Disk = view.getUint32(locatorOffset + 4, true);
+    const zip64OffsetBig = view.getBigUint64(locatorOffset + 8, true);
+    const totalDisks = view.getUint32(locatorOffset + 16, true);
+    if (zip64Disk !== 0 || totalDisks !== 1 || zip64OffsetBig > BigInt(Number.MAX_SAFE_INTEGER)) {
+      throw new Error('Multi-disk or unsupported ZIP64 archives are not accepted.');
+    }
+    const zip64Offset = Number(zip64OffsetBig);
+    if (zip64Offset + 56 > bytes.length || view.getUint32(zip64Offset, true) !== 0x06064b50) {
+      throw new Error('Invalid ZIP64 end-of-central-directory record.');
+    }
+    const zip64DiskNumber = view.getUint32(zip64Offset + 16, true);
+    const zip64CentralDisk = view.getUint32(zip64Offset + 20, true);
+    const zip64EntriesOnDisk = view.getBigUint64(zip64Offset + 24, true);
+    const zip64TotalEntries = view.getBigUint64(zip64Offset + 32, true);
+    if (zip64DiskNumber !== 0 || zip64CentralDisk !== 0 || zip64EntriesOnDisk !== zip64TotalEntries ||
+        zip64TotalEntries > BigInt(Number.MAX_SAFE_INTEGER)) {
+      throw new Error('Invalid or multi-disk ZIP64 entry metadata.');
+    }
+    totalEntries = Number(zip64TotalEntries);
+  }
+
+  if (totalEntries > maxEntries) {
+    throw new Error(`ZIP archive contains too many entries (maximum ${maxEntries}).`);
+  }
+  return totalEntries;
+}
+
+/**
  * Safely extracts a ZIP archive in-memory with strict Zip Slip, Symlink, Zip Bomb, and file filtering guards.
  * Never writes to disk and never executes code.
  */
@@ -322,10 +406,25 @@ export async function safeExtractZip(
     );
   }
 
+  // Inspect the bounded central-directory metadata before JSZip allocates
+  // archive-entry objects. Pass the already bounded bytes to the parser.
+  let zipBytes: Uint8Array;
+  try {
+    zipBytes = zipInput instanceof Uint8Array
+      ? zipInput
+      : zipInput instanceof ArrayBuffer
+        ? new Uint8Array(zipInput)
+        : new Uint8Array(await zipInput.arrayBuffer());
+    await countZipEntriesBeforeParsing(zipBytes, limits.maxArchiveEntries);
+  } catch (err) {
+    if (err instanceof Error && /too many entries|Multi-disk|ZIP64/.test(err.message)) throw err;
+    throw new Error('Invalid or corrupted ZIP archive. Please ensure the file is a valid .zip file.');
+  }
+
   const zip = new JSZip();
   let loadedZip: JSZip;
   try {
-    loadedZip = await zip.loadAsync(zipInput);
+    loadedZip = await zip.loadAsync(zipBytes);
   } catch (err) {
     throw new Error('Invalid or corrupted ZIP archive. Please ensure the file is a valid .zip file.');
   }
