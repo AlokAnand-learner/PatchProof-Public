@@ -68,3 +68,36 @@ These observations are source-level only and do not substitute for runtime verif
 **Not release-ready. Do not merge this branch into `main` yet.**
 
 The source archive import and the verification gates above are prerequisites. No claim of zero defects or complete security can be made from the current evidence.
+
+
+## Follow-up status — subsequent development on the same branch
+
+The findings above describe the repository snapshot inspected at the time of the initial audit. They are historical baseline findings and must not be read as the current branch state.
+
+### Superseded baseline blockers
+
+- The source archive was subsequently imported. The path reconciliation records 82 expected paths, with 57 exact matches, 25 differing existing files, and no missing paths. The remaining 25 differences still require semantic review; path presence alone does not prove equivalent behavior.
+- The previously missing test files are now present. The current tree includes the complete configured test set plus the source-line resource-limit suite.
+- The committed Bun lockfile is now present and frozen installation is exercised in CI.
+- CI now runs preflight and application validation. Run `43270799907` at commit `894b22a6fdeb2833651aa1bdda40eab731099ceb` completed with both jobs successful. It included type/build validation and the complete configured regression chain.
+
+### Additional hardening completed after the baseline audit
+
+- Remote OpenAI-compatible and Custom HTTPS requests now share DNS-pinned transport; redirects are rejected.
+- Credential redaction now covers unquoted assignments, YAML-style values, short values, and common prefixed provider/connection variable names. This remains heuristic and is not a complete secret scanner.
+- ZIP entry-count metadata is checked before JSZip parsing. Actual decompression is streamed and bounded by actual output bytes, rather than relying only on attacker-controlled size declarations.
+- Folder uploads reject excessive selections before copying the selection and compare actual UTF-8 content bytes with file metadata.
+- Single-file and multi-file server analysis reject excessive line counts before allocating large line arrays: 100,000 lines per file and 300,000 lines per project.
+- Report downloads sanitize filenames, defer object-URL revocation to avoid racing mobile downloads, and the Markdown copy control now reports success only after the clipboard write resolves.
+
+### Remaining verification and engineering work
+
+- Local browser upload-to-analysis smoke testing remains pending; CI source tests do not replace a real browser/device run.
+- Live DNS/TLS integration fixtures remain outstanding for pinned remote connections.
+- Hosted Gemini and Anthropic provider-specific mock/credential-backed contract checks remain outstanding.
+- The 25 differing source files still need semantic conflict review.
+- Detection precision still needs a substantially larger independently labelled corpus and broader interprocedural analysis.
+- Responsive behavior, keyboard accessibility, and assistive-technology behavior still need real-device/browser verification.
+- The current local-only deployment boundary must remain in force until a separate deployment threat model and security review are completed.
+
+The application is still **not release-ready**. Passing CI is meaningful regression evidence, not proof of zero vulnerabilities or a complete penetration test.
