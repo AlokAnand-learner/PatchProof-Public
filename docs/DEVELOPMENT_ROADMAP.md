@@ -143,3 +143,8 @@ Still required:
 ## Acceptance rule
 
 A phase is complete only when its implementation is present in the repository and its relevant automated tests pass. A source-level inspection, isolated test, syntax transpilation, or archive-path percentage is not a substitute for a complete application build, full test suite, and runtime smoke test.
+
+
+## Current archive reconciliation correction
+
+Older roadmap entries refer to the historical 57-match / 25-conflict comparison. The later CI read-only comparison checked all 82 reviewed archive paths and reported **36 exact matches, 46 preserved conflicts, and 0 missing paths**. Treat 57/25 only as the initial baseline. No differing working-tree file was overwritten; see `docs/SOURCE_CONFLICT_RECONCILIATION.md` for the reconciliation policy. This path comparison is not semantic equivalence verification.
