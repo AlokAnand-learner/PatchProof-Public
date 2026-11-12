@@ -26,6 +26,7 @@ class SourceArchiveImportFlowTests(unittest.TestCase):
         with zipfile.ZipFile(self.archive_path, "w", compression=zipfile.ZIP_DEFLATED) as archive:
             for name, content, is_symlink in entries:
                 info = zipfile.ZipInfo(name)
+                info.compress_type = zipfile.ZIP_DEFLATED
                 if is_symlink:
                     info.create_system = 3
                     info.external_attr = (stat.S_IFLNK | 0o777) << 16
@@ -124,7 +125,7 @@ class SourceArchiveImportFlowTests(unittest.TestCase):
                 import_source_archive.main()
 
     def test_non_utf8_source_file_is_rejected(self) -> None:
-        self.write_zip([("source/src/app.ts", b"\\xff\\xfe", False)])
+        self.write_zip([("source/src/app.ts", bytes([0xff, 0xfe]), False)])
         with self.assertRaises(UnicodeDecodeError):
             self.run_import()
         self.assertFalse((self.destination / "src/app.ts").exists())
