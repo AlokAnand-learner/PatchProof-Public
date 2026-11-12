@@ -13,7 +13,7 @@ These percentages are engineering estimates, not test coverage or acceptance per
 | Phase | Progress | Current state |
 |---|---:|---|
 | 1. Safe source import | 49% | 40/82 archive paths represented; remaining source files await guarded import |
-| 2. Reproducible setup | 30% | Node pin and scripts are present; Bun lockfile is absent and dependency installation/build/typecheck remain blocked |
+| 2. Reproducible setup | 45% | Bun lockfile is committed and frozen installation passed on GitHub Actions; full typecheck/build and lifecycle-script review remain open |
 | 3. Detection precision | 40% | Bounded alias taint and review-only fixture classification added; benchmark remains small and synthetic |
 | 4. Upload/archive safety | 60% | Path normalization and collision checks added; dependency-backed ZIP suite still pending |
 | 5. Privacy/local boundary | 60% | Local-only host/origin policy, SSRF controls, cloud consent, and privacy-default history are implemented |
@@ -37,19 +37,20 @@ Still required:
 - Upload the exact reviewed archive to `import/PatchProof-source.zip` on this working branch.
 - Review importer conflict output; existing branch files with different contents are intentionally preserved.
 - Audit the complete imported tree and resolve remaining conflicts.
-- Run dependency installation, full typecheck, production build, complete test suite, and a local upload-to-analysis smoke test.
+- Re-verify frozen dependency installation against the complete imported tree, then run full typecheck, production build, complete test suite, and a local upload-to-analysis smoke test.
 
 ## Phase 2 — Reproducible project setup
 
 Completed:
 - Node.js 22.16.0 is pinned in `.nvmrc`; the manifest requires Node.js 20.19 or later.
-- Bun is selected as the package manager; a matching committed `bun.lock` is still required.
-- Development, production start, build, typecheck, and test scripts are defined.
-- README documents the intended frozen-install command but explicitly marks it blocked until the lockfile is committed.
+- Bun is selected as the package manager; a 307-package `bun.lock` is committed on the working branch.
+- Development, production start, build, typecheck, full test, and focused security test scripts are defined.
+- GitHub Actions generated the lockfile from the current manifest and successfully completed `bun install --frozen-lockfile`.
+- A dedicated workflow regenerates and verifies the lockfile when the package manifest changes.
 
 Still required:
-- Generate and commit the Bun lockfile from the exact imported manifest in a network-capable environment.
-- Install dependencies from that committed lockfile.
+- Review the dependency lifecycle script reported as blocked by Bun; do not approve install scripts without checking why they are needed.
+- Re-run frozen installation after the complete source archive is imported and the manifest is reconciled.
 - Run full TypeScript typecheck and production build.
 - Run all tests, including server-backed and JSZip-backed tests.
 - Verify a clean checkout and local runtime startup.
@@ -127,8 +128,8 @@ Still required:
 - 311 focused assertions/cases passed across the executed test files.
 - The two not completed were the JSZip-backed upload suite (dependency unavailable) and the server-backed authentication boundary suite (server/dependencies not running).
 - TypeScript/TSX syntax transpilation completed for 62 files with zero syntax diagnostics.
-- Full `tsc --noEmit` is blocked because project dependencies are not installed (`vite/client` is unavailable).
-- Dependency installation timed out in the network-restricted environment; production build and full end-to-end smoke test were therefore not run.
+- Full `tsc --noEmit` has not yet been re-run after the lockfile-backed dependency installation; the earlier attempt was blocked because `vite/client` was unavailable.
+- Frozen dependency installation now passes on GitHub Actions. Production build and full end-to-end smoke test remain unverified because the complete application source tree is still missing.
 
 ## Acceptance rule
 
