@@ -124,6 +124,13 @@ if (indexCss.includes('clamp(') && indexCss.includes('pb-safe') && indexCss.incl
   fail('index.css tokens', 'Missing clamp or safe area definitions');
 }
 
+// Keep the smallest code/technical text at or above the 12px readability floor.
+if (indexCss.includes('font-size: clamp(0.75rem, 0.72rem + 0.2vw, 0.82rem)')) {
+  pass('Code and technical text keeps a minimum 12px font size');
+} else {
+  fail('Code text minimum size', 'Code typography must not shrink below 0.75rem (12px)');
+}
+
 // Respect system accessibility preferences for reduced motion.
 if (indexCss.includes('@media (prefers-reduced-motion: reduce)') &&
     indexCss.includes('animation-duration: 0.01ms !important') &&
