@@ -70,7 +70,9 @@ export function prepareUntrustedSource(
     throw new Error('Uploaded project file count is outside the allowed limit.');
   }
 
-  const seen = new Set<string>();
+  // Track explicit files and implicit directories in one portable namespace.
+  // This rejects both file/directory conflicts and aliases such as Src/a + src/b.
+  const pathRegistry = new Map<string, { spelling: string; kind: 'file' | 'directory' }>();
   let totalBytes = 0;
   const safeFiles: UntrustedSourceFile[] = [];
   const suspiciousInstructionFiles: string[] = [];
@@ -96,9 +98,23 @@ export function prepareUntrustedSource(
         path.includes('\\') || unsafePart) {
       throw new Error('Uploaded source path is unsafe.');
     }
-    const key = path.toLocaleLowerCase('en-US');
-    if (seen.has(key)) throw new Error('Uploaded project contains duplicate or case-colliding paths.');
-    seen.add(key);
+    const keyFor = (value: string) => value.toLocaleLowerCase('en-US');
+    for (let index = 1; index < parts.length; index += 1) {
+      const directory = parts.slice(0, index).join('/');
+      const directoryKey = keyFor(directory);
+      const existing = pathRegistry.get(directoryKey);
+      if (existing && (existing.kind !== 'directory' || existing.spelling !== directory)) {
+        throw new Error('Uploaded project contains duplicate, case-colliding, or file/directory-conflicting paths.');
+      }
+      if (!existing) pathRegistry.set(directoryKey, { spelling: directory, kind: 'directory' });
+    }
+
+    const key = keyFor(path);
+    const existingPath = pathRegistry.get(key);
+    if (existingPath) {
+      throw new Error('Uploaded project contains duplicate, case-colliding, or file/directory-conflicting paths.');
+    }
+    pathRegistry.set(key, { spelling: path, kind: 'file' });
 
     if (totalBytes + file.content.length > policy.maxTotalBytes) {
       throw new Error('Uploaded project exceeds the total source-size limit.');
