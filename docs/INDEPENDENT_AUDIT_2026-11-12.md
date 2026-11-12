@@ -207,3 +207,12 @@ CI success does not establish that PatchProof is vulnerability-free or release-r
 - Provider, model-query, analysis, fix-validation, and benchmark routes now use the completion-bound wrapper. The two-task limit remains enforced.
 - Added runtime tests proving pending tasks retain their slots, busy gates reject extra work, and both success and failure release exactly once. Source-contract tests verify routes use the wrapper and no longer release on response close.
 - Both CI jobs passed after the final concurrency lifecycle changes in [run 43293738702](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43293738702).
+
+
+### Follow-up engineering — staged upload state revalidation
+
+- Multi-batch upload merging previously recalculated existing file sizes and line counts but did not revalidate existing staged paths/content before retaining them.
+- Existing staged entries are now rechecked for safe relative paths, supported source type, non-empty string content, actual UTF-8 byte limits, per-file/project line limits, and file-count limits. Stored size/line metadata is recomputed.
+- A shared path registry rejects duplicate/case-colliding paths, Unicode-normalized collisions, case-colliding parent directories, and file/directory prefix conflicts across existing and incoming batches.
+- Regression tests cover unsafe pre-staged paths, stale metadata, duplicate entries, parent-directory collisions, file/directory conflicts, and cumulative resource limits.
+- Both CI jobs passed at [run 43294539727](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43294539727).
