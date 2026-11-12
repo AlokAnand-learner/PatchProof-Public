@@ -5,7 +5,9 @@
 - Archive: `PatchProof-Phase1-Foundation-Hardening-2026-11-12-Continuous-Phases.zip`
 - SHA-256: `f6a0cbe3ab7e1fc0c1c8ab33ad3218ad903ac65a1fc5267342b6cd642c9770b5`
 - Archive paths: 82
-- Latest read-only comparison: 57 exact matches, 25 differing existing files, 0 missing paths
+- Initial import comparison: 57 exact matches, 25 differing existing files, 0 missing paths (historical baseline)
+- Latest CI read-only comparison: 36 exact matches, 46 differing existing files, 0 missing paths (82 archive files checked)
+- The 25-path grouping below documents the initial baseline only; it is not a complete enumeration of the newer 46 conflicts.
 
 ## Reconciliation policy
 
