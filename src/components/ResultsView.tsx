@@ -106,7 +106,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
     if (severityFilter !== 'ALL' && f.severity !== severityFilter) return false;
     if (statusFilter !== 'ALL' && f.verificationStatus !== statusFilter) return false;
     if (fixValidationFilter !== 'ALL') {
-      const fStatus = f.fixValidation?.status || (f.patchVerificationStatus === 'VERIFIED_STATIC' ? 'VALIDATED' : 'NEEDS_REVIEW');
+      const fStatus = f.fixValidation?.status || (f.verificationStatus === 'FALSE_POSITIVE' ? 'NOT_APPLICABLE' : 'NEEDS_REVIEW');
       if (fStatus !== fixValidationFilter) return false;
     }
     if (fileFilter !== 'ALL' && f.filePath !== fileFilter) return false;
@@ -227,7 +227,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
       <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
         <div className="p-3.5 rounded-xl bg-white dark:bg-[#1B2638] border border-[#DCE3ED] dark:border-[#35445A] flex items-center justify-between col-span-2 sm:col-span-1 shadow-sm">
           <div>
-            <span className="text-[11px] text-[#526078] dark:text-[#C2CDDC] block font-medium">Health Score</span>
+            <span className="text-[11px] text-[#526078] dark:text-[#C2CDDC] block font-medium">Heuristic Risk Indicator</span>
             <span className="text-2xl font-bold text-[#17243B] dark:text-[#F1F5FC] mt-0.5 block font-mono tabular-nums">{scan.metrics.score}/100</span>
           </div>
           <div className={`w-9 h-9 rounded-lg flex items-center justify-center font-bold text-sm ${getGradeBadge(scan.metrics.grade)}`}>
@@ -322,6 +322,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
             <option value="PARTIALLY_VALIDATED">Partially Validated</option>
             <option value="NEEDS_REVIEW">Needs Review</option>
             <option value="INVALID">Invalid Fixes</option>
+            <option value="NOT_APPLICABLE">Not Applicable</option>
           </select>
         </div>
       </div>
@@ -344,7 +345,7 @@ export const ResultsView: React.FC<ResultsViewProps> = ({
               const displayFilePath = finding.filePath || scan.fileName;
               const isMarkedFP = finding.userResolution === 'FALSE_POSITIVE';
               const isMarkedFixed = finding.userResolution === 'FIXED' || finding.status === 'FIXED';
-              const fixStatus = finding.fixValidation?.status || (finding.patchVerificationStatus === 'VERIFIED_STATIC' ? 'VALIDATED' : 'NEEDS_REVIEW');
+              const fixStatus = finding.fixValidation?.status || (finding.verificationStatus === 'FALSE_POSITIVE' ? 'NOT_APPLICABLE' : 'NEEDS_REVIEW');
 
               return (
                 <div
