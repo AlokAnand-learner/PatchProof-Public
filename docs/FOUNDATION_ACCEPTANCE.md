@@ -24,6 +24,9 @@ Phase 1 is complete only when all items below are implemented and verified.
 - [x] ZIP and folder uploads preserve relative paths and reject traversal, absolute paths, ambiguous separators, control characters, and cross-platform path aliases.
 - [x] ZIP extraction is in-memory only; symlinks and unsupported/binary files are rejected.
 - [x] Per-file, archive-size, ZIP-entry-count, project-size, and file-count limits exist.
+- [x] ZIP entry-count metadata is preflighted before JSZip parsing; actual decompressed bytes are streamed under per-file and project-wide budgets.
+- [x] Folder uploads reject excessive selections and verify actual UTF-8 content bytes against file metadata.
+- [x] Server analysis caps source expansion at 100,000 lines per file and 300,000 lines per project before allocating line arrays.
 - [x] Server independently validates multi-file project paths and content.
 - [x] Single-file labels are reduced to safe supported filenames; client language labels are allowlisted.
 - [x] Dependency-backed ZIP/folder upload suite passes in the complete project environment.
@@ -33,6 +36,7 @@ Phase 1 is complete only when all items below are implemented and verified.
 - [x] Provider adapter source-contract tests cover the request shape for Ollama, Gemini/Gemma, OpenAI-compatible, and Anthropic branches; live hosted credentials are not required for these contract tests.
 - [x] Local Ollama, local OpenAI-compatible, and mocked remote custom provider integration tests confirm prompt-injection-like source remains separate from system instructions and cannot add tool declarations.
 - [ ] Hosted Gemini and Anthropic request contracts have not yet been exercised with provider-specific mocks or live credentials.
+- [x] Remote OpenAI-compatible and Custom HTTPS requests use DNS-pinned transport; live DNS/TLS integration fixtures remain outstanding.
 - [x] High-confidence credential patterns are redacted before any remote provider receives source; this is defense-in-depth, not a complete secret scanner.
 
 ## Phase 1 completion rule
