@@ -34,6 +34,20 @@ const duplicateExisting = mergeStagedFileBatches(
 assert.equal(duplicateExisting.stagedFiles.length, 2, 'case-colliding existing entries must be normalized to one');
 assert.ok(duplicateExisting.skippedFiles.some(item => item.includes('Duplicate or case-colliding existing path')));
 
+const directoryCaseCollision = mergeStagedFileBatches(
+  [makeFile('Src/first.ts', 'const first = true;')],
+  [makeFile('src/second.ts', 'const second = true;')],
+);
+assert.equal(directoryCaseCollision.stagedFiles.length, 1, 'case-colliding parent directories must be rejected');
+assert.ok(directoryCaseCollision.skippedFiles.some(item => item.includes('file/directory-conflicting path rejected')));
+
+const fileDirectoryConflict = mergeStagedFileBatches(
+  [makeFile('src/config.ts', 'const config = true;')],
+  [makeFile('src/config.ts/child.ts', 'const child = true;')],
+);
+assert.equal(fileDirectoryConflict.stagedFiles.length, 1, 'a staged file cannot also be a parent directory');
+assert.ok(fileDirectoryConflict.skippedFiles.some(item => item.includes('file/directory-conflicting path rejected')));
+
 const duplicate = mergeStagedFileBatches([first], [makeFile('SRC/FIRST.TS', 'const duplicate = true;')]);
 assert.equal(duplicate.stagedFiles.length, 1);
 assert.ok(duplicate.skippedFiles.some(item => item.includes('Duplicate or case-colliding')));
@@ -60,4 +74,4 @@ assert.equal(lineCap.stagedFiles.some(file => file.relativePath === 'src/part-4.
 assert.equal(lineCap.stagedFiles.some(file => file.relativePath === 'src/extra.ts'), true);
 assert.ok(lineCap.skippedFiles.some(item => item.includes('Existing staged content exceeds configured source line limits')));
 
-console.log('Cumulative upload batch limits and staged-state validation: 7 scenarios passed.');
+console.log('Cumulative upload batch limits and staged-state validation: 9 scenarios passed.');
