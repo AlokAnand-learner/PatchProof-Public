@@ -58,6 +58,8 @@ const submittedPrefix = longerSource.split('\n').slice(0, 3).join('\n');
 assert.equal(validateAIModelFindings([{ ...valid, startLine: 5, endLine: 5, snippet: 'exec(hidden);' }], submittedPrefix).length, 0,
   'AI findings outside the submitted prefix must be rejected even if they match the full file');
 const serverSource = fs.readFileSync(path.join(process.cwd(), 'server.ts'), 'utf8');
+assert.ok(serverSource.includes('summary = sanitizeAIText(parsed.summary, 4000)'), 'AI summaries must be sanitized and bounded before display');
+assert.ok(serverSource.includes('.map((item: string) => sanitizeAIText(item, 1000))'), 'AI recommendations must be sanitized and bounded before display');
 assert.ok(serverSource.includes('validateAIModelFindings(parsed?.findings, aiInputContent)'),
   'multi-file AI findings must be validated against the submitted prefix');
 console.log('AI truncation boundary: 2 assertions passed.');
