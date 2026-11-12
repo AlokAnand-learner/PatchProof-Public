@@ -43,3 +43,22 @@ assert.equal(sanitizeDownloadFilename('\\\\server\\share\\report.json').includes
 assert.equal(sanitizeDownloadFilename('...'), 'PatchProof-Report');
 assert.equal(sanitizeDownloadFilename('x'.repeat(250)).length, 180);
 console.log('Report download filename safety: 5 assertions passed.');
+
+const suppressedScan = {
+  ...scan,
+  findings: [{
+    ...scan.findings[0],
+    verificationStatus: 'FALSE_POSITIVE',
+    patchVerificationStatus: 'VERIFIED_STATIC'
+  }]
+} as unknown as ScanResult;
+const suppressedMarkdown = generateMarkdownReport(suppressedScan);
+assert.match(suppressedMarkdown, /Validation Status: \*\*NOT_APPLICABLE\*\*/);
+assert.equal(suppressedMarkdown.includes('Validation Status: **VALIDATED**'), false);
+
+const emptyScan = { ...scan, findings: [] } as unknown as ScanResult;
+const emptyMarkdown = generateMarkdownReport(emptyScan);
+assert.match(emptyMarkdown, /No matching vulnerability patterns were identified/);
+assert.match(emptyMarkdown, /does not prove the code is vulnerability-free/);
+assert.match(emptyMarkdown, /Heuristic Risk Indicator/);
+console.log('Report confidence and status semantics: 5 assertions passed.');
