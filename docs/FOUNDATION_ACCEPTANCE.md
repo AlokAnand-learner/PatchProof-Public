@@ -26,7 +26,7 @@ Phase 1 is complete only when all items below are implemented and verified.
 - [x] Per-file, archive-size, ZIP-entry-count, project-size, and file-count limits exist.
 - [x] ZIP entry-count metadata is preflighted before JSZip parsing; actual decompressed bytes are streamed under per-file and project-wide budgets.
 - [x] Folder uploads reject excessive selections and verify actual UTF-8 content bytes against file metadata.
-- [x] Server analysis caps source expansion at 100,000 lines per file and 300,000 lines per project before allocating line arrays.
+- [x] Client ingestion and server analysis cap source expansion at 100,000 lines per file and 300,000 lines per project before allocating line arrays.
 - [x] Server independently validates multi-file project paths and content.
 - [x] Single-file labels are reduced to safe supported filenames; client language labels are allowlisted.
 - [x] Dependency-backed ZIP/folder upload suite passes in the complete project environment.
