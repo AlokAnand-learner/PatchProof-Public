@@ -78,4 +78,14 @@ const shortRedacted = redactLikelySecrets([{ path: 'src/short-config.yml', conte
 assert.equal(shortRedacted.includes('password: x'), false, 'short YAML password values must be redacted');
 assert.equal(shortRedacted.includes('api_token=abc'), false, 'short dotenv token values must be redacted');
 assert.match(shortRedacted, /normal: visible/, 'unrelated configuration values must remain intact');
-console.log('Untrusted source boundary tests: 18 passed');
+const prefixedSecretSource = [
+  'OPENAI_API_KEY=sk-example-openai-secret',
+  'GEMINI_API_KEY: google-example-secret',
+  'STRIPE_SECRET_KEY=sk_test_example_secret',
+  'DATABASE_URL=postgres://user:password@localhost/db',
+].join('\\n');
+const prefixedRedacted = redactLikelySecrets([{ path: 'src/env.ts', content: prefixedSecretSource }])[0].content;
+for (const secret of ['sk-example-openai-secret', 'google-example-secret', 'sk_test_example_secret', 'postgres://user:password@localhost/db']) {
+  assert.equal(prefixedRedacted.includes(secret), false, `prefixed credential ${secret} must be redacted`);
+}
+console.log('Untrusted source boundary tests: 19 passed');
