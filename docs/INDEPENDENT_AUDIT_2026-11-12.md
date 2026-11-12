@@ -87,7 +87,7 @@ The findings above describe the repository snapshot inspected at the time of the
 - Credential redaction now covers unquoted assignments, YAML-style values, short values, and common prefixed provider/connection variable names. This remains heuristic and is not a complete secret scanner.
 - ZIP entry-count metadata is checked before JSZip parsing. Actual decompression is streamed and bounded by actual output bytes, rather than relying only on attacker-controlled size declarations.
 - Folder uploads reject excessive selections before copying the selection and compare actual UTF-8 content bytes with file metadata.
-- Single-file and multi-file server analysis reject excessive line counts before allocating large line arrays: 100,000 lines per file and 300,000 lines per project.
+- ZIP/folder ingestion and single-file/multi-file server analysis reject excessive line counts before allocating large line arrays: 100,000 lines per file and 300,000 lines per project.
 - Report downloads sanitize filenames, defer object-URL revocation to avoid racing mobile downloads, and the Markdown copy control now reports success only after the clipboard write resolves.
 - Privacy-mode history now also heuristically redacts likely credentials copied into retained finding snippets, surrounding evidence, explanations, and suggested patches while preserving review context.
 
