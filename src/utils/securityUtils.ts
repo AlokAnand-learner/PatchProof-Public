@@ -490,7 +490,7 @@ export function generateHtmlReport(scan: ScanResult): string {
             <div class="code-block patch">
               <div class="code-title" style="display:flex; justify-content:space-between; align-items:center;">
                 <span>Recommended Patch</span>
-                <span style="font-size:10px; font-weight:bold; padding:2px 8px; border-radius:12px; background:${valStatus === 'STATIC_CHECKS_PASSED' ? 'rgba(16,185,129,0.2)' : valStatus === 'STATIC_CHECKS_PARTIAL' ? 'rgba(245,158,11,0.2)' : valStatus === 'NOT APPLICABLE' ? 'rgba(100,116,139,0.2)' : 'rgba(239,68,68,0.2)'}; color:${valStatus === 'VALIDATED' ? '#34d399' : valStatus === 'PARTIALLY_VALIDATED' ? '#fbbf24' : valStatus === 'NOT APPLICABLE' ? '#cbd5e1' : '#f87171'};">
+                <span style="font-size:10px; font-weight:bold; padding:2px 8px; border-radius:12px; background:${valStatus === 'STATIC_CHECKS_PASSED' ? 'rgba(16,185,129,0.2)' : valStatus === 'STATIC_CHECKS_PARTIAL' ? 'rgba(245,158,11,0.2)' : valStatus === 'NOT APPLICABLE' ? 'rgba(100,116,139,0.2)' : 'rgba(239,68,68,0.2)'}; color:${valStatus === 'STATIC_CHECKS_PASSED' ? '#34d399' : valStatus === 'STATIC_CHECKS_PARTIAL' ? '#fbbf24' : valStatus === 'NOT APPLICABLE' ? '#cbd5e1' : '#f87171'};">
                   ${escapeHtml(valStatus)}${valScore === null ? ' (not executed)' : ` (Static check score: ${valScore}/100)`}
                 </span>
               </div>
@@ -653,8 +653,15 @@ export function generateHtmlReport(scan: ScanResult): string {
       <div class="score-badge">
         <div class="stat-label">Heuristic Risk Indicator</div>
         <div class="score-val">${score} <span style="font-size: 1rem; color: #fff;">/ 100</span></div>
-        <div class="stat-label" style="margin-top: 0.2rem;">Band: ${escapeHtml(metrics.grade)}</div>\n        <div class="stat-label" style="margin-top: 0.35rem; max-width: 180px;">Weighted static signals; not a security guarantee</div>
+        <div class="stat-label" style="margin-top: 0.2rem;">Band: ${escapeHtml(metrics.grade)}</div>
+        <div class="stat-label" style="margin-top: 0.35rem; max-width: 180px;">Weighted static signals; not a security guarantee</div>
       </div>
+    </div>
+
+    <div class="stat-card" style="margin-bottom: 1.25rem;">
+      <div class="stat-label">Transmission Boundary</div>
+      <p style="margin-top: 0.35rem;">${scan.transmissionMode === 'CLOUD_AI_TRANSMITTED' ? 'Remote AI analysis (consent recorded)' : 'Local analysis (no remote AI transmission recorded)'}</p>
+      ${scan.analysisNotice ? '<div style="margin-top: 0.5rem;"><strong>Analysis Coverage:</strong> ' + escapeHtml(scan.analysisNotice) + '</div>' : ''}
     </div>
 
     <div class="grid">
