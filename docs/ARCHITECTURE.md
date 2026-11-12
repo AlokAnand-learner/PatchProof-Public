@@ -42,3 +42,9 @@ PatchProof is a single-user, local-first source-code review application. The sup
 - Expressive page/card motion respects prefers-reduced-motion; real-device visual and accessibility checks remain pending.
 - Full dependency-backed integration tests and production build must pass before calling the application release-ready.
 - Live DNS/TLS integration fixtures for pinned remote connections remain outstanding; source-level transport contracts and regression tests currently pass.
+
+## Production browser policy
+
+- Production CSP restricts browser connections to the same origin; loopback WebSocket allowances are enabled only for the Vite development server.
+- Production CSP also limits form submissions to the same origin and disables all framing with `frame-ancestors 'none'`.
+- AI-generated summary and recommendation prose is bounded and has control/bidirectional formatting characters removed before it is returned to the UI. This is display hygiene, not semantic validation or HTML sanitization; the UI must continue rendering model text as text rather than trusted markup.
