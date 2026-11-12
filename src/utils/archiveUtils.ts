@@ -1,5 +1,6 @@
 import JSZip from 'jszip';
 import { StagedFile, UploadLimits } from '../types/security';
+import { countSourceLinesWithinLimit, MAX_SOURCE_LINES_PER_FILE, MAX_SOURCE_LINES_PER_PROJECT } from './sourceLimits';
 
 export const DEFAULT_LIMITS: UploadLimits = {
   maxSingleFileSize: 2 * 1024 * 1024,      // 2MB per file
@@ -476,6 +477,7 @@ export async function safeExtractZip(
   const skippedFiles: string[] = [];
   const seenPaths = new Set<string>();
   let totalExtractedSize = 0;
+  let totalLineCount = 0;
 
   // Derive project name from zip filename
   const projectName = archiveName.replace(/\.zip$/i, '') || 'Uploaded Project';
@@ -585,7 +587,16 @@ export async function safeExtractZip(
       continue;
     }
 
-    const lines = text.split('\n').length;
+    const lineCount = countSourceLinesWithinLimit(text, MAX_SOURCE_LINES_PER_FILE);
+    if (lineCount === null) {
+      skippedFiles.push(`${cleanPath} (Exceeds per-file source line limit of ${MAX_SOURCE_LINES_PER_FILE})`);
+      continue;
+    }
+    if (totalLineCount + lineCount > MAX_SOURCE_LINES_PER_PROJECT) {
+      skippedFiles.push(`${cleanPath} (Project source line limit of ${MAX_SOURCE_LINES_PER_PROJECT} reached)`);
+      continue;
+    }
+    totalLineCount += lineCount;
     const lang = detectLanguage(cleanPath, text);
     const fileNameOnly = cleanPath.split('/').pop() || cleanPath;
 
@@ -596,7 +607,7 @@ export async function safeExtractZip(
       size: actualSize,
       language: lang,
       content: text,
-      lines
+      lines: lineCount
     });
   }
 
@@ -660,6 +671,7 @@ export async function processFiles(
   const stagedFiles: StagedFile[] = [];
   const skippedFiles: string[] = [];
   let totalExtractedSize = 0;
+  let totalLineCount = 0;
   const seenPaths = new Set<string>();
 
   for (const file of fileArray) {
@@ -751,8 +763,17 @@ export async function processFiles(
         continue;
       }
 
+      const lineCount = countSourceLinesWithinLimit(content, MAX_SOURCE_LINES_PER_FILE);
+      if (lineCount === null) {
+        skippedFiles.push(`${cleanPath} (Exceeds per-file source line limit of ${MAX_SOURCE_LINES_PER_FILE})`);
+        continue;
+      }
+      if (totalLineCount + lineCount > MAX_SOURCE_LINES_PER_PROJECT) {
+        skippedFiles.push(`${cleanPath} (Project source line limit of ${MAX_SOURCE_LINES_PER_PROJECT} reached)`);
+        continue;
+      }
+      totalLineCount += lineCount;
       totalExtractedSize += actualByteSize;
-      const lines = content.split('\n').length;
       const lang = detectLanguage(cleanPath, content);
       const fileNameOnly = cleanPath.split('/').pop() || cleanPath;
 
@@ -763,7 +784,7 @@ export async function processFiles(
         size: file.size,
         language: lang,
         content,
-        lines
+        lines: lineCount
       });
     } catch (err) {
       skippedFiles.push(`${cleanPath} (Error reading file as UTF-8)`);
