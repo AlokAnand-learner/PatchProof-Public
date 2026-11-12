@@ -4,8 +4,10 @@ import path from 'node:path';
 
 const settings = fs.readFileSync(path.join(process.cwd(), 'src/components/SettingsView.tsx'), 'utf8');
 
-assert.match(settings, /role="switch"[\s\S]{0,160}aria-checked=\{isPrivacyModeEnabled\(\)\}/,
+assert.match(settings, /role="switch"[\s\S]{0,160}aria-checked=\{privacyModeEnabled\}/,
   'privacy control must expose switch semantics and its current state');
+assert.ok(settings.includes('useState<boolean>(() => isPrivacyModeEnabled())'), 'privacy switch state must be initialized from persisted preference');
+assert.ok(settings.includes('setPrivacyModeEnabled(nextState)'), 'privacy switch must update React state after a successful preference change');
 assert.match(settings, /aria-label="Enable privacy mode for saved source code"/,
   'privacy switch must have an accessible name');
 assert.match(settings, /role="switch"[\s\S]{0,220}aria-checked=\{Boolean\(serverStatus\?\.cloudConsentGranted\)\}/,
