@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { 
   PlusCircle, 
   LayoutDashboard, 
@@ -86,15 +86,57 @@ export const Sidebar: React.FC<SidebarProps> = ({
     setMobileMenuOpen(false);
   };
 
-  // Close mobile drawer on Escape key
+  const mobileDialogRef = useRef<HTMLDivElement>(null);
+  const returnFocusRef = useRef<HTMLElement | null>(null);
+
+  // Treat the mobile drawer as a modal: move focus inside, trap Tab, close on
+  // Escape, and restore focus to the control that opened it.
   useEffect(() => {
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape' && mobileMenuOpen) {
+    if (!mobileMenuOpen) return;
+
+    returnFocusRef.current = document.activeElement instanceof HTMLElement
+      ? document.activeElement
+      : null;
+    const dialog = mobileDialogRef.current;
+    const getFocusable = () => Array.from(
+      dialog?.querySelectorAll<HTMLElement>(
+        'button:not([disabled]), a[href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      ) ?? []
+    );
+    const firstFocusable = getFocusable()[0];
+    (firstFocusable ?? dialog)?.focus();
+
+    const handleKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
         setMobileMenuOpen(false);
+        return;
+      }
+      if (event.key !== 'Tab') return;
+
+      const focusable = getFocusable();
+      if (focusable.length === 0) {
+        event.preventDefault();
+        dialog?.focus();
+        return;
+      }
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
       }
     };
+
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      const previousFocus = returnFocusRef.current;
+      if (previousFocus?.isConnected) previousFocus.focus();
+    };
   }, [mobileMenuOpen, setMobileMenuOpen]);
 
   return (
@@ -363,6 +405,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           onClick={() => setMobileMenuOpen(false)}
         >
           <div 
+            ref={mobileDialogRef}
+            tabIndex={-1}
             className="fixed inset-y-0 left-0 w-72 max-w-[85vw] bg-white dark:bg-[#1B2638] border-r border-[#DCE3ED] dark:border-[#35445A] p-5 flex flex-col justify-between shadow-2xl overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
             role="dialog"
