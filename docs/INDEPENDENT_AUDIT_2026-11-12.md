@@ -225,3 +225,10 @@ CI success does not establish that PatchProof is vulnerability-free or release-r
 - History records must keep the top-level and nested scan IDs consistent. Malformed records are discarded and the validated, bounded history representation is persisted when possible.
 - Regression cases cover malformed nested finding fields and invalid metrics in addition to null findings and history-list overflow.
 - Both CI jobs passed at [run 43295116948](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43295116948).
+
+
+### Follow-up engineering — explicit review-request policy
+
+- The immutable provider system instruction now explicitly identifies the `reviewRequest` field as untrusted user input. It may prioritize a defensive review but cannot override the system policy, request hidden data, or authorize tools, network access, or code execution.
+- Provider tests assert this policy is present for local Ollama and OpenAI-compatible request construction, and that malicious review text remains only in the user-data payload.
+- Both CI jobs passed after the final prompt-policy and fixture updates in [run 43295479384](https://github.com/AlokAnand-learner/PatchProof-Public/actions/runs/43295479384).
