@@ -60,4 +60,30 @@ const fixtureFinding = testFixtureResult.findings.find(f => f.cwe.startsWith('CW
 assert.equal(fixtureFinding?.verificationStatus, 'NEEDS_REVIEW', 'test fixture findings should not be classified as likely production vulnerabilities');
 assert.equal(fixtureFinding?.severity, 'INFO', 'test fixture findings should not lower production security score');
 
-console.log('Alias propagation and test-context classification: 4 additional assertions passed.');
+
+const aliasCommandSource = `function ping(req) {
+  const requestHost = req.query.host;
+  const hostAlias = requestHost;
+  os.popen("ping " + hostAlias);
+}`;
+const aliasCommandResult = analyzeSourceCodeContextAware(aliasCommandSource, 'src/networkProbe.ts');
+assert.equal(aliasCommandResult.findings.find(f => f.cwe.startsWith('CWE-78'))?.verificationStatus, 'LIKELY', 'bounded alias chains should preserve command-sink taint evidence');
+
+const aliasSsrFSource = `async function load(req) {
+  const requestedUrl = req.query.url;
+  const urlAlias = requestedUrl;
+  await fetch(urlAlias);
+}`;
+const aliasSsrFResult = analyzeSourceCodeContextAware(aliasSsrFSource, 'src/remoteLoader.ts');
+assert.equal(aliasSsrFResult.findings.find(f => f.cwe.startsWith('CWE-918'))?.verificationStatus, 'LIKELY', 'bounded alias chains should preserve SSRF source-to-sink evidence');
+
+const reassignedSsrFSource = `async function load(req) {
+  let requestedUrl = req.query.url;
+  requestedUrl = 'https://api.example.com';
+  await fetch(requestedUrl);
+}`;
+const reassignedSsrFResult = analyzeSourceCodeContextAware(reassignedSsrFSource, 'src/remoteLoader.ts');
+assert.notEqual(reassignedSsrFResult.findings.find(f => f.cwe.startsWith('CWE-918'))?.verificationStatus, 'LIKELY', 'reassigned values must not retain stale request-source taint');
+
+console.log('Alias propagation, reassignment, and test-context classification: 7 additional assertions passed.');
+
