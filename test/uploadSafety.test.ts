@@ -108,6 +108,31 @@ async function runUploadSafetyTests() {
   }
   assert('Reject ZIP archives with more than 5,000 entries, including unsupported files', entryLimitCaught);
 
+  // 6b. A forged EOCD entry count must be rejected by the metadata preflight
+  // before JSZip parses/allocates archive entry objects.
+  const forgedCountZip = new JSZip();
+  forgedCountZip.file('src/one.ts', 'const one = 1;');
+  const forgedCountBytes = new Uint8Array(await forgedCountZip.generateAsync({ type: 'arraybuffer' }));
+  let eocdOffset = -1;
+  for (let i = forgedCountBytes.length - 22; i >= Math.max(0, forgedCountBytes.length - 22 - 0xffff); i -= 1) {
+    if (forgedCountBytes[i] === 0x50 && forgedCountBytes[i + 1] === 0x4b &&
+        forgedCountBytes[i + 2] === 0x05 && forgedCountBytes[i + 3] === 0x06) {
+      eocdOffset = i;
+      break;
+    }
+  }
+  if (eocdOffset >= 0) {
+    new DataView(forgedCountBytes.buffer).setUint16(eocdOffset + 8, 5001, true);
+    new DataView(forgedCountBytes.buffer).setUint16(eocdOffset + 10, 5001, true);
+  }
+  let forgedCountCaught = false;
+  try {
+    await safeExtractZip(forgedCountBytes);
+  } catch (err: any) {
+    forgedCountCaught = err.message.includes('too many entries');
+  }
+  assert('Reject forged ZIP entry-count metadata before full archive parsing', eocdOffset >= 0 && forgedCountCaught);
+
   // 7. Folder upload path handling: unsafe browser-supplied paths must not
   // fall back to file.name, and duplicate/case-colliding paths are rejected.
   const originalFileReader = (globalThis as any).FileReader;
