@@ -61,3 +61,4 @@ jobs:
         run: |
           npx --yes tsx@4.21.0 test/apiClientOrigin.test.ts
           npx --yes tsx@4.21.0 test/untrustedSourceBoundary.test.ts
+          npx --yes tsx@4.21.0 test/aiFindingValidation.test.ts
