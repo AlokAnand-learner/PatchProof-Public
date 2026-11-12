@@ -67,12 +67,22 @@ try {
   const fakeGitHubToken = 'ghp_' + 'B'.repeat(24);
   const remotePrepared = prepareProviderReviewPayload('custom', 'https://ai.example.com/v1', trustedTask, [{
     path: 'src/config.ts',
-    content: ['const apiKey = "' + fakeApiKey + '";', 'const token = "' + fakeGitHubToken + '";'].join('\n'),
+    content: [
+      'const apiKey = "' + fakeApiKey + '";',
+      'const token = "' + fakeGitHubToken + '";',
+      'DB_PASSWORD=unquoted_database_secret_123',
+      'JWT_SECRET: yamlSigningSecretValue12345',
+      '"refresh_token": "jsonRefreshSecretValue12345"',
+    ].join('\n'),
   }]);
   const remoteSource = JSON.parse(remotePrepared.userPayload).sourceFiles[0].content;
   assert.equal(remotePrepared.needsCloudConsent, true);
   assert.equal(remoteSource.includes(fakeApiKey), false);
   assert.equal(remoteSource.includes(fakeGitHubToken), false);
+  assert.equal(remoteSource.includes('unquoted_database_secret_123'), false, 'unquoted dotenv credentials must be redacted');
+  assert.equal(remoteSource.includes('yamlSigningSecretValue12345'), false, 'YAML colon-separated credentials must be redacted');
+  assert.equal(remoteSource.includes('jsonRefreshSecretValue12345'), false, 'JSON refresh tokens must be redacted');
+  assert.equal(remoteSource.includes('DB_PASSWORD=[REDACTED]'), true, 'dotenv key names must remain visible after redaction');
   assert.equal(remoteSource.includes('[REDACTED]'), true);
   assert.match(remotePrepared.systemInstruction, /Return a JSON object containing findings/);
 
