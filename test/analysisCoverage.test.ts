@@ -43,7 +43,7 @@ assert.match(buildAiCoverageNotice({
   attempted: 4, completed: 3, failed: 1, truncated: 2,
   maxCharactersPerFile: 35000, skippedByBudget: 2, offlineMode: false,
   cloudConsentRequired: true, cloudConsentGranted: true
-}), /2 additional eligible file\\(s\\) received static-only review/);
+}), /2 additional eligible file\(s\) received static-only review/);
 assert.match(buildAiCoverageNotice({
   attempted: 2, completed: 0, failed: 2, truncated: 0,
   maxCharactersPerFile: 35000, offlineMode: false,
