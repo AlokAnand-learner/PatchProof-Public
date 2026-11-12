@@ -32,14 +32,14 @@ const MAX_TEXT = 4000;
 function boundedText(value: unknown, fallback: string, max = MAX_TEXT): string {
   if (typeof value !== 'string') return fallback;
   const cleaned = value
-    .replace(/[\\u0000-\\u0008\\u000B\\u000C\\u000E-\\u001F\\u007F-\\u009F]/g, ' ')
-    .replace(/[\\u061C\\u200E\\u200F\\u202A-\\u202E\\u2066-\\u2069]/g, '');
+    .replace(/[\u0000-\u0008\u000B\u000C\u000E-\u001F\u007F-\u009F]/g, ' ')
+    .replace(/[\u061C\u200E\u200F\u202A-\u202E\u2066-\u2069]/g, '');
   return cleaned.trim().slice(0, max) || fallback;
 }
 
 function boundedCwe(value: unknown): string {
   const candidate = boundedText(value, 'CWE-Other', 100);
-  if (/^CWE-(?:\\d{1,5}|Other)$/i.test(candidate)) {
+  if (/^CWE-(?:\d{1,5}|Other)$/i.test(candidate)) {
     return candidate.toLowerCase() === 'cwe-other' ? 'CWE-Other' : candidate.toUpperCase();
   }
   return 'CWE-Other';
