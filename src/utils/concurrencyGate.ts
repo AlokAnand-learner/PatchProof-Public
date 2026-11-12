@@ -23,3 +23,20 @@ export function createConcurrencyGate(maxConcurrent: number): ConcurrencyGate {
     activeCount: () => active
   };
 }
+
+/**
+ * Run a task while holding a gate slot. The slot remains occupied until the
+ * task's returned Promise settles, even if an HTTP response closes earlier.
+ */
+export async function runWithConcurrencyGate<T>(
+  gate: ConcurrencyGate,
+  task: () => T | Promise<T>,
+): Promise<{ acquired: true; value: T } | { acquired: false }> {
+  const release = gate.tryAcquire();
+  if (!release) return { acquired: false };
+  try {
+    return { acquired: true, value: await task() };
+  } finally {
+    release();
+  }
+}
