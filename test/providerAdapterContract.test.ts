@@ -27,7 +27,7 @@ assert.ok(source.includes('Every remote HTTPS endpoint is DNS-pinned'), 'OpenAI 
 assert.ok(source.includes('Remote OpenAI and custom HTTPS endpoints must use DNS-pinned transport'), 'OpenAI and remote custom analysis must share pinned transport');
 assert.ok(source.includes("redirect: 'error'"), 'provider requests must reject redirects');
 const anthropicStart = source.indexOf('// 4. ANTHROPIC');
-const anthropicEnd = source.indexOf('\\n}\\n\\nexport function extractJsonFromModelResponse', anthropicStart);
+const anthropicEnd = source.indexOf('\n}\n\nexport function extractJsonFromModelResponse', anthropicStart);
 assert.ok(anthropicStart >= 0 && anthropicEnd > anthropicStart, 'Anthropic adapter must be discoverable');
 const anthropicSection = source.slice(anthropicStart, anthropicEnd);
 assert.equal(
