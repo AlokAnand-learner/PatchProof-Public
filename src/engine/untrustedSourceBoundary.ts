@@ -42,13 +42,13 @@ const SYSTEM_INSTRUCTION = [
 ].join('\n');
 
 const INSTRUCTION_SIGNAL = [
-  /ignore\\s+(all\\s+)?(previous|prior|above|system|developer)\\s+instructions?/i,
-  /reveal\\s+(the\\s+)?(system\\s+prompt|hidden\\s+prompt|secrets?|credentials?)/i,
-  /disclose\\s+(api\\s+keys?|tokens?|passwords?|secrets?)/i,
-  /you\\s+are\\s+now\\s+(an?\\s+)?(admin|root|developer|system)/i,
-  /(?:run|execute|invoke)\\s+(?:this\\s+)?(?:shell\\s+)?command/i,
-  /call\\s+(?:the\\s+)?(?:tool|function|browser|terminal)/i,
-  /do\\s+not\\s+tell\\s+the\\s+user/i,
+  /ignore\s+(all\s+)?(previous|prior|above|system|developer)\s+instructions?/i,
+  /reveal\s+(the\s+)?(system\s+prompt|hidden\s+prompt|secrets?|credentials?)/i,
+  /disclose\s+(api\s+keys?|tokens?|passwords?|secrets?)/i,
+  /you\s+are\s+now\s+(an?\s+)?(admin|root|developer|system)/i,
+  /(?:run|execute|invoke)\s+(?:this\s+)?(?:shell\s+)?command/i,
+  /call\s+(?:the\s+)?(?:tool|function|browser|terminal)/i,
+  /do\s+not\s+tell\s+the\s+user/i,
 ];
 
 function byteLength(value: string): number {
