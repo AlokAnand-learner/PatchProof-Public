@@ -39,6 +39,7 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onHistoryCleared, on
   const [showClearConfirm, setShowClearConfirm] = useState(false);
   const [showBenchmarkDetails, setShowBenchmarkDetails] = useState(false);
   const [privacyError, setPrivacyError] = useState<string | null>(null);
+  const [privacyModeEnabled, setPrivacyModeEnabled] = useState<boolean>(() => isPrivacyModeEnabled());
   const [cloudConsentError, setCloudConsentError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -154,10 +155,10 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onHistoryCleared, on
           <button
             type="button"
             role="switch"
-            aria-checked={isPrivacyModeEnabled()}
+            aria-checked={privacyModeEnabled}
             aria-label="Enable privacy mode for saved source code"
             onClick={() => {
-              const nextState = !isPrivacyModeEnabled();
+              const nextState = !privacyModeEnabled;
               const updated = setPrivacyMode(nextState);
               if (!updated) {
                 setPrivacyError(nextState
@@ -166,15 +167,16 @@ export const SettingsView: React.FC<SettingsViewProps> = ({ onHistoryCleared, on
                 return;
               }
               setPrivacyError(null);
+              setPrivacyModeEnabled(nextState);
               setHistoryCount(getScanHistory().length);
             }}
             className={`w-11 h-6 rounded-full transition-colors relative p-0.5 shrink-0 ${
-              isPrivacyModeEnabled() ? 'bg-[#2458D3] dark:bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
+              privacyModeEnabled ? 'bg-[#2458D3] dark:bg-emerald-500' : 'bg-slate-300 dark:bg-slate-700'
             }`}
           >
             <div
               className={`w-5 h-5 rounded-full bg-white transition-transform ${
-                isPrivacyModeEnabled() ? 'translate-x-5' : 'translate-x-0'
+                privacyModeEnabled ? 'translate-x-5' : 'translate-x-0'
               }`}
             />
           </button>
