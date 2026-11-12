@@ -4,7 +4,9 @@ from __future__ import annotations
 import hashlib
 from pathlib import Path
 import stat
+import struct
 import sys
+import zlib
 import tempfile
 import unittest
 import zipfile
@@ -176,6 +178,37 @@ class SourceArchiveImportFlowTests(unittest.TestCase):
         with self.assertRaises(SystemExit):
             self.run_import()
         self.assertFalse((outside / "app.ts").exists())
+
+    def test_empty_archive_is_rejected(self) -> None:
+        self.write_zip([("source/", b"", False)])
+        with self.assertRaises(SystemExit):
+            self.run_import()
+
+    def test_encrypted_member_is_rejected(self) -> None:
+        self.write_zip([("source/src/app.ts", b"secret", False)])
+        raw = bytearray(self.archive_path.read_bytes())
+        local = raw.find(b"PK\\x03\\x04")
+        central = raw.find(b"PK\\x01\\x02")
+        self.assertGreaterEqual(local, 0)
+        self.assertGreaterEqual(central, 0)
+        struct.pack_into("<H", raw, local + 6, struct.unpack_from("<H", raw, local + 6)[0] | 1)
+        struct.pack_into("<H", raw, central + 8, struct.unpack_from("<H", raw, central + 8)[0] | 1)
+        self.archive_path.write_bytes(raw)
+        with self.assertRaises(RuntimeError):
+            self.run_import()
+
+    def test_corrupt_member_checksum_is_rejected(self) -> None:
+        self.write_zip([("source/src/app.ts", b"abcde" * 1000, False)])
+        with zipfile.ZipFile(self.archive_path) as archive:
+            info = archive.getinfo("source/src/app.ts")
+        raw = bytearray(self.archive_path.read_bytes())
+        data_offset = info.header_offset + 30
+        name_length, extra_length = struct.unpack_from("<HH", raw, info.header_offset + 26)
+        data_offset += name_length + extra_length
+        raw[data_offset + 2] ^= 0xFF
+        self.archive_path.write_bytes(raw)
+        with self.assertRaises((zipfile.BadZipFile, zlib.error)):
+            self.run_import()
 
     def test_malformed_zip_is_rejected_without_writing(self) -> None:
         self.archive_path.write_bytes(b"not a zip archive")
